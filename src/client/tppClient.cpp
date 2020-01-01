@@ -12,7 +12,6 @@
 #include "../tppSocketPOSIX.h"
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27015"
 
 int __cdecl main(int argc, char **argv)
 {
@@ -49,6 +48,8 @@ int __cdecl main(int argc, char **argv)
 	messages.push_back("bool");
 	messages.push_back("int");
 
+	getchar();
+
 	while(!messages.empty())
 	{
 		const std::string& message = messages.back();
@@ -73,6 +74,8 @@ int __cdecl main(int argc, char **argv)
 	};
 
 	WSACleanup();
+
+	printf("Client closed succesfully\n");
 
 	getchar();
 

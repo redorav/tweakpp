@@ -11,7 +11,6 @@
 #include "../tppSocketPOSIX.h"
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27015"
 
 int __cdecl main(void)
 {
@@ -42,6 +41,8 @@ int __cdecl main(void)
 	serverSocket.Listen(address.port);
 	tpp::ISocket* clientSocket = serverSocket.Accept(address);
 	serverSocket.Close();
+
+	clientSocket->SetTimeout(tpp::Channel::Both, 1000);
 
 	bool shutdown = false;
 
@@ -76,6 +77,10 @@ int __cdecl main(void)
 				sendResult = clientSocket->Send(unrecognizedMsg.c_str(), unrecognizedMsg.length());
 			}
 		}
+		else if (receiveResult == tpp::SocketReturn::Timeout)
+		{
+
+		}
 		else
 		{
 			shutdown = true;
@@ -85,6 +90,8 @@ int __cdecl main(void)
 	clientSocket->Close();
 
 	WSACleanup();
+
+	printf("Server closed succesfully\n");
 
 	getchar();
 

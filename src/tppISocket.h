@@ -1,3 +1,4 @@
+#include <cstdint>
 
 namespace tpp
 {
@@ -15,7 +16,7 @@ namespace tpp
 		};
 	};
 
-	enum class ShutdownOption
+	enum class Channel
 	{
 		Send,
 		Receive,
@@ -49,7 +50,9 @@ namespace tpp
 
 		virtual SocketReturn::T Send(const char* buffer, int bufferSize) = 0;
 
-		virtual SocketReturn::T Shutdown(ShutdownOption option) = 0;
+		virtual SocketReturn::T Shutdown(Channel option) = 0;
+
+		virtual void SetTimeout(Channel channel, uint32_t milliseconds) = 0;
 	};
 
 }

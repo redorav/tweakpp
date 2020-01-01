@@ -11,6 +11,21 @@
 
 namespace tpp
 {
+	// The error code values are different between Windows and Unix systems. Even though Windows used to
+	// provide a compatibility layer they no longer recommend it. Therefore we set up out own translation
+	// layer to handle it.
+#if defined(_WIN32)
+
+	static const int TPP_TIMEOUT = WSAETIMEDOUT;
+	static const int TPP_CONNECTION_CLOSED = WSAECONNRESET;
+
+#else
+
+	static const int TPP_TIMEOUT = ETIMEDOUT;
+	static const int TPP_CONNECTION_CLOSED = ECONNRESET;
+
+#endif
+
 	SocketPOSIX::SocketPOSIX() : m_socketHandle(INVALID_SOCKET)
 	{
 	}
@@ -172,14 +187,7 @@ namespace tpp
 		}
 		else
 		{
-			int error = WSAGetLastError();
-			switch (error)
-			{
-				case ETIMEDOUT:
-					return SocketReturn::Timeout;
-				default:
-					return SocketReturn::Error;
-			}
+			return GetLastError();
 		}
 	}
 
@@ -193,39 +201,28 @@ namespace tpp
 		}
 		else
 		{
-			int error = WSAGetLastError();
-			switch (error)
-			{
-				case ETIMEDOUT:
-					printf("Timeout occurred\n");
-					return SocketReturn::Timeout;
-				case ECONNRESET:
-					printf("Timeout closed\n");
-					return SocketReturn::ConnectionClosed;
-				default:
-					return SocketReturn::Error;
-			};
+			return GetLastError();
 		}
 
 		return (SocketReturn::T)result;
 	}
 
-	SocketReturn::T SocketPOSIX::Shutdown(ShutdownOption option)
+	SocketReturn::T SocketPOSIX::Shutdown(Channel channel)
 	{
 		int result = 0;
 		int iOption = SD_BOTH;
 
-		switch (option)
+		switch (channel)
 		{
 #if defined(_WIN32)
-			case ShutdownOption::Send: iOption = SD_SEND; break;
-			case ShutdownOption::Receive: iOption = SD_RECEIVE; break;
-			case ShutdownOption::Both: iOption = SD_BOTH; break;
+			case Channel::Send: iOption = SD_SEND; break;
+			case Channel::Receive: iOption = SD_RECEIVE; break;
+			case Channel::Both: iOption = SD_BOTH; break;
 			default: iOption = SD_BOTH; break;
 #else
-			case ShutdownOption::Send: iOption = SHUT_WR; break;
-			case ShutdownOption::Receive: iOption = SHUT_RD; break;
-			case ShutdownOption::Both: iOption = SHUT_RDWR; break;
+			case Channel::Send: iOption = SHUT_WR; break;
+			case Channel::Receive: iOption = SHUT_RD; break;
+			case Channel::Both: iOption = SHUT_RDWR; break;
 			default: iOption = SD_BOTH; break;
 #endif
 		}
@@ -238,5 +235,48 @@ namespace tpp
 		}
 
 		return SocketReturn::Ok;
+	}
+
+	// https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+	void SocketPOSIX::SetTimeout(Channel channel, uint32_t milliseconds)
+	{
+#if defined(_WIN32)
+		DWORD timeout = milliseconds;
+#else
+		timeval timeout;
+		timeout.tv_sec = 0;
+		timeout.tv_usec = milliseconds * 1000;
+#endif
+
+		if (channel == Channel::Send || channel == Channel::Both)
+		{
+			setsockopt(m_socketHandle, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+		}
+
+		if (channel == Channel::Receive || channel == Channel::Both)
+		{
+			setsockopt(m_socketHandle, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+		}
+	}
+
+	tpp::SocketReturn::T SocketPOSIX::GetLastError()
+	{
+#if defined(_WIN32)
+		int error = WSAGetLastError();
+#else
+		int error = errno;
+#endif
+
+		switch (error)
+		{
+			case TPP_TIMEOUT:
+				printf("Timeout occurred\n");
+				return SocketReturn::Timeout;
+			case TPP_CONNECTION_CLOSED:
+				printf("Connection closed\n");
+				return SocketReturn::ConnectionClosed;
+			default:
+				return SocketReturn::Error;
+		}
 	}
 }

@@ -24,10 +24,14 @@ namespace tpp
 
 		virtual SocketReturn::T Send(const char* buffer, int bufferSize) override;
 
-		virtual SocketReturn::T Shutdown(ShutdownOption option) override;
+		virtual SocketReturn::T Shutdown(Channel option) override;
+
+		virtual void SetTimeout(Channel channel, uint32_t milliseconds) override;
 
 	private:
 
-		int m_socketHandle;
+		tpp::SocketReturn::T GetLastError();
+
+		uint64_t m_socketHandle;
 	};
 }

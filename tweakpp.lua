@@ -13,7 +13,7 @@ PlatformLinux64_Clang	= "Linux64 Clang"
 -- Directories
 srcDir = "src"
 
-workspace "tweak++"
+workspace "tweak++ server"
 	configurations { "Debug", "Release" }	
 	location (Workspace)
 	defines { "_CRT_SECURE_NO_WARNINGS" }
@@ -21,6 +21,7 @@ workspace "tweak++"
 project "server"
 	kind("consoleapp")
 	language("C++")
+	architecture("x64")
 	links("Ws2_32")
 	files
 	{
@@ -28,9 +29,15 @@ project "server"
 		srcDir.."/server/*.cpp",
 	}
 	
+workspace "tweak++ client"
+	configurations { "Debug", "Release" }	
+	location (Workspace)
+	defines { "_CRT_SECURE_NO_WARNINGS" }
+	
 project "client"
 	kind("consoleapp")
 	language("C++")
+	architecture("x64")
 	links("Ws2_32")
 	files
 	{
