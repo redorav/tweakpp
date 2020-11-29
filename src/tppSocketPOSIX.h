@@ -8,7 +8,7 @@ namespace tpp
 
 		SocketPOSIX();
 
-		SocketPOSIX(int socketHandle);
+		SocketPOSIX(uint64_t socketHandle);
 
 		virtual ISocket* Accept(const NetworkAddress& address) override;
 

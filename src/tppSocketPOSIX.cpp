@@ -16,38 +16,74 @@ namespace tpp
 	// layer to handle it.
 #if defined(_WIN32)
 
-	static const int TPP_TIMEOUT = WSAETIMEDOUT;
-	static const int TPP_CONNECTION_CLOSED = WSAECONNRESET;
+	#define TPP_EPREFIX(x) WSA##x
 
 #else
 
-	static const int TPP_TIMEOUT = ETIMEDOUT;
-	static const int TPP_CONNECTION_CLOSED = ECONNRESET;
+	#define TPP_EPREFIX(x) x
 
 #endif
+
+	static const int TPP_WOULDBLOCK     = TPP_EPREFIX(EWOULDBLOCK);
+	static const int TPP_INPROGRESS     = TPP_EPREFIX(EINPROGRESS);
+	static const int TPP_ALREADY        = TPP_EPREFIX(EALREADY);
+	static const int TPP_NOTSOCK        = TPP_EPREFIX(ENOTSOCK);
+	static const int TPP_DESTADDRREQ    = TPP_EPREFIX(EDESTADDRREQ);
+	static const int TPP_MSGSIZE        = TPP_EPREFIX(EMSGSIZE);
+	static const int TPP_PROTOTYPE      = TPP_EPREFIX(EPROTOTYPE);
+	static const int TPP_NOPROTOOPT     = TPP_EPREFIX(ENOPROTOOPT);
+	static const int TPP_PROTONOSUPPORT = TPP_EPREFIX(EPROTONOSUPPORT);
+	static const int TPP_SOCKTNOSUPPORT = TPP_EPREFIX(ESOCKTNOSUPPORT);
+	static const int TPP_OPNOTSUPP      = TPP_EPREFIX(EOPNOTSUPP);
+	static const int TPP_PFNOSUPPORT    = TPP_EPREFIX(EPFNOSUPPORT);
+	static const int TPP_AFNOSUPPORT    = TPP_EPREFIX(EAFNOSUPPORT);
+	static const int TPP_ADDRINUSE      = TPP_EPREFIX(EADDRINUSE);
+	static const int TPP_ADDRNOTAVAIL   = TPP_EPREFIX(EADDRNOTAVAIL);
+	static const int TPP_NETDOWN        = TPP_EPREFIX(ENETDOWN);
+	static const int TPP_NETUNREACH     = TPP_EPREFIX(ENETUNREACH);
+	static const int TPP_NETRESET       = TPP_EPREFIX(ENETRESET);
+	static const int TPP_CONNABORTED    = TPP_EPREFIX(ECONNABORTED);
+	static const int TPP_CONNRESET      = TPP_EPREFIX(ECONNRESET);
+	static const int TPP_NOBUFS         = TPP_EPREFIX(ENOBUFS);
+	static const int TPP_ISCONN         = TPP_EPREFIX(EISCONN);
+	static const int TPP_NOTCONN        = TPP_EPREFIX(ENOTCONN);
+	static const int TPP_SHUTDOWN       = TPP_EPREFIX(ESHUTDOWN);
+	static const int TPP_TOOMANYREFS    = TPP_EPREFIX(ETOOMANYREFS);
+	static const int TPP_TIMEDOUT       = TPP_EPREFIX(ETIMEDOUT);
+	static const int TPP_CONNREFUSED    = TPP_EPREFIX(ECONNREFUSED);
+	static const int TPP_LOOP           = TPP_EPREFIX(ELOOP);
+	static const int TPP_NAMETOOLONG    = TPP_EPREFIX(ENAMETOOLONG);
+	static const int TPP_HOSTDOWN       = TPP_EPREFIX(EHOSTDOWN);
+	static const int TPP_HOSTUNREACH    = TPP_EPREFIX(EHOSTUNREACH);
+	static const int TPP_NOTEMPTY       = TPP_EPREFIX(ENOTEMPTY);
+	static const int TPP_PROCLIM        = TPP_EPREFIX(EPROCLIM);
+	static const int TPP_USERS          = TPP_EPREFIX(EUSERS);
+	static const int TPP_DQUOT          = TPP_EPREFIX(EDQUOT);
+	static const int TPP_STALE          = TPP_EPREFIX(ESTALE);
+	static const int TPP_REMOTE         = TPP_EPREFIX(EREMOTE);
 
 	SocketPOSIX::SocketPOSIX() : m_socketHandle(INVALID_SOCKET)
 	{
 	}
 
-	SocketPOSIX::SocketPOSIX(int socketHandle) : m_socketHandle(socketHandle)
+	SocketPOSIX::SocketPOSIX(uint64_t socketHandle) : m_socketHandle(socketHandle)
 	{
 	}
 
 	ISocket* SocketPOSIX::Accept(const NetworkAddress& address)
 	{
-		sockaddr clientAddr = {};
+		sockaddr clientAddr;
 		socklen_t clientAddrSize = sizeof(clientAddr);
-		int clientSocketHandle = accept(m_socketHandle, &clientAddr, &clientAddrSize);
+		SOCKET clientSocketHandle = accept(m_socketHandle, &clientAddr, &clientAddrSize);
 
-		if (clientSocketHandle == INVALID_SOCKET)
+		if (clientSocketHandle != INVALID_SOCKET)
+		{
+			return new SocketPOSIX(clientSocketHandle);
+		}
+		else
 		{
 			return nullptr;
 		}
-
-		SocketPOSIX* clientSocketPOSIX = new SocketPOSIX(clientSocketHandle);
-
-		return clientSocketPOSIX;
 	}
 
 	SocketReturn::T SocketPOSIX::Create()
@@ -269,10 +305,10 @@ namespace tpp
 
 		switch (error)
 		{
-			case TPP_TIMEOUT:
+			case TPP_TIMEDOUT:
 				printf("Timeout occurred\n");
 				return SocketReturn::Timeout;
-			case TPP_CONNECTION_CLOSED:
+			case TPP_CONNREFUSED:
 				printf("Connection closed\n");
 				return SocketReturn::ConnectionClosed;
 			default:
