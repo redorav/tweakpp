@@ -8,4 +8,10 @@ namespace tpp
 		strncpy(address, in_address, sizeof(address));
 		port = in_port;
 	}
+
+	void ISocket::SetBlocking(bool blocking)
+	{
+		m_isBlocking = blocking;
+		SetBlockingI(blocking);
+	}
 }

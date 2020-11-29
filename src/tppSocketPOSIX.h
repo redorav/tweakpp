@@ -24,6 +24,8 @@ namespace tpp
 
 		virtual SocketReturn::T Send(const char* buffer, int bufferSize) override;
 
+		virtual void SetBlockingI(bool blocking) override;
+
 		virtual SocketReturn::T Shutdown(Channel option) override;
 
 		virtual void SetTimeout(Channel channel, uint32_t milliseconds) override;

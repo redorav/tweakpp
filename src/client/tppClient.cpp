@@ -13,7 +13,7 @@
 
 #define DEFAULT_BUFLEN 512
 
-int __cdecl main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	WSADATA wsaData;
 	char *sendbuf = "this is a test";

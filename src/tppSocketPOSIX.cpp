@@ -243,6 +243,16 @@ namespace tpp
 		return (SocketReturn::T)result;
 	}
 
+	void SocketPOSIX::SetBlockingI(bool blocking)
+	{
+		u_long mode = blocking ? 0 : 1;
+#if defined(_WIN32)
+		int result = ioctlsocket((SOCKET)m_socketHandle, FIONBIO, &mode);
+#else
+		int result = ioctl(m_socketHandle, FIONBIO, &mode);
+#endif
+	}
+
 	SocketReturn::T SocketPOSIX::Shutdown(Channel channel)
 	{
 		int result = 0;
@@ -305,6 +315,9 @@ namespace tpp
 
 		switch (error)
 		{
+			case TPP_WOULDBLOCK:
+				printf("Would block\n");
+				return SocketReturn::WouldBlock;
 			case TPP_TIMEDOUT:
 				printf("Timeout occurred\n");
 				return SocketReturn::Timeout;

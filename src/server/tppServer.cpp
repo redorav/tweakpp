@@ -12,7 +12,7 @@
 
 #define DEFAULT_BUFLEN 512
 
-int __cdecl main(void)
+int main(void)
 {
 	WSADATA wsaData;
 

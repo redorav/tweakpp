@@ -2,8 +2,8 @@
 
 namespace tpp
 {
-	// These values need to be negative so Send and Receive can return the same error values
-	// as the other functions (bar the fact that they are cast as int)
+	// These values need to be negative so Send and Receive can return a positive value for the number of bytes
+	// returned when reading from a socket
 	namespace SocketReturn
 	{
 		enum T
@@ -12,7 +12,8 @@ namespace tpp
 			Error            = -1,
 			Timeout          = -2,
 			InvalidSocket    = -3,
-			ConnectionClosed = -4
+			ConnectionClosed = -4,
+			WouldBlock       = -5,
 		};
 	};
 
@@ -55,10 +56,26 @@ namespace tpp
 		// Send data
 		virtual SocketReturn::T Send(const char* buffer, int bufferSize) = 0;
 
+		// Set blocking
+		void SetBlocking(bool blocking);
+
 		// Shut down socket for sending, receiving, or both
 		virtual SocketReturn::T Shutdown(Channel option) = 0;
 
 		virtual void SetTimeout(Channel channel, uint32_t milliseconds) = 0;
+
+		// Return if socket is blocking
+		bool IsBlocking();
+
+	private:
+
+		virtual void SetBlockingI(bool blocking) = 0;
+
+		bool m_isBlocking;
 	};
 
+	inline bool ISocket::IsBlocking()
+	{
+		return m_isBlocking;
+	}
 }
