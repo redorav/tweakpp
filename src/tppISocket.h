@@ -40,16 +40,22 @@ namespace tpp
 
 		virtual SocketReturn::T Connect(const NetworkAddress& address) = 0;
 
+		// Destroys socket for any further transmission
 		virtual SocketReturn::T Close() = 0;
 
+		// Create the socket
 		virtual SocketReturn::T Create() = 0;
 
+		// Listen to a specific port
 		virtual SocketReturn::T Listen(int port) = 0;
 
+		// Receive data
 		virtual SocketReturn::T Receive(char* buffer, int bufferSize) = 0;
 
+		// Send data
 		virtual SocketReturn::T Send(const char* buffer, int bufferSize) = 0;
 
+		// Shut down socket for sending, receiving, or both
 		virtual SocketReturn::T Shutdown(Channel option) = 0;
 
 		virtual void SetTimeout(Channel channel, uint32_t milliseconds) = 0;
