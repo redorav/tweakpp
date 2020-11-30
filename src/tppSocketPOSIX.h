@@ -32,7 +32,7 @@ namespace tpp
 
 	private:
 
-		tpp::SocketReturn::T GetLastError();
+		static tpp::SocketReturn::T GetLastError();
 
 		uint64_t m_socketHandle;
 	};
