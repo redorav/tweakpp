@@ -269,7 +269,7 @@ namespace tpp
 			case Channel::Send: iOption = SHUT_WR; break;
 			case Channel::Receive: iOption = SHUT_RD; break;
 			case Channel::Both: iOption = SHUT_RDWR; break;
-			default: iOption = SD_BOTH; break;
+			default: iOption = SHUT_RDWR; break;
 #endif
 		}
 
