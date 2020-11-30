@@ -170,7 +170,7 @@ namespace tpp
 	SocketReturn::T SocketPOSIX::Listen(int port)
 	{
 		// https://docs.microsoft.com/en-us/windows/desktop/api/winsock/nf-winsock-setsockopt
-		// Allows the socket to be bound to an address that is already in use.For more information, see bind.Not applicable on ATM sockets.
+		// Allows the socket to be bound to an address that is already in use. For more information, see bind. Not applicable on ATM sockets.
 		int option = 1;
 		int result = setsockopt(m_socketHandle, SOL_SOCKET, SO_REUSEADDR, (char*)&option, sizeof(option));
 		if (result != 0)
@@ -190,7 +190,7 @@ namespace tpp
 		{
 			closesocket(m_socketHandle);
 			m_socketHandle = INVALID_SOCKET;
-			return SocketReturn::Error;
+			return SocketReturn::InvalidSocket;
 		}
 
 		// Start listening
@@ -199,7 +199,7 @@ namespace tpp
 		{
 			closesocket(m_socketHandle);
 			m_socketHandle = INVALID_SOCKET;
-			return SocketReturn::Error;
+			return SocketReturn::InvalidSocket;
 		}
 
 		return SocketReturn::Ok;
@@ -218,7 +218,7 @@ namespace tpp
 		}
 		else if (result == 0)
 		{
-			// If the connection has been gracefully closed, the return value is zero.
+			// If the connection has been gracefully closed, the return value is zero
 			return SocketReturn::ConnectionClosed;
 		}
 		else
