@@ -35,55 +35,60 @@ int main(void)
 	}
 
 	tpp::NetworkAddress address("127.0.0.1", 27001);
-	tpp::SocketPOSIX serverSocket;
+	tpp::SocketPOSIX* serverSocket = new tpp::SocketPOSIX();
+	tpp::SocketPOSIX* clientSocket = new tpp::SocketPOSIX();
 
-	serverSocket.Create();
-	serverSocket.Listen(address.port);
-	tpp::ISocket* clientSocket = serverSocket.Accept(address);
-	serverSocket.Close();
-
-	clientSocket->SetTimeout(tpp::Channel::Both, 1000);
+	serverSocket->Create();
+	serverSocket->Listen(address.port);
 
 	bool shutdown = false;
 
 	while(!shutdown)
 	{
-		tpp::SocketReturn::T receiveResult = clientSocket->Receive(recvbuf, recvbuflen);
-
-		if (receiveResult > 0)
+		if (clientSocket->IsConnected())
 		{
-			std::string message(recvbuf, receiveResult);
+			tpp::SocketReturn::T receiveResult = clientSocket->Receive(recvbuf, recvbuflen);
 
-			tpp::SocketReturn::T sendResult;
+			if (receiveResult > 0)
+			{
+				std::string message(recvbuf, receiveResult);
 
-			if (message.compare("vec3") == 0)
-			{
-				std::string vec3str = "{ 0.0, 1.0, 2.0 }";
-				sendResult = clientSocket->Send(vec3str.c_str(), vec3str.length());
+				tpp::SocketReturn::T sendResult;
+
+				if (message.compare("vec3") == 0)
+				{
+					std::string vec3str = "{ 0.0, 1.0, 2.0 }";
+					sendResult = clientSocket->Send(vec3str.c_str(), vec3str.length());
+				}
+				else if (message.compare("bool") == 0)
+				{
+					std::string boolstr = "true";
+					sendResult = clientSocket->Send(boolstr.c_str(), boolstr.length());
+				}
+				else if (message.compare("int") == 0)
+				{
+					std::string intstr = "2";
+					sendResult = clientSocket->Send(intstr.c_str(), intstr.length());
+				}
+				else
+				{
+					std::string unrecognizedMsg = "Unrecognized message";
+					sendResult = clientSocket->Send(unrecognizedMsg.c_str(), unrecognizedMsg.length());
+				}
 			}
-			else if (message.compare("bool") == 0)
+			else if (receiveResult == tpp::SocketReturn::Timeout)
 			{
-				std::string boolstr = "true";
-				sendResult = clientSocket->Send(boolstr.c_str(), boolstr.length());
-			}
-			else if (message.compare("int") == 0)
-			{
-				std::string intstr = "2";
-				sendResult = clientSocket->Send(intstr.c_str(), intstr.length());
+				
 			}
 			else
 			{
-				std::string unrecognizedMsg = "Unrecognized message";
-				sendResult = clientSocket->Send(unrecognizedMsg.c_str(), unrecognizedMsg.length());
+				clientSocket->Close();
 			}
-		}
-		else if (receiveResult == tpp::SocketReturn::Timeout)
-		{
-
 		}
 		else
 		{
-			shutdown = true;
+			serverSocket->Accept(address, clientSocket);
+			serverSocket->Close();
 		}
 	}
 
@@ -91,7 +96,7 @@ int main(void)
 
 	WSACleanup();
 
-	printf("Server closed succesfully\n");
+	printf("Server closed successfully\n");
 
 	getchar();
 

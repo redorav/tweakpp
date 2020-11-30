@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 
 	WSACleanup();
 
-	printf("Client closed succesfully\n");
+	printf("Client closed successfully\n");
 
 	getchar();
 

@@ -70,20 +70,24 @@ namespace tpp
 	{
 	}
 
-	ISocket* SocketPOSIX::Accept(const NetworkAddress& address)
+	SocketReturn::T SocketPOSIX::Accept(const NetworkAddress& address, ISocket* const clientSocket)
 	{
-		sockaddr clientAddr;
-		socklen_t clientAddrSize = sizeof(clientAddr);
-		SOCKET clientSocketHandle = accept(m_socketHandle, &clientAddr, &clientAddrSize);
+		if (clientSocket)
+		{
+			sockaddr clientAddr;
+			socklen_t clientAddrSize = sizeof(clientAddr);
+			SOCKET clientSocketHandle = accept(m_socketHandle, &clientAddr, &clientAddrSize);
 
-		if (clientSocketHandle != INVALID_SOCKET)
-		{
-			return new SocketPOSIX(clientSocketHandle);
+			if (clientSocketHandle > 0)
+			{
+				SocketPOSIX* const posixSocket = static_cast<SocketPOSIX* const>(clientSocket);
+				posixSocket->m_socketHandle = clientSocketHandle;
+				posixSocket->m_isConnected = true;
+				return SocketReturn::Ok;
+			}
 		}
-		else
-		{
-			return nullptr;
-		}
+
+		return SocketReturn::Error;
 	}
 
 	SocketReturn::T SocketPOSIX::Create()
@@ -209,21 +213,32 @@ namespace tpp
 	// http://man7.org/linux/man-pages/man2/recv.2.html
 	SocketReturn::T SocketPOSIX::Receive(char* buffer, int bufferLength)
 	{
-		int result = recv(m_socketHandle, buffer, bufferLength, 0);
+		int recvResult = recv(m_socketHandle, buffer, bufferLength, 0);
 
-		if (result > 0)
+		if (recvResult > 0)
 		{
-			printf("Message received: %.*s (%d bytes)\n", result, buffer, result);
-			return (SocketReturn::T)result;
+			printf("Message received: %.*s (%d bytes)\n", recvResult, buffer, recvResult);
+			return (SocketReturn::T)recvResult;
 		}
-		else if (result == 0)
+		else 
 		{
-			// If the connection has been gracefully closed, the return value is zero
-			return SocketReturn::ConnectionClosed;
-		}
-		else
-		{
-			return GetLastError();
+			SocketReturn::T error;
+
+			if (recvResult == 0)
+			{
+				error = SocketReturn::ConnectionClosed;
+			}
+			else
+			{
+				error = GetLastError();
+			}
+
+			if (error != SocketReturn::Timeout || error != SocketReturn::WouldBlock)
+			{
+				m_isConnected = false;
+			}
+
+			return error;
 		}
 	}
 
@@ -322,6 +337,7 @@ namespace tpp
 				printf("Timeout occurred\n");
 				return SocketReturn::Timeout;
 			case TPP_CONNREFUSED:
+			case TPP_CONNRESET:
 				printf("Connection closed\n");
 				return SocketReturn::ConnectionClosed;
 			default:

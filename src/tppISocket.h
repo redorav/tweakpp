@@ -37,7 +37,7 @@ namespace tpp
 	{
 	public:
 
-		virtual ISocket* Accept(const NetworkAddress& address) = 0;
+		virtual SocketReturn::T Accept(const NetworkAddress& address, ISocket* const clientSocket) = 0;
 
 		virtual SocketReturn::T Connect(const NetworkAddress& address) = 0;
 
@@ -65,17 +65,30 @@ namespace tpp
 		virtual void SetTimeout(Channel channel, uint32_t milliseconds) = 0;
 
 		// Return if socket is blocking
-		bool IsBlocking();
+		bool IsBlocking() const;
 
-	private:
+		bool IsConnected() const;
+
+	protected:
 
 		virtual void SetBlockingI(bool blocking) = 0;
+
+		// Sockets are never actually 'connected'. Every send or receive can return a failure of some kind, so all
+		// we can really do is assume that if we were connected in the past we might be connected now. However,
+		// knowing that we don't have a connection open or that it has been dropped does allow us to make good
+		// decisions, such as to reopen the connection
+		bool m_isConnected = false;
 
 		bool m_isBlocking;
 	};
 
-	inline bool ISocket::IsBlocking()
+	inline bool ISocket::IsBlocking() const
 	{
 		return m_isBlocking;
+	}
+
+	inline bool ISocket::IsConnected() const
+	{
+		return m_isConnected;
 	}
 }

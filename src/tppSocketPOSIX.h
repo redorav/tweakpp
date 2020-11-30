@@ -10,7 +10,7 @@ namespace tpp
 
 		SocketPOSIX(uint64_t socketHandle);
 
-		virtual ISocket* Accept(const NetworkAddress& address) override;
+		virtual SocketReturn::T Accept(const NetworkAddress& address, ISocket* const clientSocket) override;
 
 		virtual SocketReturn::T Connect(const NetworkAddress& address) override;
 
