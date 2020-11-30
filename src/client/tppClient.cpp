@@ -48,8 +48,6 @@ int main(int argc, char **argv)
 	messages.push_back("bool");
 	messages.push_back("int");
 
-	getchar();
-
 	while(!messages.empty())
 	{
 		const std::string& message = messages.back();
