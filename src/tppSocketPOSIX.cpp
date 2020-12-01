@@ -78,12 +78,16 @@ namespace tpp
 			socklen_t clientAddrSize = sizeof(clientAddr);
 			SOCKET clientSocketHandle = accept(m_socketHandle, &clientAddr, &clientAddrSize);
 
-			if (clientSocketHandle > 0)
+			if (clientSocketHandle != INVALID_SOCKET)
 			{
 				SocketPOSIX* const posixSocket = static_cast<SocketPOSIX* const>(clientSocket);
 				posixSocket->m_socketHandle = clientSocketHandle;
 				posixSocket->m_isConnected = true;
 				return SocketReturn::Ok;
+			}
+			else
+			{
+				SocketReturn::InvalidSocket;
 			}
 		}
 
