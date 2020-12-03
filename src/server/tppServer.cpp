@@ -39,6 +39,7 @@ int main(void)
 	tpp::SocketPOSIX* clientSocket = new tpp::SocketPOSIX();
 
 	serverSocket->Create();
+	serverSocket->SetBlocking(false);
 	serverSocket->Listen(address.port);
 
 	bool shutdown = false;
@@ -76,7 +77,7 @@ int main(void)
 					sendResult = clientSocket->Send(unrecognizedMsg.c_str(), unrecognizedMsg.length());
 				}
 			}
-			else if (receiveResult == tpp::SocketReturn::Timeout)
+			else if (receiveResult == tpp::SocketReturn::Timeout || receiveResult == tpp::SocketReturn::WouldBlock)
 			{
 				
 			}
@@ -87,8 +88,14 @@ int main(void)
 		}
 		else
 		{
-			serverSocket->Accept(address, clientSocket);
-			serverSocket->Close();
+			printf("Listening for connections...\n");
+			tpp::SocketReturn::T acceptReturn = serverSocket->Accept(address, clientSocket);
+
+			if (acceptReturn != tpp::SocketReturn::Ok)
+			{
+				serverSocket->Close();
+				Sleep(1000);
+			}
 		}
 	}
 
