@@ -5,6 +5,7 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <string>
 
@@ -88,7 +89,9 @@ int main(void)
 		}
 		else
 		{
-			printf("Listening for connections...\n");
+			time_t currentTime = time(NULL);
+
+			printf("Listening for connections... (%lli)\n", currentTime);
 			tpp::SocketReturn::T acceptReturn = serverSocket->Accept(address, clientSocket);
 
 			if (acceptReturn != tpp::SocketReturn::Ok)
