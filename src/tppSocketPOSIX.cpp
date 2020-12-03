@@ -237,7 +237,7 @@ namespace tpp
 				error = GetLastError();
 			}
 
-			if (error != SocketReturn::Timeout || error != SocketReturn::WouldBlock)
+			if (error != SocketReturn::Timeout && error != SocketReturn::WouldBlock)
 			{
 				m_isConnected = false;
 			}
