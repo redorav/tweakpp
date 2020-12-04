@@ -1,3 +1,5 @@
+#pragma once
+
 #include "tppISocket.h"
 
 namespace tpp
