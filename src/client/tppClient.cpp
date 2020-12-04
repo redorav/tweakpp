@@ -36,11 +36,9 @@ int main(int argc, char **argv)
 	}
 
 	tpp::NetworkAddress address("127.0.0.1", 27001);
-	tpp::SocketPOSIX clientSocket;
-	clientSocket.Create();
-	clientSocket.Connect(address);
-
-	//clientSocket.Shutdown(tpp::ShutdownOption::Send);
+	tpp::SocketPOSIX* clientSocket = new tpp::SocketPOSIX();
+	clientSocket->Create();
+	clientSocket->SetBlocking(false);
 
 	std::vector<std::string> messages;
 
@@ -48,28 +46,47 @@ int main(int argc, char **argv)
 	messages.push_back("bool");
 	messages.push_back("int");
 
-	while(!messages.empty())
+	bool shutdown = false;
+
+	while (!shutdown)
 	{
-		const std::string& message = messages.back();
-
-		tpp::SocketReturn::T sendResult = clientSocket.Send(message.c_str(), message.length());
-
-		tpp::SocketReturn::T receiveResult = clientSocket.Receive(recvbuf, recvbuflen);
-
-		if (receiveResult == 0)
+		if (clientSocket->IsConnected())
 		{
-			printf("Connection closed\n");
+			if (!messages.empty())
+			{
+				const std::string& message = messages.back();
+				tpp::SocketReturn::T sendResult = clientSocket->Send(message.c_str(), message.length());
+				// TODO Handle send issues
+				messages.pop_back();
+			}
+
+			tpp::SocketReturn::T receiveResult = clientSocket->Receive(recvbuf, recvbuflen);
+
+			if (receiveResult == 0)
+			{
+				printf("Connection closed\n");
+			}
+			else if (receiveResult == tpp::SocketReturn::WouldBlock)
+			{
+			
+			}
+			else if (receiveResult < 0)
+			{
+				wchar_t errorString[256] = {};
+				int size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), 0, (LPWSTR)&errorString, sizeof(errorString), NULL);
+
+				printf("recv failed with error: %S\n", errorString);
+			}
 		}
-		else if(receiveResult < 0)
+		else
 		{
-			wchar_t errorString[256] = {};
-			int size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), 0, (LPWSTR)&errorString, sizeof(errorString), NULL);
-
-			printf("recv failed with error: %S\n", errorString);
+			tpp::SocketReturn::T connectReturn = clientSocket->Connect(address);
+			//if (connectReturn == tpp::SocketReturn::Ok)
+			//{
+			//	clientSocket->SetBlocking(false);
+			//}
 		}
-
-		messages.pop_back();
-	};
+	}
 
 	WSACleanup();
 

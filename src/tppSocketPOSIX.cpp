@@ -113,6 +113,8 @@ namespace tpp
 
 	SocketReturn::T SocketPOSIX::Connect(const NetworkAddress& networkAddress)
 	{
+		SocketReturn::T result;
+
 		addrinfo  hints = {};
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
@@ -123,24 +125,47 @@ namespace tpp
 
 		// Get the address info for the address and port
 		addrinfo* addressInfo = nullptr;
-		int result = getaddrinfo(networkAddress.address, buffer, &hints, &addressInfo);
-		if (result != 0)
+		int getaddrResult = getaddrinfo(networkAddress.address, buffer, &hints, &addressInfo);
+		if (getaddrResult == 0)
 		{
-			return SocketReturn::Error;
-		}
+			int connectResult = connect(m_socketHandle, addressInfo->ai_addr, (int)addressInfo->ai_addrlen);
 
-		result = connect(m_socketHandle, addressInfo->ai_addr, (int)addressInfo->ai_addrlen);
+			if (connectResult == SOCKET_ERROR)
+			{
+				result = GetLastError();
+
+				if (result == tpp::SocketReturn::WouldBlock || result == tpp::SocketReturn::ConnectionInProgress)
+				{
+					// If the result would block or the connection is in progress (these messages typically happen when
+					// using non-blocking sockets) we aren't yet connected but we also don't want to close the socket
+					// as if an error had occurred
+				}
+				else if (result == tpp::SocketReturn::Ok)
+				{
+					m_isConnected = true;
+					result = SocketReturn::Ok;
+				}
+				else
+				{
+					closesocket(m_socketHandle);
+					m_socketHandle = INVALID_SOCKET;
+					m_isConnected = false;
+				}
+			}
+			else
+			{
+				m_isConnected = true;
+				result = SocketReturn::Ok;
+			}
+		}
+		else
+		{
+			result = SocketReturn::Error;
+		}
 
 		freeaddrinfo(addressInfo);
 
-		if (result == SOCKET_ERROR)
-		{
-			closesocket(m_socketHandle);
-			m_socketHandle = INVALID_SOCKET;
-			return SocketReturn::InvalidSocket;
-		}
-
-		return SocketReturn::Ok;
+		return result;
 	}
 
 	// https://stackoverflow.com/questions/4160347/close-vs-shutdown-socket
@@ -154,6 +179,8 @@ namespace tpp
 #else
 		result = shutdown(m_socketHandle, SHUT_RDWR);
 #endif
+
+		m_isConnected = false;
 
 		if (result == SOCKET_ERROR)
 		{
@@ -265,11 +292,17 @@ namespace tpp
 	void SocketPOSIX::SetBlockingI(bool blocking)
 	{
 		u_long mode = blocking ? 0 : 1;
+
 #if defined(_WIN32)
 		int result = ioctlsocket((SOCKET)m_socketHandle, FIONBIO, &mode);
 #else
 		int result = ioctl(m_socketHandle, FIONBIO, &mode);
 #endif
+
+		if (result == SOCKET_ERROR)
+		{
+			printf("Error setting socket blocking status");
+		}
 	}
 
 	SocketReturn::T SocketPOSIX::Shutdown(Channel channel)
@@ -335,7 +368,7 @@ namespace tpp
 		switch (error)
 		{
 			case TPP_WOULDBLOCK:
-				printf("Would block\n");
+				//printf("Would block\n");
 				return SocketReturn::WouldBlock;
 			case TPP_TIMEDOUT:
 				printf("Timeout occurred\n");
@@ -344,6 +377,14 @@ namespace tpp
 			case TPP_CONNRESET:
 				printf("Connection closed\n");
 				return SocketReturn::ConnectionClosed;
+			case TPP_NOTSOCK:
+				printf("Not a socket\n");
+				return SocketReturn::NotASocket;
+			case TPP_INPROGRESS:
+			case TPP_ALREADY:
+				return SocketReturn::ConnectionInProgress;
+			case TPP_ISCONN:
+				return SocketReturn::Ok;
 			default:
 				return SocketReturn::Error;
 		}

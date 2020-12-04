@@ -8,12 +8,14 @@ namespace tpp
 	{
 		enum T
 		{
-			Ok               =  0,
-			Error            = -1,
-			Timeout          = -2,
-			InvalidSocket    = -3,
-			ConnectionClosed = -4,
-			WouldBlock       = -5,
+			Ok                   =  0, // Operation completed successfully
+			Error                = -1, // A generic error
+			Timeout              = -2, // Operation timed out (if we have a timeout on the socket)
+			InvalidSocket        = -3, // Socket is invalid
+			ConnectionClosed     = -4, // One of the ends closed the connection
+			WouldBlock           = -5, // Non-blocking sockets call receive or send that would normally block but aren't ready yet
+			NotASocket           = -6, // Normally means we have called a function on an invalid socket handle
+			ConnectionInProgress = -7, // A connection in progress typically happens when a non-blocking socket is trying to connect
 		};
 	};
 
