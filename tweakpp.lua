@@ -11,36 +11,54 @@ PlatformLinux64_GCC		= "Linux64 GCC"
 PlatformLinux64_Clang	= "Linux64 Clang"
 
 -- Directories
-srcDir = "src"
+SourceDirectory = "src"
+PlatformDirectory = SourceDirectory.."/platform"
 
-workspace "tweak++ server"
+function AddWinsockLibrary()
+	links("Ws2_32")
+end
+
+function AddPlatformDependencies()
+
+	AddWinsockLibrary()
+
+	files
+	{
+		PlatformDirectory.."/POSIX/**.h", PlatformDirectory.."/POSIX/**.cpp"
+	}
+
+end
+
+workspace "Tweak++ Server"
 	configurations { "Debug", "Release" }	
 	location (Workspace)
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
-project "server"
+project "Server"
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")
-	links("Ws2_32")
+	AddPlatformDependencies()
+	includedirs (SourceDirectory)
 	files
 	{
-		srcDir.."/*.cpp", srcDir.."/*.h",
-		srcDir.."/server/*.cpp",
+		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
+		SourceDirectory.."/server/*.cpp",
 	}
 	
-workspace "tweak++ client"
+workspace "Tweak++ Client"
 	configurations { "Debug", "Release" }	
 	location (Workspace)
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
-project "client"
+project "Client"
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")
-	links("Ws2_32")
+	AddPlatformDependencies()
+	includedirs (SourceDirectory)
 	files
 	{
-		srcDir.."/*.cpp", srcDir.."/*.h",
-		srcDir.."/client/*.cpp",
+		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
+		SourceDirectory.."/client/*.cpp",
 	}
