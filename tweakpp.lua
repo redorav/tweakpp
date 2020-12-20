@@ -31,7 +31,7 @@ end
 
 workspace "Tweak++ Server"
 	configurations { "Debug", "Release" }	
-	location (Workspace)
+	location (Workspace.."/Server")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
 project "Server"
@@ -48,7 +48,7 @@ project "Server"
 	
 workspace "Tweak++ Client"
 	configurations { "Debug", "Release" }	
-	location (Workspace)
+	location (Workspace.."/Client")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
 project "Client"
