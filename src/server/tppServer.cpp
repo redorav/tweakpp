@@ -1,4 +1,4 @@
-#include <stdlib.h>
+﻿#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <vector>
@@ -9,6 +9,45 @@
 
 #include "tppNetwork.h"
 #include "tppISocket.h"
+
+// Example
+// tpp33path20Rendering/SSR/Number of Raystypefloatvalue[f]
+
+std::vector<char> PrepareMessage1()
+{
+	std::string messageHeader = "tpp";
+	std::string pathString = u8"path";
+	std::string path = u8"Rendering/SSR/Number of Rays";
+	std::string typeString = "type";
+	std::string type = "float";
+	std::string valueString = "value";
+
+	std::vector<char> fullPacket;
+	
+	// 1 Reserve space in the packet for tpp and the size of the data
+	const char dummySize[4] = {};
+	fullPacket.insert(fullPacket.end(), messageHeader.begin(), messageHeader.end());
+	fullPacket.insert(fullPacket.end(), dummySize, dummySize + 4);
+
+	// 2 Populate all the packet data after that
+	fullPacket.insert(fullPacket.end(), pathString.begin(), pathString.end()); // Add path
+	fullPacket.insert(fullPacket.end(), path.begin(), path.end() + 1);
+
+	fullPacket.insert(fullPacket.end(), typeString.begin(), typeString.end()); // Add type
+	fullPacket.insert(fullPacket.end(), type.begin(), type.end() + 1);
+
+	float value = 16.0;
+	fullPacket.insert(fullPacket.end(), valueString.begin(), valueString.end()); // Add value
+	fullPacket.insert(fullPacket.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + 4);
+
+	// 3 Calculate size as size() - (length(tpp) + 4)
+	// 4 Fill in data size for the entire packet
+	size_t totalDataSize = fullPacket.size() - messageHeader.size() - 4;
+	const char* totalDataSizeChar = reinterpret_cast<const char*>(&totalDataSize);
+	std::copy(totalDataSizeChar, totalDataSizeChar + 4, fullPacket.data() + messageHeader.size());
+
+	return fullPacket;
+}
 
 int main(void)
 {
@@ -27,7 +66,7 @@ int main(void)
 	serverSocket->SetBlocking(false);
 	serverSocket->Listen(address.port);
 
-	std::vector<std::string> messages;
+	std::vector<std::vector<char>> messages;
 
 	bool shutdown = false;
 
@@ -37,8 +76,8 @@ int main(void)
 		{
 			if (!messages.empty())
 			{
-				const std::string& message = messages.back();
-				tpp::SocketReturn::T sendResult = clientSocket->Send(message.c_str(), message.length());
+				const std::vector<char>& message = messages.back();
+				tpp::SocketReturn::T sendResult = clientSocket->Send(message.data(), message.size());
 				// TODO Handle send issues
 				messages.pop_back();
 			}
@@ -72,9 +111,7 @@ int main(void)
 			}
 			else
 			{
-				messages.push_back("vec3");
-				messages.push_back("bool");
-				messages.push_back("int");
+				messages.push_back(PrepareMessage1());
 			}
 		}
 	}

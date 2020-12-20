@@ -1,7 +1,14 @@
 #pragma once
 
+#include <string>
+
 namespace tpp
 {
+	static const char* HeaderString = "tpp";
+	static const char* PathString   = "path";
+	static const char* TypeString   = "type";
+	static const char* ValueString  = "value";
+
 	class ISocket;
 
 	class Network
