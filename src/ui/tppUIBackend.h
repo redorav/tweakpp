@@ -28,19 +28,9 @@ namespace tpp
 
 		static UIBackendResult PrepareNewFrame();
 
-		static int GetWindowWidth()
-		{
-			return WindowWidth;
-		}
+		static int GetWindowWidth();
 
-		static int GetWindowHeight()
-		{
-			return WindowHeight;
-		}
-
-		static int WindowWidth;
-
-		static int WindowHeight;
+		static int GetWindowHeight();
 
 	private:
 
