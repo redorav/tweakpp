@@ -203,7 +203,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	tpp::Network::Deinitialize();
+	tpp::Network::Shutdown();
 
 	printf("Client closed successfully\n");
 
