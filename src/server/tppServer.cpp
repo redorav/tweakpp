@@ -10,6 +10,11 @@
 #include "tppNetwork.h"
 #include "tppISocket.h"
 
+#include "tppUIBackend.h"
+#include "tppUILog.h"
+
+#include "imgui.h"
+
 // Example
 // tpp33path20Rendering/SSR/Number of Raystypefloatvalue[f]
 
@@ -51,6 +56,18 @@ std::vector<char> PrepareMessage1()
 
 int main(void)
 {
+	tpp::UIInitializeParams params;
+	params.windowPositionX = 100;
+	params.windowPositionY = 100;
+	params.windowWidth = 1280;
+	params.windowHeight = 800;
+
+	tpp::UIBackend::Initialize(params);
+
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
+	tpp::UILog uiLog;
+
 	static const int DEFAULT_BUFLEN = 512;
 
 	char recvbuf[DEFAULT_BUFLEN];
@@ -68,15 +85,18 @@ int main(void)
 
 	std::vector<std::vector<char>> messages;
 
-	bool shutdown = false;
+	uint64_t lastAttemptedConnection = 0;
 
-	while(!shutdown)
+	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
 		if (clientSocket->IsConnected())
 		{
 			if (!messages.empty())
 			{
 				const std::vector<char>& message = messages.back();
+
+				uiLog.Log(message.data());
+
 				tpp::SocketReturn::T sendResult = clientSocket->Send(message.data(), message.size());
 				// TODO Handle send issues
 				messages.pop_back();
@@ -86,11 +106,11 @@ int main(void)
 
 			if (receiveResult > 0)
 			{
-				
+
 			}
 			else if (receiveResult == tpp::SocketReturn::Timeout || receiveResult == tpp::SocketReturn::WouldBlock)
 			{
-				
+
 			}
 			else
 			{
@@ -101,28 +121,45 @@ int main(void)
 		{
 			time_t currentTime = time(NULL);
 
-			printf("Listening for connections... (%lli)\n", currentTime);
-			tpp::SocketReturn::T acceptReturn = serverSocket->Accept(address, clientSocket);
+			// TODO Use better time
+			uint64_t timeDelta = currentTime - lastAttemptedConnection;
 
-			if (acceptReturn != tpp::SocketReturn::Ok)
+			if (timeDelta > 0)
 			{
-				serverSocket->Close();
-				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-			}
-			else
-			{
-				messages.push_back(PrepareMessage1());
+				uiLog.Log("Listening for connections... (%lli)\n", currentTime);
+				printf("Listening for connections... (%lli)\n", currentTime);
+				tpp::SocketReturn::T acceptReturn = serverSocket->Accept(address, clientSocket);
+
+				if (acceptReturn != tpp::SocketReturn::Ok)
+				{
+					serverSocket->Close();
+					//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+				}
+				else
+				{
+					messages.push_back(PrepareMessage1());
+				}
+
+				lastAttemptedConnection = currentTime;
 			}
 		}
+
+		// Prepare the UI elements
+		{
+			ImGui::SetNextWindowPos(ImVec2(0, (float)(params.windowHeight - 200)), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2((float)params.windowWidth, 200), ImGuiCond_Always);
+
+			uiLog.Draw("Log", nullptr);
+		}
+
+		tpp::UIBackend::Render();
 	}
 
 	clientSocket->Close();
 
 	tpp::Network::Shutdown();
 
-	printf("Server closed successfully\n");
-
-	getchar();
+	tpp::UIBackend::Shutdown();
 
 	return 0;
 }

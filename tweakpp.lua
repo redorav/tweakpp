@@ -12,25 +12,63 @@ PlatformLinux64_Clang	= "Linux64 Clang"
 
 -- Directories
 SourceDirectory = "src"
-PlatformDirectory = SourceDirectory.."/platform"
+NetworkDirectory = SourceDirectory.."/platform"
+UIDirectory = SourceDirectory.."/ui"
 
 function AddWinsockLibrary()
 	links("Ws2_32")
 end
 
-function AddPlatformDependencies()
+function AddNetworkDependencies()
 
 	AddWinsockLibrary()
 
 	files
 	{
-		PlatformDirectory.."/POSIX/**.h", PlatformDirectory.."/POSIX/**.cpp"
+		NetworkDirectory.."/POSIX/**.h", NetworkDirectory.."/POSIX/**.cpp"
 	}
 
 end
 
+function AddUIDependencies()
+
+	files
+	{
+		UIDirectory.."/windows-dx11/**.cpp",
+		UIDirectory.."/*.cpp"
+	}
+
+	includedirs
+	{
+		UIDirectory
+	}
+
+end
+
+function AddImguiDependencies()
+
+	files
+	{
+		"external/imgui/*.cpp",
+		"external/imgui/backends/imgui_impl_win32.cpp",
+		"external/imgui/backends/imgui_impl_dx11.cpp"
+	}
+
+	includedirs
+	{
+		"external/imgui"
+	}
+
+end
+
+function AddGraphicsApiDependencies()
+
+	links { "d3d11", "d3dcompiler", "dxgi" }
+
+end
+
 workspace "Tweak++ Server"
-	configurations { "Debug", "Release" }	
+	configurations { "Debug", "Release" }
 	location (Workspace.."/Server")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
@@ -38,7 +76,10 @@ project "Server"
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")
-	AddPlatformDependencies()
+	AddNetworkDependencies()
+	AddImguiDependencies()
+	AddGraphicsApiDependencies()
+	AddUIDependencies()
 	includedirs (SourceDirectory)
 	files
 	{
@@ -55,7 +96,7 @@ project "Client"
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")
-	AddPlatformDependencies()
+	AddNetworkDependencies()
 	includedirs (SourceDirectory)
 	files
 	{
