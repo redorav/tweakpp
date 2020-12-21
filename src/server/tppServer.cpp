@@ -118,7 +118,7 @@ int main(void)
 
 	clientSocket->Close();
 
-	tpp::Network::Deinitialize();
+	tpp::Network::Shutdown();
 
 	printf("Server closed successfully\n");
 

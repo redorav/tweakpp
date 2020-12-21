@@ -29,7 +29,7 @@ namespace tpp
 		}
 	}
 
-	void Network::Deinitialize()
+	void Network::Shutdown()
 	{
 		WSACleanup();
 	}

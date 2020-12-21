@@ -17,7 +17,7 @@ namespace tpp
 
 		static void Initialize();
 
-		static void Deinitialize();
+		static void Shutdown();
 
 		static ISocket* CreateSocket();
 	};
