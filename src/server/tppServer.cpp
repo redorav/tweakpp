@@ -146,8 +146,8 @@ int main(void)
 
 		// Prepare the UI elements
 		{
-			ImGui::SetNextWindowPos(ImVec2(0, (float)(params.windowHeight - 200)), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2((float)params.windowWidth, 200), ImGuiCond_Always);
+			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Always);
+			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth(), 200), ImGuiCond_Always);
 
 			uiLog.Draw("Log", nullptr);
 		}

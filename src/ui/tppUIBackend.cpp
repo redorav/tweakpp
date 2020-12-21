@@ -4,8 +4,15 @@
 
 #include "imgui.h"
 
+int tpp::UIBackend::WindowWidth;
+
+int tpp::UIBackend::WindowHeight;
+
 bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 {
+	WindowWidth = params.windowWidth;
+	WindowHeight = params.windowHeight;
+
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();

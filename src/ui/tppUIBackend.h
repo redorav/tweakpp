@@ -28,6 +28,20 @@ namespace tpp
 
 		static UIBackendResult PrepareNewFrame();
 
+		static int GetWindowWidth()
+		{
+			return WindowWidth;
+		}
+
+		static int GetWindowHeight()
+		{
+			return WindowHeight;
+		}
+
+		static int WindowWidth;
+
+		static int WindowHeight;
+
 	private:
 
 		static bool InitializePlatform(const UIInitializeParams& params);

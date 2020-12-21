@@ -85,6 +85,8 @@ static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_SIZE:
 			if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
 			{
+				tpp::UIBackend::WindowWidth = (UINT)LOWORD(lParam);
+				tpp::UIBackend::WindowHeight = (UINT)HIWORD(lParam);
 				CleanupRenderTarget();
 				g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, 0);
 				CreateRenderTarget();
@@ -98,6 +100,7 @@ static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 			::PostQuitMessage(0);
 			return 0;
 	}
+
 	return ::DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
