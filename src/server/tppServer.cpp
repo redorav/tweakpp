@@ -22,36 +22,32 @@
 
 std::vector<char> PrepareMessage1()
 {
-	std::string messageHeader = "tpp";
-	std::string pathString = u8"path";
 	std::string path = u8"Rendering/SSR/Number of Rays";
-	std::string typeString = "type";
 	std::string type = "float";
-	std::string valueString = "value";
 
 	std::vector<char> fullPacket;
 	
 	// 1 Reserve space in the packet for tpp and the size of the data
 	const char dummySize[4] = {};
-	fullPacket.insert(fullPacket.end(), messageHeader.begin(), messageHeader.end());
+	fullPacket.insert(fullPacket.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
 	fullPacket.insert(fullPacket.end(), dummySize, dummySize + 4);
 
 	// 2 Populate all the packet data after that
-	fullPacket.insert(fullPacket.end(), pathString.begin(), pathString.end()); // Add path
+	fullPacket.insert(fullPacket.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
 	fullPacket.insert(fullPacket.end(), path.begin(), path.end() + 1);
 
-	fullPacket.insert(fullPacket.end(), typeString.begin(), typeString.end()); // Add type
+	fullPacket.insert(fullPacket.end(), tpp::TypeString, tpp::TypeString + strlen(tpp::TypeString));
 	fullPacket.insert(fullPacket.end(), type.begin(), type.end() + 1);
 
 	float value = 16.0;
-	fullPacket.insert(fullPacket.end(), valueString.begin(), valueString.end()); // Add value
+	fullPacket.insert(fullPacket.end(), tpp::ValueString, tpp::ValueString + strlen(tpp::ValueString));
 	fullPacket.insert(fullPacket.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + 4);
 
 	// 3 Calculate size as size() - (length(tpp) + 4)
 	// 4 Fill in data size for the entire packet
-	size_t totalDataSize = fullPacket.size() - messageHeader.size() - 4;
+	size_t totalDataSize = fullPacket.size() - strlen(tpp::HeaderString) - 4;
 	const char* totalDataSizeChar = reinterpret_cast<const char*>(&totalDataSize);
-	std::copy(totalDataSizeChar, totalDataSizeChar + 4, fullPacket.data() + messageHeader.size());
+	std::copy(totalDataSizeChar, totalDataSizeChar + 4, fullPacket.data() + strlen(tpp::HeaderString));
 
 	return fullPacket;
 }
@@ -137,7 +133,6 @@ int main(void)
 				if (acceptReturn != tpp::SocketReturn::Ok)
 				{
 					serverSocket->Close();
-					//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 				}
 				else
 				{
@@ -150,7 +145,8 @@ int main(void)
 
 		// Prepare the UI elements
 		{
-			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+			ImGuiDockNodeFlags dockNodeFlags = 0;
+			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), dockNodeFlags);
 
 			ImGuiWindowFlags windowFlags = 0;
 
