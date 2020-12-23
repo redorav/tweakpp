@@ -47,6 +47,9 @@ end
 
 function AddImguiDependencies()
 
+	-- Disable obsolete stuff so we don't rely on it
+	defines { "IMGUI_DISABLE_OBSOLETE_FUNCTIONS" }
+
 	files
 	{
 		"external/imgui/*.cpp",
