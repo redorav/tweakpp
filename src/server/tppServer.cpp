@@ -18,7 +18,34 @@
 #include "imgui.h"
 
 // Example
-// tpp33path20Rendering/SSR/Number of Raystypefloatvalue[f]
+// 1) tpp33[MessageType]pathRendering/SSR/Number of Raystypefloatvalue[f]
+// 2) tpp33[MessageType]pathRendering/SSR/Number of Rays[float][f]
+
+void SerializeFloat(std::vector<char>& updateCommandStream, float value)
+{
+	updateCommandStream.insert(updateCommandStream.end(), tpp::ValueString, tpp::ValueString + strlen(tpp::ValueString));
+	updateCommandStream.insert(updateCommandStream.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + 4);
+}
+
+void SerializePath(std::vector<char>& updateCommandStream, const std::string& path)
+{
+	updateCommandStream.insert(updateCommandStream.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
+	updateCommandStream.insert(updateCommandStream.end(), path.begin(), path.end() + 1);
+}
+
+void SerializeType(std::vector<char>& updateCommandStream)
+{
+	std::string type = "float";
+	updateCommandStream.insert(updateCommandStream.end(), tpp::TypeString, tpp::TypeString + strlen(tpp::TypeString));
+	updateCommandStream.insert(updateCommandStream.end(), type.begin(), type.end() + 1);
+}
+
+void PrepareUpdateCommand(std::vector<char>& updateCommandStream)
+{
+	const char dummySize[4] = {};
+	updateCommandStream.insert(updateCommandStream.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+	updateCommandStream.insert(updateCommandStream.end(), dummySize, dummySize + 4);
+}
 
 std::vector<char> PrepareMessage1()
 {
@@ -26,22 +53,14 @@ std::vector<char> PrepareMessage1()
 	std::string type = "float";
 
 	std::vector<char> fullPacket;
-	
-	// 1 Reserve space in the packet for tpp and the size of the data
-	const char dummySize[4] = {};
-	fullPacket.insert(fullPacket.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
-	fullPacket.insert(fullPacket.end(), dummySize, dummySize + 4);
 
-	// 2 Populate all the packet data after that
-	fullPacket.insert(fullPacket.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
-	fullPacket.insert(fullPacket.end(), path.begin(), path.end() + 1);
+	PrepareUpdateCommand(fullPacket);
 
-	fullPacket.insert(fullPacket.end(), tpp::TypeString, tpp::TypeString + strlen(tpp::TypeString));
-	fullPacket.insert(fullPacket.end(), type.begin(), type.end() + 1);
+	SerializePath(fullPacket, path);
 
-	float value = 16.0;
-	fullPacket.insert(fullPacket.end(), tpp::ValueString, tpp::ValueString + strlen(tpp::ValueString));
-	fullPacket.insert(fullPacket.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + 4);
+	SerializeType(fullPacket);
+
+	SerializeFloat(fullPacket, 16.0);
 
 	// 3 Calculate size as size() - (length(tpp) + 4)
 	// 4 Fill in data size for the entire packet
