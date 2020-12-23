@@ -2,8 +2,6 @@
 
 tpp::UILog::UILog()
 {
-	m_windowFlags |= ImGuiWindowFlags_NoMove;
-	m_windowFlags |= ImGuiWindowFlags_NoResize;
 	m_windowFlags |= ImGuiWindowFlags_NoCollapse;
 }
 
@@ -50,7 +48,11 @@ void tpp::UILog::Draw(const char* title, bool* p_open)
 	m_filter.Draw("Filter", -60.0f);
 
 	ImGui::Separator();
-	ImGui::BeginChild("scrolling", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+
+	ImGuiWindowFlags scrollingSubWindowFlags = 0;
+	scrollingSubWindowFlags |= ImGuiWindowFlags_HorizontalScrollbar;
+
+	ImGui::BeginChild("scrolling", ImVec2(0, 0), false, scrollingSubWindowFlags);
 	{
 		for (size_t i = 0; i < m_logBuffer.size(); ++i)
 		{

@@ -12,6 +12,8 @@
 
 #include "tppUIBackend.h"
 #include "tppUILog.h"
+#include "tppUIVariableTree.h"
+#include "tppUIConnectionsWindow.h"
 
 #include "imgui.h"
 
@@ -67,6 +69,8 @@ int main(void)
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	tpp::UILog uiLog;
+	tpp::UIVariableTree variableTree;
+	tpp::UIConnectionsWindow connectionsWindow;
 
 	static const int DEFAULT_BUFLEN = 512;
 
@@ -146,10 +150,29 @@ int main(void)
 
 		// Prepare the UI elements
 		{
-			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Always);
-			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth(), 200), ImGuiCond_Always);
+			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+			ImGuiWindowFlags windowFlags = 0;
+
+			// Variable Tree
+			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
+
+			variableTree.Draw("Variable Tree", nullptr);
+
+			// Connection Window (with variables)
+			ImGui::SetNextWindowPos(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, 0), ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
+
+			connectionsWindow.Draw("Connections");
+
+			// Log
+			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
+			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth(), 200), ImGuiCond_Appearing);
 
 			uiLog.Draw("Log", nullptr);
+
+			// Console
 		}
 
 		tpp::UIBackend::Render();
