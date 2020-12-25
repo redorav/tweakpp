@@ -18,26 +18,28 @@
 #include "imgui.h"
 
 // Example
-// 1) tpp33[MessageType]pathRendering/SSR/Number of Raystypefloatvalue[f]
-// 2) tpp33[MessageType]pathRendering/SSR/Number of Rays[float][f]
+//
+// HEADER
+// tpp MessageType::Update 33 2 - Update message that is 33 bytes, version 2
+// 
+// MESSAGE
+// [Header]pathRendering/SSR/Number of Rays\0[floatType][floatValue]
+// [Header]pathRendering/SSR/Optimized\0[boolType][boolValue]
+// [Header]pathRendering/SSR/Clear\0[functionType]
 
 void SerializeFloat(std::vector<char>& updateCommandStream, float value)
 {
-	updateCommandStream.insert(updateCommandStream.end(), tpp::ValueString, tpp::ValueString + strlen(tpp::ValueString));
-	updateCommandStream.insert(updateCommandStream.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + 4);
+	tpp::VariableHeader floatPacket;
+	floatPacket.type = tpp::VariableType::Float;
+	floatPacket.size = 4;
+	updateCommandStream.insert(updateCommandStream.end(), reinterpret_cast<char*>(&floatPacket), reinterpret_cast<char*>(&floatPacket) + sizeof(floatPacket));
+	updateCommandStream.insert(updateCommandStream.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + sizeof(value));
 }
 
 void SerializePath(std::vector<char>& updateCommandStream, const std::string& path)
 {
 	updateCommandStream.insert(updateCommandStream.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
 	updateCommandStream.insert(updateCommandStream.end(), path.begin(), path.end() + 1);
-}
-
-void SerializeType(std::vector<char>& updateCommandStream)
-{
-	std::string type = "float";
-	updateCommandStream.insert(updateCommandStream.end(), tpp::TypeString, tpp::TypeString + strlen(tpp::TypeString));
-	updateCommandStream.insert(updateCommandStream.end(), type.begin(), type.end() + 1);
 }
 
 void SerializeCommandHeader(std::vector<char>& updateCommandStream, tpp::MessageType messageType)
@@ -54,15 +56,12 @@ void SerializeCommandHeader(std::vector<char>& updateCommandStream, tpp::Message
 std::vector<char> PrepareMessage1()
 {
 	std::string path = u8"Rendering/SSR/Number of Rays";
-	std::string type = "float";
 
 	std::vector<char> fullPacket;
 
 	SerializeCommandHeader(fullPacket, tpp::MessageType::Update);
 
 	SerializePath(fullPacket, path);
-
-	SerializeType(fullPacket);
 
 	SerializeFloat(fullPacket, 16.0);
 

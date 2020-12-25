@@ -11,10 +11,21 @@
 
 namespace tpp
 {
-	static const char* HeaderString = "tpp";
-	static const char* PathString   = "path";
-	static const char* TypeString   = "type";
-	static const char* ValueString  = "value";
+	static const char* HeaderString   = "tpp";
+	static const char* PathString     = "path";
+	static const char* VariableString = "var";
+
+	enum class VariableType : uint32_t
+	{
+		Float = 0,
+		UnsignedInteger = 1,
+		Integer = 2,
+		Color3 = 3,
+		Color4 = 4,
+		Bool = 5,
+		Function = 6,
+		Invalid = 0xffffffff
+	};
 
 	enum class MessageType : uint32_t
 	{
@@ -37,6 +48,15 @@ namespace tpp
 		Version version = Version::CurrentVersion;
 		uint32_t messageSize;
 		MessageType messageType;
+	};
+	TPP_PACK_END
+
+	TPP_PACK_BEGIN
+	struct VariableHeader
+	{
+		const char var[3] = { 'v', 'a', 'r' };
+		tpp::VariableType type;
+		uint32_t size;
 	};
 	TPP_PACK_END
 
