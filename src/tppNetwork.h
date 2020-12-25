@@ -34,9 +34,9 @@ namespace tpp
 	struct MessageHeader
 	{
 		const char tpp[3] = { 't', 'p', 'p' };
-		MessageType messageType;
-		uint32_t messageSize;
 		Version version = Version::CurrentVersion;
+		uint32_t messageSize;
+		MessageType messageType;
 	};
 	TPP_PACK_END
 
