@@ -40,11 +40,15 @@ void SerializeType(std::vector<char>& updateCommandStream)
 	updateCommandStream.insert(updateCommandStream.end(), type.begin(), type.end() + 1);
 }
 
-void PrepareUpdateCommand(std::vector<char>& updateCommandStream)
+void SerializeCommandHeader(std::vector<char>& updateCommandStream, tpp::MessageType messageType)
 {
-	const char dummySize[4] = {};
-	updateCommandStream.insert(updateCommandStream.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
-	updateCommandStream.insert(updateCommandStream.end(), dummySize, dummySize + 4);
+	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
+	// size that we know once the whole message has been constructed
+	tpp::MessageHeader header;
+	header.messageType = messageType;
+	header.messageSize = 0;
+
+	updateCommandStream.insert(updateCommandStream.end(), (const char*)&header, (const char*)&header + sizeof(header));
 }
 
 std::vector<char> PrepareMessage1()
@@ -54,7 +58,7 @@ std::vector<char> PrepareMessage1()
 
 	std::vector<char> fullPacket;
 
-	PrepareUpdateCommand(fullPacket);
+	SerializeCommandHeader(fullPacket, tpp::MessageType::Update);
 
 	SerializePath(fullPacket, path);
 
@@ -62,11 +66,10 @@ std::vector<char> PrepareMessage1()
 
 	SerializeFloat(fullPacket, 16.0);
 
-	// 3 Calculate size as size() - (length(tpp) + 4)
-	// 4 Fill in data size for the entire packet
-	size_t totalDataSize = fullPacket.size() - strlen(tpp::HeaderString) - 4;
-	const char* totalDataSizeChar = reinterpret_cast<const char*>(&totalDataSize);
-	std::copy(totalDataSizeChar, totalDataSizeChar + 4, fullPacket.data() + strlen(tpp::HeaderString));
+	// 3 Calculate message size and update packet
+	size_t totalDataSize = fullPacket.size() - sizeof(tpp::MessageHeader);
+	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(fullPacket.data());
+	header->messageSize = totalDataSize;
 
 	return fullPacket;
 }

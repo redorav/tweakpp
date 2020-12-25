@@ -113,15 +113,18 @@ int main(int argc, char **argv)
 				// While we have headers (there could be multiple messages in the data) process them
 				while (headerPosition != receivedData.end())
 				{
-					// Compute the offset into the raw packet data to get the size of the packet
-					// From there we can load the entire packet in to get the next one
-					// Once we've got all relevant packets, we'll start parsing them for the interesting bits
-					auto index = headerPosition + strlen(tpp::HeaderString) - receivedData.begin();
-					uint32_t packetSize = *(uint32_t*)(&receivedData[index]);
+					// Cast the start of the message to the header, and extract relevant information
+					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(receivedData.data());
+					tpp::MessageType messageType = header->messageType;
+					tpp::Version version = header->version;
+					uint32_t packetSize = header->messageSize;
+
+					// Find where the header starts, and copy the data onward
+					auto index = headerPosition + sizeof(tpp::MessageHeader) - receivedData.begin();
 
 					std::vector<char> packetData;
 					packetData.reserve(packetSize);
-					packetData.insert(packetData.end(), &receivedData[index] + 4, &receivedData[index] + 4 + packetSize);
+					packetData.insert(packetData.end(), &receivedData[index], &receivedData[index] + packetSize);
 
 					UpdateCommand command;
 
