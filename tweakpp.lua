@@ -84,6 +84,7 @@ project "Server"
 	AddGraphicsApiDependencies()
 	AddUIDependencies()
 	includedirs (SourceDirectory)
+	defines ("TPP_SERVER")
 	files
 	{
 		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
