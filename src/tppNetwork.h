@@ -33,7 +33,7 @@ namespace tpp
 		Update      = 1, // Server tells client to update a variable's value
 	};
 
-	enum class Version : uint32_t
+	enum class Version : uint16_t
 	{
 		InitialVersion = 0,
 		CurrentVersion = InitialVersion
