@@ -41,8 +41,10 @@ namespace tpp
 	{
 	public:
 
+		// Accept incoming connection that is being listened to. Typically the server does this
 		virtual SocketReturn::T Accept(const NetworkAddress& address, ISocket* const clientSocket) = 0;
 
+		// Try to establish a connection with someone who is listening to this address
 		virtual SocketReturn::T Connect(const NetworkAddress& address) = 0;
 
 		// Destroys socket for any further transmission
@@ -66,11 +68,14 @@ namespace tpp
 		// Shut down socket for sending, receiving, or both
 		virtual SocketReturn::T Shutdown(Channel option) = 0;
 
+		// Set timeout on send and receive operations
 		virtual void SetTimeout(Channel channel, uint32_t milliseconds) = 0;
 
-		// Return if socket is blocking
+		// Return whether socket is blocking
 		bool IsBlocking() const;
 
+		// Return whether socket's last operation was successful
+		// See explanation below for what this means
 		bool IsConnected() const;
 
 	protected:
@@ -83,7 +88,7 @@ namespace tpp
 		// decisions, such as to reopen the connection
 		bool m_isConnected = false;
 
-		bool m_isBlocking;
+		bool m_isBlocking = true;
 	};
 
 	inline bool ISocket::IsBlocking() const
