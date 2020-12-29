@@ -12,8 +12,15 @@ void tpp::UIVariableTree::Draw(const tpp::ServerVariableManager& variableDescrip
 		variableDescriptionTree.ForEachNode(
 		[](const std::string& nodeName, const VariableNode& variable)
 		{
+			ImGuiTreeNodeFlags nodeFlags = 0;
+			
+			if (variable.nodes.empty())
+			{
+				nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+			}
+
 			// Take the address of the variable as the unique id so it remains consistent across frames
-			bool nodeOpen = ImGui::TreeNodeEx((void*)&variable, 0, nodeName.c_str());
+			bool nodeOpen = ImGui::TreeNodeEx((void*)&variable, nodeFlags, nodeName.c_str());
 			return nodeOpen;
 		},
 		[](const std::string& nodeName, const VariableNode& variable, bool isOpen)
