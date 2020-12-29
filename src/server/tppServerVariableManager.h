@@ -101,6 +101,12 @@ namespace tpp
 			m_root.ForEachNode(fnOpen, fnClose);
 		}
 
+		void Clear()
+		{
+			m_root = VariableNode();
+			m_pathExistenceHashMap.clear();
+		}
+
 		VariableNode m_root;
 
 		// Check to see if path already exists (when adding a new variable)
@@ -140,6 +146,8 @@ namespace tpp
 
 		void Clear()
 		{
+			m_variableTree.Clear();
+
 			m_variableHashMap.clear();
 		}
 
