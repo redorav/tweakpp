@@ -114,6 +114,12 @@ int main(void)
 
 	bool packetOpen = false;
 
+	std::vector<char> receivedData;
+	receivedData.reserve(DEFAULT_BUFLEN);
+
+	std::vector<char> currentPacketData;
+	currentPacketData.reserve(DEFAULT_BUFLEN);
+
 	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
 		if (clientSocket->IsConnected())
@@ -126,29 +132,81 @@ int main(void)
 
 				// Copy all the data into a vector
 				// TODO Use the original buffer instead
-				std::vector<char> receivedData(receiveBuffer, receiveBuffer + receiveResult);
+				receivedData.clear();
+				receivedData.insert(receivedData.begin(), receiveBuffer, receiveBuffer + receiveResult);
 
-				// Search for the first appearance of the header
-				auto headerPosition = std::search(receivedData.begin(), receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+				auto headerPosition = receivedData.begin();
+				size_t offset = 0;
 
-				while (headerPosition != receivedData.end())
+				// If we have a pending packet, assume the rest of the content is coming next
+				// We search for another header in the incoming data. If we find one, we only
+				// copy up to that point. Otherwise, copy all the data. If the incoming data
+				// fills the buffer we need to wait 
+				if (currentPacketData.size() > 0)
 				{
-					size_t remainingDataInBuffer = (size_t)receiveResult - (headerPosition - receivedData.begin());
+					headerPosition = std::search(receivedData.begin() + offset, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
 
-					// Cast the start of the message to the header, and extract relevant information
-					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(receivedData.data());
-					tpp::MessageType messageType = header->messageType;
-					tpp::Version version = header->version;
-					uint32_t packetSize = header->messageSize;
+					// If we actually manage to find a new header, we know where the existing message ends
+					if (headerPosition != receivedData.end())
+					{
+						currentPacketData.insert(currentPacketData.end(), receivedData.begin(), headerPosition);
+						ProcessPacket(currentPacketData);
+					}
+				}
 
-					std::vector<char> currentPacketData;
-					currentPacketData.reserve(DEFAULT_BUFLEN);
-					currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + packetSize);
+				while (true)
+				{
+					headerPosition = std::search(receivedData.begin() + offset, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
 
-					ProcessPacket(currentPacketData);
+					size_t headerIndex = headerPosition - receivedData.begin();
 
-					// TODO Change to search after the entire message
-					headerPosition = std::search(headerPosition + 1, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+					if (headerPosition != receivedData.end())
+					{
+						// If we found the header, there are several possible cases
+						size_t remainingDataInBuffer = (size_t)receiveResult - (headerPosition - receivedData.begin());
+
+						if (remainingDataInBuffer >= sizeof(tpp::MessageHeader))
+						{
+							tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
+							tpp::MessageType messageType = header->messageType;
+							tpp::Version version = header->version;
+							uint32_t packetSize = header->messageSize;
+
+							if (remainingDataInBuffer >= sizeof(tpp::MessageHeader) + packetSize)
+							{
+								currentPacketData.clear();
+								currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + packetSize);
+								ProcessPacket(currentPacketData);
+								offset = (headerPosition - receivedData.begin()) + sizeof(tpp::MessageHeader) + packetSize;
+							}
+							else
+							{
+								// Insert into the current packet, but don't process it yet as it's incomplete
+								currentPacketData.clear();
+								currentPacketData.insert(currentPacketData.end(), headerPosition, receivedData.end());
+								break;
+							}
+						}
+						else
+						{
+							// Insert into the current packet, but don't process it yet as it's incomplete
+							currentPacketData.clear();
+							currentPacketData.insert(currentPacketData.end(), headerPosition, receivedData.end());
+							break;
+						}
+					}
+					else
+					{
+						// If we didn't find the header, there are two possible reasons.
+						// 1) We actually parsed all messages that arrived
+						// 2) The message was split and the pattern 'tpp' has been split as well (bad luck!) so we need to store
+						// whatever part is there and try again with more data
+
+						// Insert into the current packet, but don't process it yet as it's incomplete
+						currentPacketData.clear();
+						currentPacketData.insert(currentPacketData.end(), headerPosition, receivedData.end());
+						break;
+					}
 				}
 			}
 			else if (receiveResult == tpp::SocketReturn::Timeout || receiveResult == tpp::SocketReturn::WouldBlock)

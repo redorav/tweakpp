@@ -14,28 +14,32 @@
 //---------
 
 // SSR
-tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1.0f, 1.0f, 2.0f, 0.001f);
+tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR1/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRThicknessMultiplier("Rendering/Post Effects/SSR2/Thickness Multiplier", 1.0f, 1.0f, 2.0f, 0.001f);
 
 // Depth of Field
-tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field/Bokeh Size", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field1/Aperture", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field2/Bokeh Size", 8.0f, 1.0f, 64.0f, 1.0f);
 
 // TAA
-tpp::Float TAAJitterX("Rendering/Post Effects/TAA/TAA Jitter X", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float TAAJitterY("Rendering/Post Effects/TAA/TAA Jitter Y", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float TAAJitterX("Rendering/Post Effects/TAA1/TAA Jitter X", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float TAAJitterY("Rendering/Post Effects/TAA2/TAA Jitter Y", 8.0f, 1.0f, 64.0f, 1.0f);
 
-tpp::Float PerformanceGraphScaleX("Rendering/Performance/Graph Scale X", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float PerformanceGraphScaleY("Rendering/Performance/Graph Scale Y", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float PerformanceGraphScaleX("Rendering/Performance1/Graph Scale X", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float PerformanceGraphScaleY("Rendering/Performance2/Graph Scale Y", 8.0f, 1.0f, 64.0f, 1.0f);
 
-tpp::Float CoreGraphScaleX("Core/Performance/Graph Scale X", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float CoreGraphScaleY("Core/Performance/Graph Scale Y", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float CoreGraphScaleX("Core/Performance1/Graph Scale X", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float CoreGraphScaleY("Core/Performance2/Graph Scale Y", 8.0f, 1.0f, 64.0f, 1.0f);
 
-//tpp::Float AnimationTimeScale("Animation/Time Scale", 8.0f, 1.0f, 64.0f, 1.0f);
-//tpp::Float AnimationThreshold("Animation/Threshold", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float AnimationTimeScale("Animation1/Time Scale", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float AnimationThreshold("Animation2/Threshold", 8.0f, 1.0f, 64.0f, 1.0f);
 
-//tpp::Float AnimationTimeScaleX("Physics/Target FPS", 8.0f, 1.0f, 64.0f, 1.0f);
-//tpp::Float AnimationTimeScaleY("Physics/Performance/FPS Limit", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float PhysicsTargetFPS("Physics1/Target FPS", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float PhysicsFPSLimit("Physics2/Performance/FPS Limit", 8.0f, 1.0f, 64.0f, 1.0f);
+
+tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display1/Deferred/Normals", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display2/Forward/Albedo", 8.0f, 1.0f, 64.0f, 1.0f);
+
 
 bool IsCopyable(tpp::VariableType type)
 {
