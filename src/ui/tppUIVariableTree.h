@@ -4,6 +4,8 @@
 
 namespace tpp
 {
+	class ServerVariableManager;
+
 	class UIVariableTree
 	{
 	public:
@@ -13,7 +15,7 @@ namespace tpp
 
 		}
 
-		void Draw(const char* title, bool* open = nullptr);
+		void Draw(const tpp::ServerVariableManager& variableManager, const char* title, bool* open = nullptr);
 
 	private:
 

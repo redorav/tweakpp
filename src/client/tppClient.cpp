@@ -7,8 +7,35 @@
 #include "tppNetwork.h"
 #include "tppISocket.h"
 #include "tppTypes.h"
+#include "tppSerialize.h"
 
-tpp::Float myFloat("Rendering/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
+//---------
+// EXAMPLES
+//---------
+
+// SSR
+tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1.0f, 1.0f, 2.0f, 0.001f);
+
+// Depth of Field
+tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field/Bokeh Size", 8.0f, 1.0f, 64.0f, 1.0f);
+
+// TAA
+tpp::Float TAAJitterX("Rendering/Post Effects/TAA/TAA Jitter X", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float TAAJitterY("Rendering/Post Effects/TAA/TAA Jitter Y", 8.0f, 1.0f, 64.0f, 1.0f);
+
+tpp::Float PerformanceGraphScaleX("Rendering/Performance/Graph Scale X", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float PerformanceGraphScaleY("Rendering/Performance/Graph Scale Y", 8.0f, 1.0f, 64.0f, 1.0f);
+
+tpp::Float CoreGraphScaleX("Core/Performance/Graph Scale X", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float CoreGraphScaleY("Core/Performance/Graph Scale Y", 8.0f, 1.0f, 64.0f, 1.0f);
+
+//tpp::Float AnimationTimeScale("Animation/Time Scale", 8.0f, 1.0f, 64.0f, 1.0f);
+//tpp::Float AnimationThreshold("Animation/Threshold", 8.0f, 1.0f, 64.0f, 1.0f);
+
+//tpp::Float AnimationTimeScaleX("Physics/Target FPS", 8.0f, 1.0f, 64.0f, 1.0f);
+//tpp::Float AnimationTimeScaleY("Physics/Performance/FPS Limit", 8.0f, 1.0f, 64.0f, 1.0f);
 
 bool IsCopyable(tpp::VariableType type)
 {
@@ -19,6 +46,45 @@ bool IsCopyable(tpp::VariableType type)
 	}
 
 	return true;
+}
+
+// HEADER
+// tpp MessageType::Declaration 33 2 - Update message that is 33 bytes, version 2
+//
+// MESSAGE
+// [Header][path]Rendering/SSR/Number of Rays\0 [var][floatType][initialValue][minValue][maxValue][step]
+
+// TODO Take as input parameter
+std::vector<char> PrepareVariableDescriptionTable()
+{
+	std::vector<char> fullPacket;
+
+	tpp::GlobalClientVariableManager->ForEachVariable([&fullPacket](const std::string& path, const tpp::Variable& variable)
+	{
+		std::vector<char> localPacket;
+
+		SerializeCommandHeader(localPacket, tpp::MessageType::Declaration);
+
+		SerializePath(localPacket, path.c_str());
+
+		SerializeFloat(localPacket, 16.0f);
+
+		SerializeFloatProperty(localPacket, tpp::PropertyType::Min, 1.0f);
+
+		SerializeFloatProperty(localPacket, tpp::PropertyType::Max, 64.0f);
+
+		SerializeFloatProperty(localPacket, tpp::PropertyType::Step, 1.0f);
+
+		// 3 Calculate message size and update packet
+		size_t totalDataSize = localPacket.size() - sizeof(tpp::MessageHeader);
+		tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(localPacket.data());
+		header->messageSize = totalDataSize;
+
+		// TODO Do this on the actual full packet
+		fullPacket.insert(fullPacket.end(), localPacket.begin(), localPacket.end());
+	});
+
+	return fullPacket;
 }
 
 int main(int argc, char **argv)
@@ -37,10 +103,19 @@ int main(int argc, char **argv)
 
 	bool shutdown = false;
 
+	bool sentVariableTable = false;
+
 	while (!shutdown)
 	{
 		if (clientSocket->IsConnected())
 		{
+			if (!sentVariableTable)
+			{
+				std::vector<char> variableDescriptionTable = PrepareVariableDescriptionTable();
+				clientSocket->Send(variableDescriptionTable.data(), variableDescriptionTable.size());
+				sentVariableTable = true;
+			}
+
 			tpp::SocketReturn::T receiveResult = clientSocket->Receive(receiveBuffer, receiveBufferLength);
 
 			// If we have received valid data
@@ -79,11 +154,11 @@ int main(int argc, char **argv)
 
 					// Use the type to read in the value
 					{
-						tpp::Data variableData = tpp::GlobalVariableManager->Find(path);
+						tpp::Variable variable = tpp::GlobalClientVariableManager->Find(path);
 
 						auto variablePosition = std::search(packetData.begin(), packetData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
 
-						if (variablePosition != packetData.end() && variableData.memory != nullptr)
+						if (variablePosition != packetData.end() && variable.memory != nullptr)
 						{
 							auto valueIndex = variablePosition - packetData.begin();
 							tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
@@ -92,12 +167,12 @@ int main(int argc, char **argv)
 
 							if (IsCopyable(variablePacket->type))
 							{
-								memcpy(variableData.memory, &packetData[variableIndex], variablePacket->size);
+								memcpy(variable.memory, &packetData[variableIndex], variablePacket->size);
 							}
 						}
 					}
 
-					if (myFloat == 16.0f)
+					if (SSRNumberOfRays == 16.0f)
 					{
 						printf("Wow!\n");
 					}
@@ -130,10 +205,11 @@ int main(int argc, char **argv)
 		else
 		{
 			tpp::SocketReturn::T connectReturn = clientSocket->Connect(address);
-			//if (connectReturn == tpp::SocketReturn::Ok)
-			//{
-			//	clientSocket->SetBlocking(false);
-			//}
+
+			if (connectReturn == tpp::SocketReturn::Ok)
+			{
+				sentVariableTable = false;
+			}
 		}
 	}
 

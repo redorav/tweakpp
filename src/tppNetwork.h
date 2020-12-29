@@ -27,6 +27,21 @@ namespace tpp
 		Invalid = 0xffffffff
 	};
 
+	enum class PropertyType : uint32_t
+	{
+		Min,
+		Max,
+		Step,
+	};
+
+	TPP_PACK_BEGIN
+	struct PropertyHeader
+	{
+		PropertyType type;
+		uint32_t size;
+	};
+	TPP_PACK_END
+
 	enum class MessageType : uint32_t
 	{
 		Declaration = 0, // Client tells server a variable of a certain type and parameters exists
@@ -53,6 +68,15 @@ namespace tpp
 
 	TPP_PACK_BEGIN
 	struct VariableHeader
+	{
+		const char var[3] = { 'v', 'a', 'r' };
+		tpp::VariableType type;
+		uint32_t size;
+	};
+	TPP_PACK_END
+
+	TPP_PACK_BEGIN
+	struct VariableDeclarationHeader
 	{
 		const char var[3] = { 'v', 'a', 'r' };
 		tpp::VariableType type;

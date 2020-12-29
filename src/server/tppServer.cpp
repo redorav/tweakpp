@@ -4,54 +4,23 @@
 #include <vector>
 #include <chrono>
 #include <thread>
-
+#include <algorithm>
 #include <string>
+#include <memory>
+#include <unordered_map>
 
 #include "tppNetwork.h"
 #include "tppISocket.h"
 
+#include "tppServerVariableManager.h"
 #include "tppUIBackend.h"
 #include "tppUILog.h"
 #include "tppUIVariableTree.h"
 #include "tppUIConnectionsWindow.h"
+#include "tppSerialize.h"
+#include "tppTypes.h"
 
 #include "imgui.h"
-
-// Example
-//
-// HEADER
-// tpp MessageType::Update 33 2 - Update message that is 33 bytes, version 2
-// 
-// MESSAGE
-// [Header]pathRendering/SSR/Number of Rays\0[floatType][floatValue]
-// [Header]pathRendering/SSR/Optimized\0[boolType][boolValue]
-// [Header]pathRendering/SSR/Clear\0[functionType]
-
-void SerializeFloat(std::vector<char>& updateCommandStream, float value)
-{
-	tpp::VariableHeader floatPacket;
-	floatPacket.type = tpp::VariableType::Float;
-	floatPacket.size = 4;
-	updateCommandStream.insert(updateCommandStream.end(), reinterpret_cast<char*>(&floatPacket), reinterpret_cast<char*>(&floatPacket) + sizeof(floatPacket));
-	updateCommandStream.insert(updateCommandStream.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + sizeof(value));
-}
-
-void SerializePath(std::vector<char>& updateCommandStream, const std::string& path)
-{
-	updateCommandStream.insert(updateCommandStream.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
-	updateCommandStream.insert(updateCommandStream.end(), path.begin(), path.end() + 1);
-}
-
-void SerializeCommandHeader(std::vector<char>& updateCommandStream, tpp::MessageType messageType)
-{
-	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
-	// size that we know once the whole message has been constructed
-	tpp::MessageHeader header;
-	header.messageType = messageType;
-	header.messageSize = 0;
-
-	updateCommandStream.insert(updateCommandStream.end(), (const char*)&header, (const char*)&header + sizeof(header));
-}
 
 std::vector<char> PrepareMessage1()
 {
@@ -73,6 +42,9 @@ std::vector<char> PrepareMessage1()
 	return fullPacket;
 }
 
+// TODO There should be one per connection
+tpp::ServerVariableManager GlobalServerVariableManager;
+
 int main(void)
 {
 	tpp::UIInitializeParams params;
@@ -91,8 +63,8 @@ int main(void)
 
 	static const int DEFAULT_BUFLEN = 512;
 
-	char recvbuf[DEFAULT_BUFLEN];
-	int recvbuflen = DEFAULT_BUFLEN;
+	char receiveBuffer[DEFAULT_BUFLEN];
+	int receiveBufferLength = DEFAULT_BUFLEN;
 
 	tpp::Network::Initialize();
 
@@ -112,6 +84,80 @@ int main(void)
 	{
 		if (clientSocket->IsConnected())
 		{
+			tpp::SocketReturn::T receiveResult = clientSocket->Receive(receiveBuffer, receiveBufferLength);
+
+			if (receiveResult > 0)
+			{
+				// Parse variable description message
+
+				// Copy all the data into a vector
+				// TODO Use the original buffer instead
+				std::vector<char> receivedData(receiveBuffer, receiveBuffer + receiveResult);
+
+				// Search for the first appearance of the header
+				auto headerPosition = std::search(receivedData.begin(), receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+
+				while (headerPosition != receivedData.end())
+				{
+					// Cast the start of the message to the header, and extract relevant information
+					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(receivedData.data());
+					tpp::MessageType messageType = header->messageType;
+					tpp::Version version = header->version;
+					uint32_t packetSize = header->messageSize;
+
+					// Find where the header starts, and copy the data onward
+					auto index = headerPosition + sizeof(tpp::MessageHeader) - receivedData.begin();
+
+					std::vector<char> packetData;
+					packetData.reserve(packetSize);
+					packetData.insert(packetData.end(), &receivedData[index], &receivedData[index] + packetSize);
+
+					// Search for path in packet and read path
+					std::string path;
+					{
+						auto pathPosition = std::search(packetData.begin(), packetData.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
+						auto nullTerminator = std::find(pathPosition, packetData.end(), '\0');
+						path = std::string(pathPosition + strlen(tpp::PathString), nullTerminator);
+					}
+
+					auto variablePosition = std::search(packetData.begin(), packetData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
+
+					if (variablePosition != packetData.end())
+					{
+						auto valueIndex = variablePosition - packetData.begin();
+						tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
+
+						auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
+
+						if (variablePacket->type == tpp::VariableType::Float)
+						{
+							float initialValue = *reinterpret_cast<float*>(&packetData[variableIndex]);
+
+							tpp::Variable floatVariableDescription;
+							floatVariableDescription.vdFloat = tpp::Float("", initialValue, 0.0f, 0.0f, 0.0f);
+
+							// Put into global tree
+							GlobalServerVariableManager.AddVariable(path, floatVariableDescription);
+						}
+					}
+
+					// TODO Change to search after the entire message
+					headerPosition = std::search(headerPosition + 1, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+				}
+			}
+			else if (receiveResult == tpp::SocketReturn::Timeout || receiveResult == tpp::SocketReturn::WouldBlock)
+			{
+
+			}
+			else
+			{
+				clientSocket->Close();
+
+				// TODO Clear everything related to a connection
+				GlobalServerVariableManager.Clear();
+			}
+
+			// TODO Check if it's still connected as we might have dropped the connection here!
 			if (!messages.empty())
 			{
 				const std::vector<char>& message = messages.back();
@@ -121,21 +167,6 @@ int main(void)
 				tpp::SocketReturn::T sendResult = clientSocket->Send(message.data(), message.size());
 				// TODO Handle send issues
 				messages.pop_back();
-			}
-
-			tpp::SocketReturn::T receiveResult = clientSocket->Receive(recvbuf, recvbuflen);
-
-			if (receiveResult > 0)
-			{
-
-			}
-			else if (receiveResult == tpp::SocketReturn::Timeout || receiveResult == tpp::SocketReturn::WouldBlock)
-			{
-
-			}
-			else
-			{
-				clientSocket->Close();
 			}
 		}
 		else
@@ -175,7 +206,7 @@ int main(void)
 			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
 			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
 
-			variableTree.Draw("Variable Tree", nullptr);
+			variableTree.Draw(GlobalServerVariableManager, "Variable Tree", nullptr);
 
 			// Connection Window (with variables)
 			ImGui::SetNextWindowPos(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, 0), ImGuiCond_Appearing);

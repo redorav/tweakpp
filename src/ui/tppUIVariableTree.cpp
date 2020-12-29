@@ -1,18 +1,28 @@
 #include "tppUIVariableTree.h"
 
-void tpp::UIVariableTree::Draw(const char* title, bool* open)
+#include "server/tppServerVariableManager.h"
+
+void tpp::UIVariableTree::Draw(const tpp::ServerVariableManager& variableDescriptionTree, const char* title, bool* open)
 {
 	ImGuiWindowFlags windowFlags = 0;
 	windowFlags |= ImGuiWindowFlags_NoCollapse;
 
 	ImGui::Begin("Variable Tree", nullptr, windowFlags);
 	{
-		int id = 0;
-		bool nodeOpen = ImGui::TreeNodeEx((void*)(intptr_t)id, 0, "Selectable Leaf 1");
-		if (nodeOpen)
+		variableDescriptionTree.ForEachNode(
+		[](const std::string& nodeName, const VariableNode& variable)
 		{
-			ImGui::TreePop();
-		}
+			// Take the address of the variable as the unique id so it remains consistent across frames
+			bool nodeOpen = ImGui::TreeNodeEx((void*)&variable, 0, nodeName.c_str());
+			return nodeOpen;
+		},
+		[](const std::string& nodeName, const VariableNode& variable, bool isOpen)
+		{
+			if (isOpen)
+			{
+				ImGui::TreePop();
+			}
+		});
 	}
 	ImGui::End();
 }
