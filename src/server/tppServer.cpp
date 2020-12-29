@@ -45,6 +45,38 @@ std::vector<char> PrepareMessage1()
 // TODO There should be one per connection
 tpp::ServerVariableManager GlobalServerVariableManager;
 
+void ProcessPacket(const std::vector<char>& currentPacketData)
+{
+	// Search for path in packet and read path
+	std::string path;
+	{
+		auto pathPosition = std::search(currentPacketData.begin(), currentPacketData.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
+		auto nullTerminator = std::find(pathPosition, currentPacketData.end(), '\0');
+		path = std::string(pathPosition + strlen(tpp::PathString), nullTerminator);
+	}
+
+	auto variablePosition = std::search(currentPacketData.begin(), currentPacketData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
+
+	if (variablePosition != currentPacketData.end())
+	{
+		auto valueIndex = variablePosition - currentPacketData.begin();
+		const tpp::VariableHeader* variablePacket = reinterpret_cast<const tpp::VariableHeader*>(&currentPacketData[valueIndex]);
+
+		auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
+
+		if (variablePacket->type == tpp::VariableType::Float)
+		{
+			float initialValue = *reinterpret_cast<const float*>(&currentPacketData[variableIndex]);
+
+			tpp::Variable floatVariableDescription;
+			floatVariableDescription.vdFloat = tpp::Float("", initialValue, 0.0f, 0.0f, 0.0f);
+
+			// Put in global registry
+			GlobalServerVariableManager.AddVariable(path, floatVariableDescription);
+		}
+	}
+}
+
 int main(void)
 {
 	tpp::UIInitializeParams params;
@@ -80,6 +112,8 @@ int main(void)
 
 	uint64_t lastAttemptedConnection = 0;
 
+	bool packetOpen = false;
+
 	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
 		if (clientSocket->IsConnected())
@@ -99,47 +133,19 @@ int main(void)
 
 				while (headerPosition != receivedData.end())
 				{
+					size_t remainingDataInBuffer = (size_t)receiveResult - (headerPosition - receivedData.begin());
+
 					// Cast the start of the message to the header, and extract relevant information
 					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(receivedData.data());
 					tpp::MessageType messageType = header->messageType;
 					tpp::Version version = header->version;
 					uint32_t packetSize = header->messageSize;
 
-					// Find where the header starts, and copy the data onward
-					auto index = headerPosition + sizeof(tpp::MessageHeader) - receivedData.begin();
+					std::vector<char> currentPacketData;
+					currentPacketData.reserve(DEFAULT_BUFLEN);
+					currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + packetSize);
 
-					std::vector<char> packetData;
-					packetData.reserve(packetSize);
-					packetData.insert(packetData.end(), &receivedData[index], &receivedData[index] + packetSize);
-
-					// Search for path in packet and read path
-					std::string path;
-					{
-						auto pathPosition = std::search(packetData.begin(), packetData.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
-						auto nullTerminator = std::find(pathPosition, packetData.end(), '\0');
-						path = std::string(pathPosition + strlen(tpp::PathString), nullTerminator);
-					}
-
-					auto variablePosition = std::search(packetData.begin(), packetData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
-
-					if (variablePosition != packetData.end())
-					{
-						auto valueIndex = variablePosition - packetData.begin();
-						tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
-
-						auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
-
-						if (variablePacket->type == tpp::VariableType::Float)
-						{
-							float initialValue = *reinterpret_cast<float*>(&packetData[variableIndex]);
-
-							tpp::Variable floatVariableDescription;
-							floatVariableDescription.vdFloat = tpp::Float("", initialValue, 0.0f, 0.0f, 0.0f);
-
-							// Put into global tree
-							GlobalServerVariableManager.AddVariable(path, floatVariableDescription);
-						}
-					}
+					ProcessPacket(currentPacketData);
 
 					// TODO Change to search after the entire message
 					headerPosition = std::search(headerPosition + 1, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
