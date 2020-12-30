@@ -13,6 +13,7 @@ void tpp::UIVariableTree::Draw(const tpp::ServerVariableManager& variableDescrip
 		[](const std::string& nodeName, const VariableNode& variable)
 		{
 			ImGuiTreeNodeFlags nodeFlags = 0;
+			nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
 			
 			if (variable.nodes.empty())
 			{
