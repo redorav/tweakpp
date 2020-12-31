@@ -4,7 +4,7 @@
 
 void tpp::UIVariableGroupWindow::Draw(const tpp::ServerVariableManager& variableManager, const char* title, bool* open)
 {
-	variableManager.ForEachNode(
+	variableManager.ForEachVariableGroup(
 	[this](const std::string& nodeName, const VariableGroupNode& variable)
 	{
 		ImGuiTreeNodeFlags nodeFlags = 0;

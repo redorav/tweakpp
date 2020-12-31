@@ -54,7 +54,7 @@ namespace tpp
 		std::map<std::string, VariableGroupNode> nodes;
 	};
 
-	struct VariableTree
+	struct VariableGroupTree
 	{
 		void AddPath(const std::string& path)
 		{
@@ -161,14 +161,14 @@ namespace tpp
 		}
 
 		template<typename FnOpen, typename FnClose>
-		void ForEachNode(const FnOpen& fnOpen, const FnClose& fnClose) const
+		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const
 		{
 			m_variableTree.ForEachNode(fnOpen, fnClose);
 		}
 
 	private:
 
-		VariableTree m_variableTree;
+		VariableGroupTree m_variableTree;
 
 		std::unordered_map<std::string, Variable> m_variableHashMap;
 	};
