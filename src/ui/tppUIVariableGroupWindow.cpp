@@ -2,12 +2,10 @@
 
 #include "server/tppServerVariableManager.h"
 
-const tpp::VariableNode* selectedNode = nullptr;
-
 void tpp::UIVariableGroupWindow::Draw(const tpp::ServerVariableManager& variableManager, const char* title, bool* open)
 {
 	variableManager.ForEachNode(
-	[](const std::string& nodeName, const VariableNode& variable)
+	[this](const std::string& nodeName, const VariableGroupNode& variable)
 	{
 		ImGuiTreeNodeFlags nodeFlags = 0;
 		nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
@@ -17,7 +15,7 @@ void tpp::UIVariableGroupWindow::Draw(const tpp::ServerVariableManager& variable
 			nodeFlags |= ImGuiTreeNodeFlags_Leaf;
 		}
 
-		if (&variable == selectedNode)
+		if (&variable == m_selectedGroup)
 		{
 			nodeFlags |= ImGuiTreeNodeFlags_Selected;
 		}
@@ -30,12 +28,12 @@ void tpp::UIVariableGroupWindow::Draw(const tpp::ServerVariableManager& variable
 
 		if (ImGui::IsItemClicked())
 		{
-			selectedNode = &variable;
+			m_selectedGroup = &variable;
 		}
 
 		return nodeOpen;
 	},
-	[](const std::string& nodeName, const VariableNode& variable, bool isOpen)
+	[](const std::string& nodeName, const VariableGroupNode& variable, bool isOpen)
 	{
 		if (isOpen)
 		{

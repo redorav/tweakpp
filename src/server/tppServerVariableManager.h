@@ -9,9 +9,11 @@
 
 namespace tpp
 {
-	struct VariableNode
+	class VariableGroupNode
 	{
-		VariableNode* AddFindNode(const std::string& nodeName)
+	public:
+		
+		VariableGroupNode* AddFindNode(const std::string& nodeName)
 		{
 			auto it = nodes.find(nodeName);
 
@@ -21,7 +23,7 @@ namespace tpp
 			}
 			else
 			{
-				auto it2 = nodes.insert({ nodeName, VariableNode() });
+				auto it2 = nodes.insert({ nodeName, VariableGroupNode() });
 				return &it2.first->second;
 			}
 		}
@@ -47,11 +49,9 @@ namespace tpp
 			}
 		}
 
-	public:
-
 		// Have a map so that it's sorted on insertion, we also want to traverse it sorted
 		// and we want to be able to find things in it as well
-		std::map<std::string, VariableNode> nodes;
+		std::map<std::string, VariableGroupNode> nodes;
 	};
 
 	struct VariableTree
@@ -60,7 +60,7 @@ namespace tpp
 		{
 			if (!Exists(path))
 			{
-				VariableNode* currentNode = &m_root;
+				VariableGroupNode* currentNode = &m_root;
 
 				size_t currentSlashPosition = 0;
 				size_t newSlashPosition = path.find("/");
@@ -103,16 +103,16 @@ namespace tpp
 
 		void Clear()
 		{
-			m_root = VariableNode();
+			m_root = VariableGroupNode();
 			m_pathExistenceHashMap.clear();
 		}
 
-		VariableNode m_root;
+		VariableGroupNode m_root;
 
 		// Check to see if path already exists (when adding a new variable)
 		// This also points to leaf nodes that are guaranteed to exist in 
 		// the variable tree
-		std::unordered_map<std::string, VariableNode*> m_pathExistenceHashMap;
+		std::unordered_map<std::string, VariableGroupNode*> m_pathExistenceHashMap;
 	};
 
 	class ServerVariableManager
