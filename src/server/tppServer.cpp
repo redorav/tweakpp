@@ -15,8 +15,8 @@
 #include "tppServerVariableManager.h"
 #include "tppUIBackend.h"
 #include "tppUILog.h"
-#include "tppUIVariableTree.h"
-#include "tppUIConnectionsWindow.h"
+#include "tppUIVariableGroupWindow.h"
+#include "tppUIVariableWindow.h"
 #include "tppSerialize.h"
 #include "tppTypes.h"
 
@@ -90,8 +90,8 @@ int main(void)
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	tpp::UILog uiLog;
-	tpp::UIVariableTree variableTree;
-	tpp::UIConnectionsWindow connectionsWindow;
+	tpp::UIVariableGroupWindow uiVariableGroupWindow;
+	tpp::UIVariableWindow uiVariableWindow;
 
 	static const int DEFAULT_BUFLEN = 512;
 
@@ -262,21 +262,80 @@ int main(void)
 		// Prepare the UI elements
 		{
 			ImGuiDockNodeFlags dockNodeFlags = 0;
-			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), dockNodeFlags);
+			//ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), dockNodeFlags);
+
+			if (ImGui::BeginMainMenuBar())
+			{
+				if (ImGui::BeginMenu("File"))
+				{
+					if (ImGui::MenuItem("New Connection", "Ctrl + N"))
+					{
+
+					}
+
+					ImGui::EndMenu();
+				}
+				if (ImGui::BeginMenu("Help"))
+				{
+					if (ImGui::MenuItem("About"))
+					{
+
+					}
+					ImGui::EndMenu();
+				}
+				ImGui::EndMainMenuBar();
+			}
 
 			ImGuiWindowFlags windowFlags = 0;
+			windowFlags |= ImGuiWindowFlags_NoCollapse;
+			//windowFlags |= ImGuiWindowFlags_NoResize;
+			//windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
+			ImGui::Begin("Connections", nullptr, windowFlags);
+			{
+				ImGui::BeginTabBar("Tab Bar");
+				{
+					if (ImGui::BeginTabItem("Local : 192.168.0.1"))
+					{
+						ImGuiTableFlags tableFlags = 0;
+						tableFlags |= ImGuiTableFlags_Resizable;
+						tableFlags |= ImGuiTableFlags_BordersOuter;
+						tableFlags |= ImGuiTableFlags_BordersV;
+						tableFlags |= ImGuiTableFlags_ContextMenuInBody;
+						tableFlags |= ImGuiTableFlags_ScrollY;
 
-			// Variable Tree
-			ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Appearing);
-			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
+						if (ImGui::BeginTable("##table1", 2, tableFlags))
+						{
+							// Set up header rows
+							ImGui::TableSetupColumn("Variable Groups");
+							ImGui::TableSetupColumn("Variables");
+							ImGui::TableHeadersRow();
+							
+							// Exit header row
+							ImGui::TableNextRow();
 
-			variableTree.Draw(GlobalServerVariableManager, "Variable Tree", nullptr);
+							// Show variable groups
+							ImGui::TableSetColumnIndex(0);
+							uiVariableGroupWindow.Draw(GlobalServerVariableManager, "Variable Groups", nullptr);
 
-			// Connection Window (with variables)
-			ImGui::SetNextWindowPos(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, 0), ImGuiCond_Appearing);
-			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth() / 2, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
+							// Show Variables
+							ImGui::TableSetColumnIndex(1);
+							uiVariableWindow.Draw(GlobalServerVariableManager, "Variables", nullptr);
 
-			connectionsWindow.Draw("Connections");
+							ImGui::EndTable();
+						}
+
+						ImGui::EndTabItem();
+					}
+				
+					if (ImGui::BeginTabItem("Xbox One : 192.168.0.32"))
+					{
+						ImGui::Text("This is the Xbox tab!");
+						ImGui::EndTabItem();
+					}
+				}
+				ImGui::EndTabBar();
+			}
+			ImGui::End();
 
 			// Log
 			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);

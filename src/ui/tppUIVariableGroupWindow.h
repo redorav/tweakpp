@@ -6,11 +6,11 @@ namespace tpp
 {
 	class ServerVariableManager;
 
-	class UIVariableTree
+	class UIVariableGroupWindow
 	{
 	public:
 
-		UIVariableTree()
+		UIVariableGroupWindow()
 		{
 
 		}
