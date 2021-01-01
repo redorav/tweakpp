@@ -9,24 +9,17 @@
 
 namespace tpp
 {
+	// Represents a node in the variable group tree, that is itself a group and
+	// can have other groups under it. A group with an empty array of nodes is a leaf
 	class VariableGroupNode
 	{
 	public:
-		
-		VariableGroupNode* AddFindNode(const std::string& nodeName)
-		{
-			auto it = nodes.find(nodeName);
 
-			if (it != nodes.end())
-			{
-				return &it->second;
-			}
-			else
-			{
-				auto it2 = nodes.insert({ nodeName, VariableGroupNode() });
-				return &it2.first->second;
-			}
-		}
+		VariableGroupNode() {}
+
+		VariableGroupNode(const std::string& path) : path(path) {}
+		
+		VariableGroupNode* AddFindNode(const std::string& path, const std::string& nodeName);
 
 		template<typename FnOpen, typename FnClose>
 		void ForEachNode(const FnOpen& fnOpen, const FnClose& fnClose) const
@@ -49,6 +42,9 @@ namespace tpp
 			}
 		}
 
+		// Each node contains its full path so through a node we can easily access its variables
+		std::string path;
+
 		// Have a map so that it's sorted on insertion, we also want to traverse it sorted
 		// and we want to be able to find things in it as well
 		std::map<std::string, VariableGroupNode> nodes;
@@ -56,44 +52,9 @@ namespace tpp
 
 	struct VariableGroupTree
 	{
-		void AddPath(const std::string& path)
-		{
-			if (!Exists(path))
-			{
-				VariableGroupNode* currentNode = &m_root;
+		void AddPath(const std::string& path);
 
-				size_t currentSlashPosition = 0;
-				size_t newSlashPosition = path.find("/");
-
-				// If there are no slashes, add the whole path
-				if (newSlashPosition == std::string::npos)
-				{
-					currentNode = currentNode->AddFindNode(path);
-				}
-				else
-				{
-					while (currentSlashPosition != std::string::npos)
-					{
-						std::string nodeName = path.substr(currentSlashPosition, newSlashPosition - currentSlashPosition);
-
-						if (nodeName.size() > 0)
-						{
-							currentNode = currentNode->AddFindNode(nodeName);
-						}
-
-						currentSlashPosition = newSlashPosition == std::string::npos ? std::string::npos : newSlashPosition + 1;
-						newSlashPosition = path.find("/", currentSlashPosition);
-					}
-				}
-
-				m_pathExistenceHashMap.insert({ path, currentNode });
-			}
-		}
-
-		bool Exists(const std::string& path)
-		{
-			return m_pathExistenceHashMap.find(path) != m_pathExistenceHashMap.end();
-		}
+		bool Exists(const std::string& path);
 
 		template<typename FnOpen, typename FnClose>
 		void ForEachNode(const FnOpen& fnOpen, const FnClose& fnClose) const
@@ -101,11 +62,7 @@ namespace tpp
 			m_root.ForEachNode(fnOpen, fnClose);
 		}
 
-		void Clear()
-		{
-			m_root = VariableGroupNode();
-			m_pathExistenceHashMap.clear();
-		}
+		void Clear();
 
 		VariableGroupNode m_root;
 
@@ -115,61 +72,94 @@ namespace tpp
 		std::unordered_map<std::string, VariableGroupNode*> m_pathExistenceHashMap;
 	};
 
+	class VariableGroup
+	{
+	public:
+
+		std::vector<const tpp::Variable*> variables;
+	};
+
 	class ServerVariableManager
 	{
 	public:
 
-		void AddVariable(const std::string& path, const Variable& variable)
+		void AddVariable(const Variable& variable)
 		{
-			auto lastSlash = path.find_last_of("/");
+			// TODO Make this string_view and function take a string_view
+			std::string groupPath = std::string(variable.groupPath);
 
-			std::string partialPath = path.substr(0, lastSlash);
+			m_variableGroupTree.AddPath(groupPath);
 
-			m_variableTree.AddPath(partialPath);
+			VariableGroup* variableGroup = nullptr;
 
-			m_variableHashMap.insert({ path, variable });
-		}
+			auto variableGroupIterator = m_variableGroupHashMap.find(groupPath);
 
-		const Variable& GetVariable(const std::string& path) const
-		{
-			auto variable = m_variableHashMap.find(path);
-
-			if (variable != m_variableHashMap.end())
+			if (variableGroupIterator == m_variableGroupHashMap.end())
 			{
-				return variable->second;
+				variableGroupIterator = m_variableGroupHashMap.insert({ groupPath, VariableGroup() }).first;
 			}
-			else
-			{
-				return Variable();
-			}
+			
+			variableGroup = &variableGroupIterator->second;
+
+			const Variable& insertedVariable = m_variableHashMap.insert({ variable.path, variable }).first->second;
+
+			// Insert a pointer to the variable that we inserted (as a copy)
+			variableGroup->variables.push_back(&insertedVariable);
 		}
 
-		void Clear()
-		{
-			m_variableTree.Clear();
+		const Variable& GetVariable(const std::string& path) const;
 
-			m_variableHashMap.clear();
-		}
+		void Clear();
 
 		template<typename Fn>
-		void ForEachVariable(Fn fn) const
-		{
-			for (const auto& it : m_variableHashMap)
-			{
-				fn(it.first, it.second);
-			}
-		}
+		void ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const;
+
+		template<typename Fn>
+		void ForEachVariable(const Fn& fn) const;
 
 		template<typename FnOpen, typename FnClose>
-		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const
-		{
-			m_variableTree.ForEachNode(fnOpen, fnClose);
-		}
+		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const;
 
 	private:
 
-		VariableGroupTree m_variableTree;
+		const Variable Dummy;
+
+		VariableGroupTree m_variableGroupTree;
+
+		std::unordered_map<std::string, VariableGroup> m_variableGroupHashMap;
 
 		std::unordered_map<std::string, Variable> m_variableHashMap;
 	};
+
+	template<typename Fn>
+	void tpp::ServerVariableManager::ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const
+	{
+		auto it = m_variableGroupHashMap.find(groupPath);
+
+		if (it != m_variableGroupHashMap.end())
+		{
+			const VariableGroup& variableGroup = it->second;
+
+			for (const tpp::Variable* variable : variableGroup.variables)
+			{
+				fn(variable);
+			}
+		}
+	}
+
+	template<typename Fn>
+	void tpp::ServerVariableManager::ForEachVariable(const Fn& fn) const
+	{
+		for (const auto& it : m_variableHashMap)
+		{
+			fn(it.first, it.second);
+		}
+	}
+
+	template<typename FnOpen, typename FnClose>
+	void tpp::ServerVariableManager::ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const
+	{
+		m_variableGroupTree.ForEachNode(fnOpen, fnClose);
+	}
+
 }

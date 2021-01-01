@@ -54,7 +54,34 @@ namespace tpp
 
 		Variable() {}
 
+#if defined(TPP_SERVER)
+
+		Variable(const std::string& path) : path(path)
+		{
+			size_t lastSlash = path.find_last_of("/");
+			size_t afterLastSlash = lastSlash + 1;
+
+			groupPath = std::string(path.data(), lastSlash);
+			name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
+		}
+
+		const std::string& GetGroupPath() const
+		{
+			return groupPath;
+		}
+
+		const std::string& GetName() const
+		{
+			return name;
+		}
+
 		std::string path;
+
+		std::string groupPath;
+
+		std::string name;
+
+#endif
 
 		uint32_t size = 0;
 

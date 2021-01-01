@@ -68,11 +68,11 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 		{
 			float initialValue = *reinterpret_cast<const float*>(&currentPacketData[variableIndex]);
 
-			tpp::Variable floatVariableDescription;
-			floatVariableDescription.vdFloat = tpp::Float("", initialValue, 0.0f, 0.0f, 0.0f);
+			tpp::Variable floatVariable(path);
+			floatVariable.vdFloat = tpp::Float(path.c_str(), initialValue, 0.0f, 0.0f, 0.0f);
 
 			// Put in global registry
-			GlobalServerVariableManager.AddVariable(path, floatVariableDescription);
+			GlobalServerVariableManager.AddVariable(floatVariable);
 		}
 	}
 }
@@ -317,9 +317,11 @@ int main(void)
 							ImGui::TableSetColumnIndex(0);
 							uiVariableGroupWindow.Draw(GlobalServerVariableManager, "Variable Groups", nullptr);
 
+							const tpp::VariableGroupNode* variableGroup = uiVariableGroupWindow.GetSelectedGroup();
+
 							// Show Variables
 							ImGui::TableSetColumnIndex(1);
-							uiVariableWindow.Draw(GlobalServerVariableManager, "Variables", nullptr);
+							uiVariableWindow.Draw(GlobalServerVariableManager, variableGroup);
 
 							ImGui::EndTable();
 						}
