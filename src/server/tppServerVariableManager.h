@@ -83,29 +83,7 @@ namespace tpp
 	{
 	public:
 
-		void AddVariable(const Variable& variable)
-		{
-			// TODO Make this string_view and function take a string_view
-			std::string groupPath = std::string(variable.groupPath);
-
-			m_variableGroupTree.AddPath(groupPath);
-
-			VariableGroup* variableGroup = nullptr;
-
-			auto variableGroupIterator = m_variableGroupHashMap.find(groupPath);
-
-			if (variableGroupIterator == m_variableGroupHashMap.end())
-			{
-				variableGroupIterator = m_variableGroupHashMap.insert({ groupPath, VariableGroup() }).first;
-			}
-			
-			variableGroup = &variableGroupIterator->second;
-
-			const Variable& insertedVariable = m_variableHashMap.insert({ variable.path, variable }).first->second;
-
-			// Insert a pointer to the variable that we inserted (as a copy)
-			variableGroup->variables.push_back(&insertedVariable);
-		}
+		void AddVariable(const Variable& variable);
 
 		const Variable& GetVariable(const std::string& path) const;
 
