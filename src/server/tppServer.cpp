@@ -66,10 +66,10 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 
 		if (variablePacket->type == tpp::VariableType::Float)
 		{
-			float initialValue = *reinterpret_cast<const float*>(&currentPacketData[variableIndex]);
+			tpp::Float tppFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]);
 
 			tpp::Variable floatVariable(tpp::VariableType::Float, path);
-			floatVariable.vdFloat = tpp::Float(path.c_str(), initialValue, 0.0f, 0.0f, 0.0f);
+			floatVariable.vdFloat = tppFloat;
 
 			// Put in global registry
 			GlobalServerVariableManager.AddVariable(floatVariable);
@@ -175,7 +175,7 @@ int main(void)
 							if (remainingDataInBuffer >= sizeof(tpp::MessageHeader) + packetSize)
 							{
 								currentPacketData.clear();
-								currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + packetSize);
+								currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + sizeof(tpp::MessageHeader) + packetSize);
 								ProcessPacket(currentPacketData);
 								offset = (headerPosition - receivedData.begin()) + sizeof(tpp::MessageHeader) + packetSize;
 							}

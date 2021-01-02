@@ -21,17 +21,6 @@ void SerializeCommandHeader(std::vector<char>& commandStream, tpp::MessageType m
 	commandStream.insert(commandStream.end(), (const char*)&header, (const char*)&header + sizeof(header));
 }
 
-// TODO Templated function that just copies whatever data we pass through
-// TODO Some types like strings probably need special handling
-void SerializeFloatProperty(std::vector<char>& commandStream, tpp::PropertyType type, float value)
-{
-	tpp::PropertyHeader propertyHeader;
-	propertyHeader.type = type;
-	propertyHeader.size = sizeof(value);
-	commandStream.insert(commandStream.end(), reinterpret_cast<char*>(&propertyHeader), reinterpret_cast<char*>(&propertyHeader) + sizeof(propertyHeader));
-	commandStream.insert(commandStream.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + sizeof(value));
-}
-
 void SerializeFloat(std::vector<char>& commandStream, float value)
 {
 	tpp::VariableHeader variableHeader;
@@ -39,6 +28,15 @@ void SerializeFloat(std::vector<char>& commandStream, float value)
 	variableHeader.size = 4;
 	commandStream.insert(commandStream.end(), reinterpret_cast<char*>(&variableHeader), reinterpret_cast<char*>(&variableHeader) + sizeof(variableHeader));
 	commandStream.insert(commandStream.end(), reinterpret_cast<char*>(&value), reinterpret_cast<char*>(&value) + sizeof(value));
+}
+
+void SerializeFloat(std::vector<char>& commandStream, const tpp::Float& tppFloat)
+{
+	tpp::VariableHeader variableHeader;
+	variableHeader.type = tpp::VariableType::Float;
+	variableHeader.size = sizeof(tpp::Float);
+	commandStream.insert(commandStream.end(), reinterpret_cast<char*>(&variableHeader), reinterpret_cast<char*>(&variableHeader) + sizeof(variableHeader));
+	commandStream.insert(commandStream.end(), reinterpret_cast<const char*>(&tppFloat), reinterpret_cast<const char*>(&tppFloat) + sizeof(tppFloat));
 }
 
 void SerializePath(std::vector<char>& commandStream, const std::string& path)

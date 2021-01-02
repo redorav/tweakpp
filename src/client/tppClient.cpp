@@ -18,27 +18,27 @@ tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.
 tpp::Float SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1.0f, 1.0f, 2.0f, 0.001f);
 
 // Depth of Field
-tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field/Bokeh Size", 2.5f, 1.0f, 64.0f, 1.0f);
+tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
+tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field/Bokeh Size", 2.5f, 1.0f, 32.0f, 1.0f);
 
 // TAA
-tpp::Float TAAJitterX("Rendering/Post Effects/TAA/TAA Jitter X", 0.5f, 1.0f, 64.0f, 1.0f);
-tpp::Float TAAJitterY("Rendering/Post Effects/TAA/TAA Jitter Y", 0.5f, 1.0f, 64.0f, 1.0f);
+tpp::Float TAAJitterX("Rendering/Post Effects/TAA/TAA Jitter X", 0.5f, 0.0f, 128.0f, 1.0f);
+tpp::Float TAAJitterY("Rendering/Post Effects/TAA/TAA Jitter Y", 0.5f, 0.0f, 128.0f, 1.0f);
 
-tpp::Float PerformanceGraphScaleX("Rendering/Performance/Graph Scale X", 1.5f, 1.0f, 64.0f, 1.0f);
-tpp::Float PerformanceGraphScaleY("Rendering/Performance/Graph Scale Y", 1.5f, 1.0f, 64.0f, 1.0f);
+tpp::Float PerformanceGraphScaleX("Rendering/Performance/Graph Scale X", 1.5f, 0.1f, 4.0f, 1.0f);
+tpp::Float PerformanceGraphScaleY("Rendering/Performance/Graph Scale Y", 1.5f, 0.1f, 4.0f, 1.0f);
 
-tpp::Float CoreGraphScaleX("Core/Performance/Graph Scale X", 1.3f, 1.0f, 64.0f, 1.0f);
-tpp::Float CoreGraphScaleY("Core/Performance/Graph Scale Y", 1.3f, 1.0f, 64.0f, 1.0f);
+tpp::Float CoreGraphScaleX("Core/Performance/Graph Scale X", 1.3f, 0.1f, 4.0f, 1.0f);
+tpp::Float CoreGraphScaleY("Core/Performance/Graph Scale Y", 1.3f, 0.1f, 4.0f, 1.0f);
 
-tpp::Float AnimationTimeScale("Animation/Time Scale", 1.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float AnimationThreshold("Animation/Threshold", 1.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float AnimationTimeScale("Animation/Time Scale", 1.0f, 0.0f, 2.0f, 1.0f);
+tpp::Float AnimationThreshold("Animation/Threshold", 1.0f, 1.0f, 3.0f, 1.0f);
 
-tpp::Float PhysicsTargetFPS("Physics/Target FPS", 60.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float PhysicsTargetFPS("Physics/Target FPS", 60.0f, 1.0f, 120.0f, 1.0f);
+tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f, 1.0f);
 
-tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 1.0f, 64.0f, 1.0f);
-tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
+tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
 
 
 bool IsCopyable(tpp::VariableType type)
@@ -71,18 +71,12 @@ std::vector<char> PrepareVariableDescriptionTable()
 
 		SerializePath(localPacket, path.c_str());
 
-		SerializeFloat(localPacket, variable.vdFloat.m_currentValue);
-
-		SerializeFloatProperty(localPacket, tpp::PropertyType::Min, variable.vdFloat.m_minValue);
-
-		SerializeFloatProperty(localPacket, tpp::PropertyType::Max, variable.vdFloat.m_maxValue);
-
-		SerializeFloatProperty(localPacket, tpp::PropertyType::Step, variable.vdFloat.m_step);
+		SerializeFloat(localPacket, variable.vdFloat);
 
 		// 3 Calculate message size and update packet
 		size_t totalDataSize = localPacket.size() - sizeof(tpp::MessageHeader);
 		tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(localPacket.data());
-		header->messageSize = totalDataSize;
+		header->messageSize = (uint32_t)totalDataSize;
 
 		// TODO Do this on the actual full packet
 		fullPacket.insert(fullPacket.end(), localPacket.begin(), localPacket.end());

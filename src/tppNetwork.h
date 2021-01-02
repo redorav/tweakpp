@@ -17,21 +17,6 @@ namespace tpp
 
 	enum class VariableType : uint32_t;
 
-	enum class PropertyType : uint32_t
-	{
-		Min,
-		Max,
-		Step,
-	};
-
-	TPP_PACK_BEGIN
-	struct PropertyHeader
-	{
-		PropertyType type;
-		uint32_t size;
-	};
-	TPP_PACK_END
-
 	enum class MessageType : uint32_t
 	{
 		Declaration = 0, // Client tells server a variable of a certain type and parameters exists

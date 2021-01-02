@@ -11,7 +11,6 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 		ImGuiTableFlags tableFlags = 0;
 		tableFlags |= ImGuiTableFlags_Resizable;
 		tableFlags |= ImGuiTableFlags_PadOuterX; // Because we've not enabled ImGuiTableFlags_BordersV
-		tableFlags |= ImGuiTableFlags_ContextMenuInBody;
 		tableFlags |= ImGuiTableFlags_ScrollY;
 
 		if (ImGui::BeginTable("##UIVariableWindow", 2, tableFlags))
@@ -36,7 +35,9 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 					ImGui::Text(variable->GetName().c_str());
 					
 					ImGui::TableSetColumnIndex(1);
-					ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.m_currentValue, 0.0f, 10.0f);
+					ImGui::Text("%.3f", variable->vdFloat.m_minValue); ImGui::SameLine();
+					ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.m_currentValue, variable->vdFloat.m_minValue, variable->vdFloat.m_maxValue); ImGui::SameLine();
+					ImGui::Text("%f", variable->vdFloat.m_maxValue);
 				}
 			});
 
