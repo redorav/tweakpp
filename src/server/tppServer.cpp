@@ -300,14 +300,13 @@ int main(void)
 						tableFlags |= ImGuiTableFlags_Resizable;
 						tableFlags |= ImGuiTableFlags_BordersOuter;
 						tableFlags |= ImGuiTableFlags_BordersV;
-						tableFlags |= ImGuiTableFlags_ContextMenuInBody;
 						tableFlags |= ImGuiTableFlags_ScrollY;
 
 						if (ImGui::BeginTable("##table1", 2, tableFlags))
 						{
 							// Set up header rows
 							ImGui::TableSetupColumn("Variable Groups");
-							ImGui::TableSetupColumn("Variables");
+							//ImGui::TableSetupColumn("Variables");
 							ImGui::TableHeadersRow();
 							
 							// Exit header row
@@ -317,11 +316,9 @@ int main(void)
 							ImGui::TableSetColumnIndex(0);
 							uiVariableGroupWindow.Draw(GlobalServerVariableManager, "Variable Groups", nullptr);
 
-							const tpp::VariableGroupNode* variableGroup = uiVariableGroupWindow.GetSelectedGroup();
-
 							// Show Variables
 							ImGui::TableSetColumnIndex(1);
-							uiVariableWindow.Draw(GlobalServerVariableManager, variableGroup);
+							uiVariableWindow.Draw(GlobalServerVariableManager, uiVariableGroupWindow.GetSelectedGroup());
 
 							ImGui::EndTable();
 						}

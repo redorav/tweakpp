@@ -17,6 +17,7 @@ namespace tpp
 		tpp::Variable variable;
 		variable.size = Size;
 		variable.memory = &m_currentValue;
+		variable.vdFloat = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);
 		#endif
 	}

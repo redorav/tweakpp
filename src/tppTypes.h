@@ -38,10 +38,6 @@ namespace tpp
 			return m_currentValue;
 		}
 
-#if !defined(TPP_SERVER)
-	private:
-#endif
-
 		// Need mutable for the server to modify value through the UI widgets
 		mutable float m_currentValue = 0.0f;
 
