@@ -8,6 +8,18 @@
 
 namespace tpp
 {
+	enum class VariableType : uint32_t
+	{
+		Float = 0,
+		UnsignedInteger = 1,
+		Integer = 2,
+		Color3 = 3,
+		Color4 = 4,
+		Bool = 5,
+		Function = 6,
+		Invalid = 0xffffffff
+	};
+
 	class Float
 	{
 	public:
@@ -26,9 +38,12 @@ namespace tpp
 			return m_currentValue;
 		}
 
+#if !defined(TPP_SERVER)
 	private:
+#endif
 
-		float m_currentValue = 0.0f;
+		// Need mutable for the server to modify value through the UI widgets
+		mutable float m_currentValue = 0.0f;
 
 		float m_minValue = 0.0f;
 
@@ -56,7 +71,7 @@ namespace tpp
 
 #if defined(TPP_SERVER)
 
-		Variable(const std::string& path) : path(path)
+		Variable(tpp::VariableType type, const std::string& path) : type(type), path(path)
 		{
 			size_t lastSlash = path.find_last_of("/");
 			size_t afterLastSlash = lastSlash + 1;
@@ -80,6 +95,8 @@ namespace tpp
 		std::string groupPath;
 
 		std::string name;
+
+		tpp::VariableType type = tpp::VariableType::Invalid;
 
 #endif
 

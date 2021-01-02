@@ -15,17 +15,7 @@ namespace tpp
 	static const char* PathString     = "path";
 	static const char* VariableString = "var";
 
-	enum class VariableType : uint32_t
-	{
-		Float = 0,
-		UnsignedInteger = 1,
-		Integer = 2,
-		Color3 = 3,
-		Color4 = 4,
-		Bool = 5,
-		Function = 6,
-		Invalid = 0xffffffff
-	};
+	enum class VariableType : uint32_t;
 
 	enum class PropertyType : uint32_t
 	{
