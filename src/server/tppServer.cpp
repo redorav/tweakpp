@@ -68,7 +68,7 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 		{
 			float initialValue = *reinterpret_cast<const float*>(&currentPacketData[variableIndex]);
 
-			tpp::Variable floatVariable(path);
+			tpp::Variable floatVariable(tpp::VariableType::Float, path);
 			floatVariable.vdFloat = tpp::Float(path.c_str(), initialValue, 0.0f, 0.0f, 0.0f);
 
 			// Put in global registry
