@@ -30,17 +30,17 @@ namespace tpp
 
 		operator float()
 		{
-			return m_currentValue;
+			return currentValue;
 		}
 
 		// Need mutable for the server to modify value through the UI widgets
-		mutable float m_currentValue = 0.0f;
+		mutable float currentValue = 0.0f;
 
-		float m_minValue = 0.0f;
+		float minValue = 0.0f;
 
-		float m_maxValue = 0.0f;
+		float maxValue = 0.0f;
 
-		float m_step = 0.0f;
+		float step = 0.0f;
 	};
 
 	class UInt

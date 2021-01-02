@@ -35,11 +35,11 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 					ImGui::Text(variable->GetName().c_str());
 					
 					ImGui::TableSetColumnIndex(1);
-					ImGui::Text("%.3f", variable->vdFloat.m_minValue);
+					ImGui::Text("%.3f", variable->vdFloat.minValue);
 					ImGui::SameLine();
-					bool wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.m_currentValue, variable->vdFloat.m_minValue, variable->vdFloat.m_maxValue);
+					bool wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
 					ImGui::SameLine();
-					ImGui::Text("%f", variable->vdFloat.m_maxValue);
+					ImGui::Text("%f", variable->vdFloat.maxValue);
 
 					if (wasModified)
 					{

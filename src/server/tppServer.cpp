@@ -30,7 +30,7 @@ void PrepareUpdatePacket(std::vector<char>& updatePacket, const tpp::Variable* v
 
 	if (variable->type == tpp::VariableType::Float)
 	{
-		SerializeFloat(updatePacket, variable->vdFloat.m_currentValue);
+		SerializeFloat(updatePacket, variable->vdFloat.currentValue);
 	}
 
 	size_t totalDataSize = updatePacket.size() - sizeof(tpp::MessageHeader);

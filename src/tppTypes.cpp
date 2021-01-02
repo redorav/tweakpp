@@ -7,16 +7,16 @@ namespace tpp
 	#endif
 
 	Float::Float(const char* path, float initialValue, float minValue, float maxValue, float step)
-		: m_currentValue(initialValue)
-		, m_minValue(minValue)
-		, m_maxValue(maxValue)
-		, m_step(step)
+		: currentValue(initialValue)
+		, minValue(minValue)
+		, maxValue(maxValue)
+		, step(step)
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
 		tpp::Variable variable;
-		variable.size = sizeof(float);
-		variable.memory = &m_currentValue;
+		variable.size = sizeof(currentValue);
+		variable.memory = &currentValue;
 		variable.vdFloat = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);
 		#endif
