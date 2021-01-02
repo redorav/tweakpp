@@ -29,6 +29,8 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 
 				std::string mangledName = "##" + variable->GetName();
 
+				bool wasModified = false;
+
 				if (variable->type == tpp::VariableType::Float)
 				{
 					ImGui::TableSetColumnIndex(0);
@@ -37,14 +39,14 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 					ImGui::TableSetColumnIndex(1);
 					ImGui::Text("%.3f", variable->vdFloat.minValue);
 					ImGui::SameLine();
-					bool wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
+					wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
 					ImGui::SameLine();
 					ImGui::Text("%f", variable->vdFloat.maxValue);
+				}
 
-					if (wasModified)
-					{
-						modifiedVariable = variable;
-					}
+				if (wasModified)
+				{
+					modifiedVariable = variable;
 				}
 			});
 
