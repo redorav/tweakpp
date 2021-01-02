@@ -73,11 +73,11 @@ std::vector<char> PrepareVariableDescriptionTable()
 
 		SerializeFloat(localPacket, variable.vdFloat.m_currentValue);
 
-		SerializeFloatProperty(localPacket, tpp::PropertyType::Min, 1.0f);
+		SerializeFloatProperty(localPacket, tpp::PropertyType::Min, variable.vdFloat.m_minValue);
 
-		SerializeFloatProperty(localPacket, tpp::PropertyType::Max, 64.0f);
+		SerializeFloatProperty(localPacket, tpp::PropertyType::Max, variable.vdFloat.m_maxValue);
 
-		SerializeFloatProperty(localPacket, tpp::PropertyType::Step, 1.0f);
+		SerializeFloatProperty(localPacket, tpp::PropertyType::Step, variable.vdFloat.m_step);
 
 		// 3 Calculate message size and update packet
 		size_t totalDataSize = localPacket.size() - sizeof(tpp::MessageHeader);
