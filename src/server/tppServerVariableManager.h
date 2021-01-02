@@ -139,5 +139,4 @@ namespace tpp
 	{
 		m_variableGroupTree.ForEachNode(fnOpen, fnClose);
 	}
-
 }

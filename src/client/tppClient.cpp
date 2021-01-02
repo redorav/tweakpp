@@ -8,6 +8,7 @@
 #include "tppISocket.h"
 #include "tppTypes.h"
 #include "tppSerialize.h"
+#include "client/tppClientVariableManager.h"
 
 //---------
 // EXAMPLES
