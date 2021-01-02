@@ -15,7 +15,7 @@ namespace tpp
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
 		tpp::Variable variable;
-		variable.size = Size;
+		variable.size = sizeof(float);
 		variable.memory = &m_currentValue;
 		variable.vdFloat = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);

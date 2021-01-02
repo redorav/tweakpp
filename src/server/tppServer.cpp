@@ -22,24 +22,20 @@
 
 #include "imgui.h"
 
-std::vector<char> PrepareMessage1()
+void PrepareUpdatePacket(std::vector<char>& updatePacket, const tpp::Variable* variable)
 {
-	std::string path = u8"Rendering/SSR/Number of Rays";
+	SerializeCommandHeader(updatePacket, tpp::MessageType::Update);
 
-	std::vector<char> fullPacket;
+	SerializePath(updatePacket, variable->path);
 
-	SerializeCommandHeader(fullPacket, tpp::MessageType::Update);
+	if (variable->type == tpp::VariableType::Float)
+	{
+		SerializeFloat(updatePacket, variable->vdFloat.m_currentValue);
+	}
 
-	SerializePath(fullPacket, path);
-
-	SerializeFloat(fullPacket, 16.0);
-
-	// 3 Calculate message size and update packet
-	size_t totalDataSize = fullPacket.size() - sizeof(tpp::MessageHeader);
-	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(fullPacket.data());
-	header->messageSize = totalDataSize;
-
-	return fullPacket;
+	size_t totalDataSize = updatePacket.size() - sizeof(tpp::MessageHeader);
+	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(updatePacket.data());
+	header->messageSize = (uint32_t)totalDataSize;
 }
 
 // TODO There should be one per connection
@@ -119,6 +115,9 @@ int main(void)
 
 	std::vector<char> currentPacketData;
 	currentPacketData.reserve(DEFAULT_BUFLEN);
+
+	std::vector<char> currentSendPacket;
+	currentSendPacket.reserve(DEFAULT_BUFLEN);
 
 	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
@@ -229,6 +228,7 @@ int main(void)
 				uiLog.Log(message.data());
 
 				tpp::SocketReturn::T sendResult = clientSocket->Send(message.data(), message.size());
+
 				// TODO Handle send issues
 				messages.pop_back();
 			}
@@ -250,10 +250,6 @@ int main(void)
 				{
 					serverSocket->Close();
 				}
-				else
-				{
-					messages.push_back(PrepareMessage1());
-				}
 
 				lastAttemptedConnection = currentTime;
 			}
@@ -261,8 +257,7 @@ int main(void)
 
 		// Prepare the UI elements
 		{
-			ImGuiDockNodeFlags dockNodeFlags = 0;
-			//ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), dockNodeFlags);
+			const tpp::Variable* modifiedVariable = nullptr;
 
 			if (ImGui::BeginMainMenuBar())
 			{
@@ -316,9 +311,9 @@ int main(void)
 							ImGui::TableSetColumnIndex(0);
 							uiVariableGroupWindow.Draw(GlobalServerVariableManager, "Variable Groups", nullptr);
 
-							// Show Variables
+							// Show Variables and record which variable was modified through the UI
 							ImGui::TableSetColumnIndex(1);
-							uiVariableWindow.Draw(GlobalServerVariableManager, uiVariableGroupWindow.GetSelectedGroup());
+							uiVariableWindow.Draw(GlobalServerVariableManager, uiVariableGroupWindow.GetSelectedGroup(), modifiedVariable);
 
 							ImGui::EndTable();
 						}
@@ -343,6 +338,13 @@ int main(void)
 			uiLog.Draw("Log", nullptr);
 
 			// Console
+
+			if (modifiedVariable)
+			{
+				currentSendPacket.clear();
+				PrepareUpdatePacket(currentSendPacket, modifiedVariable);
+				messages.push_back(currentSendPacket);
+			}
 		}
 
 		tpp::UIBackend::Render();

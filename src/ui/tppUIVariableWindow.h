@@ -4,6 +4,7 @@ namespace tpp
 {
 	class ServerVariableManager;
 	class VariableGroupNode;
+	class Variable;
 
 	class UIVariableWindow
 	{
@@ -11,7 +12,7 @@ namespace tpp
 
 		UIVariableWindow() {}
 
-		void Draw(const tpp::ServerVariableManager& variableDescriptionTree, const tpp::VariableGroupNode* variableGroupNode);
+		void Draw(const tpp::ServerVariableManager& variableDescriptionTree, const tpp::VariableGroupNode* variableGroupNode, const tpp::Variable*& modifiedVariable);
 
 	private:
 

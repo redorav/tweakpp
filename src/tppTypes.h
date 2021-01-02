@@ -1,9 +1,9 @@
 #pragma once
 
+#include "tppCommon.h"
+
 #include <cstdint>
-
 #include <unordered_map>
-
 #include <memory>
 
 namespace tpp
@@ -23,11 +23,6 @@ namespace tpp
 	class Float
 	{
 	public:
-
-		enum Properties
-		{
-			Size = sizeof(float)
-		};
 
 		Float(const char* path, float initialValue, float minValue, float maxValue, float step);
 

@@ -4,7 +4,7 @@
 
 #include "imgui.h"
 
-void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManager, const tpp::VariableGroupNode* variableGroupNode)
+void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManager, const tpp::VariableGroupNode* variableGroupNode, const tpp::Variable*& modifiedVariable)
 {
 	if (variableGroupNode)
 	{
@@ -23,7 +23,7 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 			// Exit header row
 			ImGui::TableNextRow();
 
-			variableManager.ForEachVariableInGroup(variableGroupNode->path, [this](const tpp::Variable* variable)
+			variableManager.ForEachVariableInGroup(variableGroupNode->path, [this, &modifiedVariable](const tpp::Variable* variable)
 			{
 				ImGui::TableNextRow();
 
@@ -35,9 +35,16 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 					ImGui::Text(variable->GetName().c_str());
 					
 					ImGui::TableSetColumnIndex(1);
-					ImGui::Text("%.3f", variable->vdFloat.m_minValue); ImGui::SameLine();
-					ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.m_currentValue, variable->vdFloat.m_minValue, variable->vdFloat.m_maxValue); ImGui::SameLine();
+					ImGui::Text("%.3f", variable->vdFloat.m_minValue);
+					ImGui::SameLine();
+					bool wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.m_currentValue, variable->vdFloat.m_minValue, variable->vdFloat.m_maxValue);
+					ImGui::SameLine();
 					ImGui::Text("%f", variable->vdFloat.m_maxValue);
+
+					if (wasModified)
+					{
+						modifiedVariable = variable;
+					}
 				}
 			});
 

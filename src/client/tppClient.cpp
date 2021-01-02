@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 				while (headerPosition != receivedData.end())
 				{
 					// Cast the start of the message to the header, and extract relevant information
-					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(receivedData.data());
+					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
 					tpp::MessageType messageType = header->messageType;
 					tpp::Version version = header->version;
 					uint32_t packetSize = header->messageSize;
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 
 					// Use the type to read in the value
 					{
-						tpp::Variable variable = tpp::GlobalClientVariableManager->Find(path);
+						const tpp::Variable& variable = tpp::GlobalClientVariableManager->Find(path);
 
 						auto variablePosition = std::search(packetData.begin(), packetData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
 
@@ -170,19 +170,10 @@ int main(int argc, char **argv)
 						}
 					}
 
-					if (SSRNumberOfRays == 16.0f)
-					{
-						printf("Wow!\n");
-					}
-
 					auto nextHeaderPosition = std::search(headerPosition + 1, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
 
 					headerPosition = nextHeaderPosition;
 				}
-
-				tpp::SocketReturn::T sendResult;
-				std::string receivedMsg = "Received a message from server";
-				sendResult = clientSocket->Send(receivedMsg.c_str(), receivedMsg.length());
 			}
 			else if (receiveResult == 0)
 			{
