@@ -15,10 +15,12 @@ namespace tpp
 		Float = 0,
 		UnsignedInteger = 1,
 		Integer = 2,
-		Color3 = 3,
-		Color4 = 4,
-		Bool = 5,
-		Function = 6,
+		Bool = 3,
+		Color3 = 4,
+		Color4 = 5,
+		String = 6,
+		Enum = 7,
+		Function = 8,
 		Invalid = 0xffffffff
 	};
 
@@ -27,8 +29,6 @@ namespace tpp
 	public:
 
 		Float(const char* path, float initialValue, float minValue, float maxValue, float step);
-
-		Float& operator = (float f) = delete;
 
 		operator float()
 		{
@@ -47,12 +47,124 @@ namespace tpp
 
 	class UInt
 	{
-		uint32_t u;
+	public:
+
+		UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step);
+
+		operator uint32_t()
+		{
+			return currentValue;
+		}
+
+		mutable uint32_t currentValue = 0u;
+
+		uint32_t minValue = 0u;
+
+		uint32_t maxValue = 0u;
+
+		uint32_t step = 0u;
 	};
 
 	class Int
 	{
-		int32_t i;
+	public:
+
+		Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step);
+
+		mutable int32_t currentValue = 0;
+
+		uint32_t minValue = 0u;
+
+		uint32_t maxValue = 0u;
+
+		uint32_t step = 0u;
+	};
+
+	class Bool
+	{
+	public:
+
+		Bool(const char* path, bool initialValue);
+
+		mutable bool currentValue = 0;
+	};
+
+	class Color3
+	{
+	public:
+
+		Color3(const char* path, float r, float g, float b);
+
+		union
+		{
+			struct
+			{
+				float r;
+				float g;
+				float b;
+			};
+
+			float currentValue[3] = {};
+		};
+	};
+
+	class Color4
+	{
+	public:
+
+		Color4(const char* path, float r, float g, float b, float a);
+
+		union
+		{
+			struct
+			{
+				float r;
+				float g;
+				float b;
+				float a;
+			};
+
+			float currentValue[4] = {};
+		};
+	};
+
+	class Vector3
+	{
+	public:
+
+		Vector3(const char* path, float x, float y, float z);
+
+		union
+		{
+			struct
+			{
+				float x;
+				float y;
+				float z;
+			};
+
+			float currentValue[3] = {};
+		};
+	};
+
+	class Vector4
+	{
+	public:
+
+		Vector4(const char* path, float x, float y, float z, float w);
+
+		union
+		{
+			struct
+			{
+				float x;
+				float y;
+				float z;
+				float w;
+			};
+
+			float currentValue[4] = {};
+		};
 	};
 
 	// Can be any of the allowed types
@@ -101,9 +213,24 @@ namespace tpp
 		{
 			tpp::Float vdFloat;
 
+			tpp::UInt vdUInt;
+
 			tpp::Int vdInt;
 
-			tpp::UInt vdUInt;
+			tpp::Bool vdBool;
+			
+			tpp::Color3 vdColor3;
+			
+			tpp::Color4 vdColor4;
+
+			tpp::Vector3 vdVector3;
+
+			tpp::Vector4 vdVector4;
 		};
 	};
+
+	template<int N>
+	class dummy;
+
+	//dummy<sizeof(Variable)>;
 }
