@@ -31,17 +31,26 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 
 				bool wasModified = false;
 
+				ImGui::TableSetColumnIndex(0);
+				ImGui::Text(variable->GetName().c_str());
+
+				ImGui::TableSetColumnIndex(1);
+
 				if (variable->type == tpp::VariableType::Float)
 				{
-					ImGui::TableSetColumnIndex(0);
-					ImGui::Text(variable->GetName().c_str());
-					
-					ImGui::TableSetColumnIndex(1);
 					ImGui::Text("%.3f", variable->vdFloat.minValue);
 					ImGui::SameLine();
 					wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
 					ImGui::SameLine();
 					ImGui::Text("%f", variable->vdFloat.maxValue);
+				}
+				else if (variable->type == tpp::VariableType::Color3)
+				{
+					wasModified = ImGui::ColorEdit3(mangledName.c_str(), &variable->vdFloat.currentValue);
+				}
+				else
+				{
+					printf("Variable type not implemented");
 				}
 
 				if (wasModified)

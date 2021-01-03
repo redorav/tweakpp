@@ -46,6 +46,11 @@ namespace tpp
 		float maxValue = 0.0f;
 
 		float step = 0.0f;
+
+		enum : uint32_t
+		{
+			type = VariableType::Float
+		};
 	};
 
 	class UInt
@@ -66,6 +71,11 @@ namespace tpp
 		uint32_t maxValue = 0u;
 
 		uint32_t step = 0u;
+
+		enum : uint32_t
+		{
+			type = VariableType::UnsignedInteger
+		};
 	};
 
 	class Int
@@ -81,6 +91,11 @@ namespace tpp
 		uint32_t maxValue = 0u;
 
 		uint32_t step = 0u;
+
+		enum : uint32_t
+		{
+			type = VariableType::Integer
+		};
 	};
 
 	class Bool
@@ -90,6 +105,11 @@ namespace tpp
 		Bool(const char* path, bool initialValue);
 
 		mutable bool currentValue = 0;
+
+		enum : uint32_t
+		{
+			type = VariableType::Bool
+		};
 	};
 
 	class Color3
@@ -108,6 +128,11 @@ namespace tpp
 			};
 
 			float currentValue[3] = {};
+		};
+
+		enum : uint32_t
+		{
+			type = VariableType::Color3
 		};
 	};
 
@@ -129,6 +154,11 @@ namespace tpp
 
 			float currentValue[4] = {};
 		};
+
+		enum : uint32_t
+		{
+			type = VariableType::Color4
+		};
 	};
 
 	class Vector3
@@ -147,6 +177,11 @@ namespace tpp
 			};
 
 			float currentValue[3] = {};
+		};
+
+		enum : uint32_t
+		{
+			type = VariableType::Vector3
 		};
 	};
 
@@ -167,6 +202,11 @@ namespace tpp
 			};
 
 			float currentValue[4] = {};
+		};
+
+		enum : uint32_t
+		{
+			type = VariableType::Vector4
 		};
 	};
 

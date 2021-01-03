@@ -39,6 +39,10 @@ namespace tpp
 	TPP_PACK_BEGIN
 	struct VariableHeader
 	{
+		VariableHeader(uint32_t type, uint32_t size) : type(static_cast<tpp::VariableType>(type)), size(size) {}
+
+		VariableHeader(tpp::VariableType type, uint32_t size) : type(type), size(size) {}
+
 		const char var[3] = { 'v', 'a', 'r' };
 		tpp::VariableType type;
 		uint32_t size;

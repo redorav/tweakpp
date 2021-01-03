@@ -24,13 +24,17 @@
 
 void PrepareUpdatePacket(std::vector<char>& updatePacket, const tpp::Variable* variable)
 {
-	SerializeCommandHeader(updatePacket, tpp::MessageType::Update);
+	tpp::SerializeCommandHeader(updatePacket, tpp::MessageType::Update);
 
-	SerializePath(updatePacket, variable->path);
+	tpp::Serialize(updatePacket, variable->path);
 
 	if (variable->type == tpp::VariableType::Float)
 	{
-		SerializeFloat(updatePacket, variable->vdFloat.currentValue);
+		tpp::Serialize(updatePacket, variable->vdFloat.currentValue);
+	}
+	else if (variable->type == tpp::VariableType::Color3)
+	{
+		tpp::SerializeColor3(updatePacket, variable->vdColor3.currentValue);
 	}
 
 	size_t totalDataSize = updatePacket.size() - sizeof(tpp::MessageHeader);
@@ -60,16 +64,19 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 
 		auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
 
+		tpp::Variable variable(variablePacket->type, path);
+
 		if (variablePacket->type == tpp::VariableType::Float)
 		{
-			tpp::Float tppFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]);
-
-			tpp::Variable floatVariable(tpp::VariableType::Float, path);
-			floatVariable.vdFloat = tppFloat;
-
-			// Put in global registry
-			GlobalServerVariableManager.AddVariable(floatVariable);
+			variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]);
+			
 		}
+		else if (variablePacket->type == tpp::VariableType::Color3)
+		{
+			variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]);
+		}
+
+		GlobalServerVariableManager.AddVariable(variable);
 	}
 }
 

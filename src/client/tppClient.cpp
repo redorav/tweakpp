@@ -17,6 +17,7 @@
 // SSR
 tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
 tpp::Float SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1.0f, 1.0f, 2.0f, 0.001f);
+tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
 
 // Depth of Field
 tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
@@ -67,11 +68,18 @@ std::vector<char> PrepareVariableDescriptionTable()
 	{
 		std::vector<char> localPacket;
 
-		SerializeCommandHeader(localPacket, tpp::MessageType::Declaration);
+		tpp::SerializeCommandHeader(localPacket, tpp::MessageType::Declaration);
 
-		SerializePath(localPacket, path.c_str());
+		tpp::Serialize(localPacket, path.c_str());
 
-		SerializeFloat(localPacket, variable.vdFloat);
+		if (variable.type == tpp::VariableType::Float)
+		{
+			tpp::Serialize(localPacket, variable.vdFloat);
+		}
+		else if(variable.type == tpp::VariableType::Color3)
+		{
+			tpp::Serialize(localPacket, variable.vdColor3);
+		}
 
 		// 3 Calculate message size and update packet
 		size_t totalDataSize = localPacket.size() - sizeof(tpp::MessageHeader);
