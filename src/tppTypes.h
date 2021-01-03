@@ -178,11 +178,17 @@ namespace tpp
 
 		Variable(tpp::VariableType type, const std::string& path) : type(type), path(path)
 		{
-			size_t lastSlash = path.find_last_of("/");
-			size_t afterLastSlash = lastSlash + 1;
+			if (path.size() > 0)
+			{
+				size_t lastSlash = path.find_last_of("/");
+				size_t afterLastSlash = lastSlash + 1;
 
-			groupPath = std::string(path.data(), lastSlash);
-			name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
+				if (lastSlash != std::string::npos)
+				{
+					groupPath = std::string(path.data(), lastSlash);
+					name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
+				}
+			}
 		}
 
 		const std::string& GetGroupPath() const
