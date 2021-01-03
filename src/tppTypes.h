@@ -18,10 +18,13 @@ namespace tpp
 		Bool = 3,
 		Color3 = 4,
 		Color4 = 5,
-		String = 6,
-		Enum = 7,
-		Function = 8,
-		Invalid = 0xffffffff
+		Vector2 = 6,
+		Vector3 = 7,
+		Vector4 = 8,
+		String = 9,
+		Enum = 10,
+		Function = 11,
+		Invalid = 0xff
 	};
 
 	class Float
@@ -172,8 +175,6 @@ namespace tpp
 	{
 	public:
 
-		Variable() {}
-
 #if defined(TPP_SERVER)
 
 		Variable(tpp::VariableType type, const std::string& path) : type(type), path(path)
@@ -206,14 +207,17 @@ namespace tpp
 		std::string groupPath;
 
 		std::string name;
+#else
 
-		tpp::VariableType type = tpp::VariableType::Invalid;
+		Variable(tpp::VariableType type) : type(type) {}
 
 #endif
 
+		void* memory = nullptr;
+
 		uint32_t size = 0;
 
-		void* memory = nullptr;
+		tpp::VariableType type = tpp::VariableType::Invalid;
 
 		union
 		{

@@ -47,7 +47,7 @@ namespace tpp
 
 	private:
 
-		const tpp::Variable Dummy;
+		const tpp::Variable Dummy = tpp::Variable(tpp::VariableType::Invalid);
 
 		std::unordered_map<std::string, tpp::Variable> m_hashMap;
 	};

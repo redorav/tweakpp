@@ -100,7 +100,7 @@ namespace tpp
 
 	private:
 
-		const Variable Dummy;
+		const Variable Dummy = Variable(tpp::VariableType::Invalid, "");
 
 		VariableGroupTree m_variableGroupTree;
 

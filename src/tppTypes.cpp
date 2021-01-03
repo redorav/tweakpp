@@ -14,7 +14,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Float);
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdFloat = *this;
@@ -30,7 +30,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::UnsignedInteger);
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdUInt = *this;
@@ -46,7 +46,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Integer);
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdInt = *this;
@@ -59,7 +59,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Bool);
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdBool = *this;
@@ -71,7 +71,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Color3);
 		variable.size = sizeof(currentValue);
 		variable.memory = currentValue;
 		variable.vdColor3 = *this;
@@ -83,7 +83,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Color4);
 		variable.size = sizeof(currentValue);
 		variable.memory = currentValue;
 		variable.vdColor4 = *this;
@@ -95,7 +95,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Vector3);
 		variable.size = sizeof(currentValue);
 		variable.memory = currentValue;
 		variable.vdVector3 = *this;
@@ -107,7 +107,7 @@ namespace tpp
 	{
 		#if !defined(TPP_SERVER)
 		InitializeGlobalClientVariableManager();
-		tpp::Variable variable;
+		tpp::Variable variable(tpp::VariableType::Vector4);
 		variable.size = sizeof(currentValue);
 		variable.memory = currentValue;
 		variable.vdVector4 = *this;
