@@ -174,9 +174,9 @@ int main(void)
 						if (remainingDataInBuffer >= sizeof(tpp::MessageHeader))
 						{
 							tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
-							tpp::MessageType messageType = header->messageType;
+							tpp::MessageType messageType = header->type;
 							tpp::Version version = header->version;
-							uint32_t packetSize = header->messageSize;
+							uint32_t packetSize = header->size;
 
 							if (remainingDataInBuffer >= sizeof(tpp::MessageHeader) + packetSize)
 							{

@@ -84,7 +84,7 @@ std::vector<char> PrepareVariableDescriptionTable()
 		// 3 Calculate message size and update packet
 		size_t totalDataSize = localPacket.size() - sizeof(tpp::MessageHeader);
 		tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(localPacket.data());
-		header->messageSize = (uint32_t)totalDataSize;
+		header->size = (uint32_t)totalDataSize;
 
 		// TODO Do this on the actual full packet
 		fullPacket.insert(fullPacket.end(), localPacket.begin(), localPacket.end());
@@ -139,9 +139,9 @@ int main(int argc, char **argv)
 				{
 					// Cast the start of the message to the header, and extract relevant information
 					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
-					tpp::MessageType messageType = header->messageType;
+					tpp::MessageType messageType = header->type;
 					tpp::Version version = header->version;
-					uint32_t packetSize = header->messageSize;
+					uint32_t packetSize = header->size;
 
 					// Find where the header starts, and copy the data onward
 					auto index = headerPosition + sizeof(tpp::MessageHeader) - receivedData.begin();

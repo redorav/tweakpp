@@ -25,14 +25,19 @@ namespace tpp
 	};
 
 	// Pack so we can serialize directly from the incoming message
+	// Do not shuffle the fields without changing the version!
 
 	TPP_PACK_BEGIN
 	struct MessageHeader
 	{
+		MessageHeader() {}
+
+		MessageHeader(uint32_t size, MessageType type) : size(size), type(type) {}
+
 		const char tpp[3] = { 't', 'p', 'p' };
 		Version version = Version::CurrentVersion;
-		uint32_t messageSize;
-		MessageType messageType;
+		uint32_t size;
+		MessageType type;
 	};
 	TPP_PACK_END
 

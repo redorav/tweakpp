@@ -17,8 +17,8 @@ namespace tpp
 		// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
 		// size that we know once the whole message has been constructed
 		tpp::MessageHeader header;
-		header.messageType = messageType;
-		header.messageSize = 0;
+		header.type = messageType;
+		header.size = 0;
 
 		stream.insert(stream.end(), (const char*)&header, (const char*)&header + sizeof(header));
 	}
