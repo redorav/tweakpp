@@ -10,9 +10,9 @@ namespace tpp
 	static const char* PathString     = "path";
 	static const char* VariableString = "var";
 
-	enum class VariableType : uint32_t;
+	enum class VariableType : uint8_t;
 
-	enum class MessageType : uint32_t
+	enum class MessageType : uint8_t
 	{
 		Declaration = 0, // Client tells server a variable of a certain type and parameters exists
 		Update      = 1, // Server tells client to update a variable's value
@@ -44,16 +44,7 @@ namespace tpp
 		VariableHeader(tpp::VariableType type, uint32_t size) : type(type), size(size) {}
 
 		const char var[3] = { 'v', 'a', 'r' };
-		tpp::VariableType type;
-		uint32_t size;
-	};
-	TPP_PACK_END
-
-	TPP_PACK_BEGIN
-	struct VariableDeclarationHeader
-	{
-		const char var[3] = { 'v', 'a', 'r' };
-		tpp::VariableType type;
+		VariableType type;
 		uint32_t size;
 	};
 	TPP_PACK_END

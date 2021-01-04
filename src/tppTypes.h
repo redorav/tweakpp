@@ -10,7 +10,7 @@
 
 namespace tpp
 {
-	enum class VariableType : uint32_t
+	enum class VariableType : uint8_t
 	{
 		Float = 0,
 		UnsignedInteger = 1,
