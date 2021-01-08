@@ -122,12 +122,13 @@ namespace tpp
 		{
 			struct
 			{
-				float r;
-				float g;
-				float b;
+				float r, g, b;
 			};
 
-			float currentValue[3] = {};
+			struct Data
+			{
+				float data[3];
+			} currentValue;
 		};
 
 		enum : uint32_t
@@ -146,13 +147,13 @@ namespace tpp
 		{
 			struct
 			{
-				float r;
-				float g;
-				float b;
-				float a;
+				float r, g, b, a;
 			};
 
-			float currentValue[4] = {};
+			struct Data
+			{
+				float data[4];
+			} currentValue;
 		};
 
 		enum : uint32_t
@@ -171,12 +172,13 @@ namespace tpp
 		{
 			struct
 			{
-				float x;
-				float y;
-				float z;
+				float x, y, z;
 			};
 
-			float currentValue[3] = {};
+			struct Data
+			{
+				float data[3];
+			} currentValue;
 		};
 
 		enum : uint32_t
@@ -195,13 +197,13 @@ namespace tpp
 		{
 			struct
 			{
-				float x;
-				float y;
-				float z;
-				float w;
+				float x, y, z, w;
 			};
 
-			float currentValue[4] = {};
+			struct Data
+			{
+				float data[4];
+			} currentValue;
 		};
 
 		enum : uint32_t

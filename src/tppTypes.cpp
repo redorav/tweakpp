@@ -73,7 +73,7 @@ namespace tpp
 		InitializeGlobalClientVariableManager();
 		tpp::Variable variable(tpp::VariableType::Color3);
 		variable.size = sizeof(currentValue);
-		variable.memory = currentValue;
+		variable.memory = &currentValue;
 		variable.vdColor3 = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);
 		#endif
@@ -85,7 +85,7 @@ namespace tpp
 		InitializeGlobalClientVariableManager();
 		tpp::Variable variable(tpp::VariableType::Color4);
 		variable.size = sizeof(currentValue);
-		variable.memory = currentValue;
+		variable.memory = &currentValue;
 		variable.vdColor4 = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);
 		#endif
@@ -97,7 +97,7 @@ namespace tpp
 		InitializeGlobalClientVariableManager();
 		tpp::Variable variable(tpp::VariableType::Vector3);
 		variable.size = sizeof(currentValue);
-		variable.memory = currentValue;
+		variable.memory = &currentValue;
 		variable.vdVector3 = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);
 		#endif
@@ -109,7 +109,7 @@ namespace tpp
 		InitializeGlobalClientVariableManager();
 		tpp::Variable variable(tpp::VariableType::Vector4);
 		variable.size = sizeof(currentValue);
-		variable.memory = currentValue;
+		variable.memory = &currentValue;
 		variable.vdVector4 = *this;
 		GlobalClientVariableManager->Register(std::string(path), variable);
 		#endif
