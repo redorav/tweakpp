@@ -53,45 +53,14 @@ bool IsCopyable(tpp::VariableType type)
 	return true;
 }
 
-// HEADER
-// tpp MessageType::Declaration 33 2 - Update message that is 33 bytes, version 2
-//
-// MESSAGE
-// [Header][path]Rendering/SSR/Number of Rays\0 [var][floatType][initialValue][minValue][maxValue][step]
-
-// TODO Take as input parameter
-std::vector<char> PrepareVariableDescriptionTable()
+void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::RawStreamWrite>& variableDescriptionTable)
 {
-	std::vector<char> fullPacket;
-
-	tpp::GlobalClientVariableManager->ForEachVariable([&fullPacket](const std::string& path, const tpp::Variable& variable)
+	tpp::GlobalClientVariableManager->ForEachVariable([&variableDescriptionTable](const std::string& path, const tpp::Variable& variable)
 	{
-		std::vector<char> localPacket;
-
-		tpp::SerializeCommandHeader(localPacket, tpp::MessageType::Declaration);
-
-		tpp::Serialize(localPacket, path.c_str());
-
-		if (variable.type == tpp::VariableType::Float)
-		{
-			tpp::Serialize(localPacket, variable.vdFloat);
-		}
-		else if(variable.type == tpp::VariableType::Color3)
-		{
-			tpp::Serialize(localPacket, variable.vdColor3);
-		}
-
-		// 3 Calculate message size and update packet
-		size_t totalDataSize = localPacket.size() - sizeof(tpp::MessageHeader);
-		tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(localPacket.data());
-		header->size = (uint32_t)totalDataSize;
-
-		// TODO Do this on the actual full packet
-		fullPacket.insert(fullPacket.end(), localPacket.begin(), localPacket.end());
+		variableDescriptionTable.SerializeVariableDescription(path, variable);
 	});
-
-	return fullPacket;
 }
+
 
 int main(int argc, char **argv)
 {
@@ -111,14 +80,17 @@ int main(int argc, char **argv)
 
 	bool sentVariableTable = false;
 
+	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> variableDescriptionTable(DEFAULT_BUFLEN);
+
 	while (!shutdown)
 	{
 		if (clientSocket->IsConnected())
 		{
 			if (!sentVariableTable)
 			{
-				std::vector<char> variableDescriptionTable = PrepareVariableDescriptionTable();
-				clientSocket->Send(variableDescriptionTable.data(), variableDescriptionTable.size());
+				variableDescriptionTable.Clear();
+				PrepareVariableDescriptionTable(variableDescriptionTable);
+				clientSocket->Send(variableDescriptionTable.GetStream().Data(), variableDescriptionTable.GetStream().Size());
 				sentVariableTable = true;
 			}
 
@@ -150,23 +122,23 @@ int main(int argc, char **argv)
 					packetData.reserve(packetSize);
 					packetData.insert(packetData.end(), &receivedData[index], &receivedData[index] + packetSize);
 
+					auto currentPosition = packetData.begin();
+
 					// Search for path in packet and read path
 					std::string path;
 					{
-						auto pathPosition = std::search(packetData.begin(), packetData.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
-						auto nullTerminator = std::find(pathPosition, packetData.end(), '\0');
-						path = std::string(pathPosition + strlen(tpp::PathString), nullTerminator);
+						auto nullTerminator = std::find(currentPosition, packetData.end(), '\0');
+						path = std::string(packetData.begin(), nullTerminator);
+						currentPosition = nullTerminator + 1;
 					}
 
 					// Use the type to read in the value
 					{
 						const tpp::Variable& variable = tpp::GlobalClientVariableManager->Find(path);
 
-						auto variablePosition = std::search(packetData.begin(), packetData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
-
-						if (variablePosition != packetData.end() && variable.memory != nullptr)
+						if (variable.memory != nullptr)
 						{
-							auto valueIndex = variablePosition - packetData.begin();
+							auto valueIndex = currentPosition - packetData.begin();
 							tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
 
 							auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);

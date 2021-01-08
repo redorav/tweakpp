@@ -12,16 +12,153 @@
 
 namespace tpp
 {
-	void SerializeCommandHeader(std::vector<char>& stream, tpp::MessageType messageType)
+	namespace SerializationStreamType
 	{
-		// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
-		// size that we know once the whole message has been constructed
-		tpp::MessageHeader header;
-		header.type = messageType;
-		header.size = 0;
-
-		stream.insert(stream.end(), (const char*)&header, (const char*)&header + sizeof(header));
+		enum T
+		{
+			RawStreamWrite,
+			RawStreamRead
+		};
 	}
+
+	template<SerializationStreamType::T StreamType>
+	class SerializationStream {};
+
+	template<>
+	class SerializationStream<SerializationStreamType::RawStreamWrite>
+	{
+	public:
+
+		SerializationStream(uint32_t initialSize)
+		{
+			m_data.reserve(initialSize);
+		}
+
+		void Clear() { m_data.clear(); }
+
+		const char* Data() const { return m_data.data(); }
+
+		char* Back() { return &m_data.back(); }
+
+		size_t Size() const { return m_data.size(); }
+		
+		bool Empty() const { return m_data.empty(); }
+
+		template<typename S>
+		SerializationStream& operator << (const S& v)
+		{
+			m_data.insert(m_data.end(), reinterpret_cast<const char*>(&v), reinterpret_cast<const char*>(&v) + sizeof(v));
+			return *this;
+		}
+
+		SerializationStream& operator << (const std::string& v)
+		{
+			m_data.insert(m_data.end(), v.c_str(), v.c_str() + v.size());
+			return *this;
+		}
+
+	private:
+
+		std::vector<char> m_data;
+	};
+
+	template<SerializationStreamType::T StreamType>
+	class Archive
+	{
+	public:
+
+		Archive(uint32_t initialSize)
+		{
+	
+		}
+
+		void Clear()
+		{
+			m_stream.Clear();
+		}
+
+		void SerializeTppVariableUpdatePacket(const tpp::Variable& variable)
+		{
+			size_t startSize = m_stream.Size();
+
+			// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
+			// size that we know once the whole message has been constructed
+			m_stream << tpp::MessageHeader(0, tpp::MessageType::Update);
+
+			SerializePath(variable.path);
+			
+			if (variable.type == tpp::VariableType::Float)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdFloat);
+			}
+			else if (variable.type == tpp::VariableType::Color3)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdColor3);
+			}
+
+			size_t totalSize = m_stream.Size() - startSize;
+			size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
+
+			tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(m_stream.Back() - totalSize + 1);
+			header->size = (decltype(header->size))packetSize;
+		}
+
+		void SerializeVariableDescription(const std::string& path, const tpp::Variable& variable)
+		{
+			size_t startSize = m_stream.Size();
+
+			// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
+			// size that we know once the whole message has been constructed
+			m_stream << tpp::MessageHeader(0, tpp::MessageType::Declaration);
+
+			SerializePath(path);
+
+			if (variable.type == tpp::VariableType::Float)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdFloat);
+			}
+			else if (variable.type == tpp::VariableType::Color3)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdColor3);
+			}
+
+			size_t totalSize = m_stream.Size() - startSize;
+			size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
+
+			tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(m_stream.Back() - totalSize + 1);
+			header->size = (decltype(header->size))packetSize;
+		}
+
+		template<typename TppVariable>
+		void SerializeTppVariable(const tpp::MessageType messageType, const TppVariable& variable)
+		{
+			// If we're updating, we only need to send the current value. Otherwise, we send the entire variable
+			if (messageType == tpp::MessageType::Update)
+			{
+				m_stream << tpp::VariableHeader(variable.type, sizeof(variable.currentValue));
+				m_stream << variable.currentValue;
+			}
+			else
+			{
+				m_stream << tpp::VariableHeader(variable.type, sizeof(variable));
+				m_stream << variable;
+			}
+		}
+	
+		void SerializePath(const std::string& path)
+		{
+			m_stream << path << '\0';
+		}
+
+		const SerializationStream<StreamType>& GetStream() const
+		{
+			return m_stream;
+		}
+
+	private:
+	
+		SerializationStream<StreamType> m_stream = SerializationStream<StreamType>(512);
+	};
 
 	template<typename S>
 	void SerializeRaw(std::vector<char>& stream, const S& s)

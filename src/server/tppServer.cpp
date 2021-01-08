@@ -22,62 +22,39 @@
 
 #include "imgui.h"
 
-void PrepareUpdatePacket(std::vector<char>& updatePacket, const tpp::Variable* variable)
-{
-	tpp::SerializeCommandHeader(updatePacket, tpp::MessageType::Update);
-
-	tpp::Serialize(updatePacket, variable->path);
-
-	if (variable->type == tpp::VariableType::Float)
-	{
-		tpp::Serialize(updatePacket, variable->vdFloat.currentValue);
-	}
-	else if (variable->type == tpp::VariableType::Color3)
-	{
-		tpp::SerializeColor3(updatePacket, variable->vdColor3.currentValue);
-	}
-
-	size_t totalDataSize = updatePacket.size() - sizeof(tpp::MessageHeader);
-	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(updatePacket.data());
-	header->messageSize = (uint32_t)totalDataSize;
-}
-
 // TODO There should be one per connection
 tpp::ServerVariableManager GlobalServerVariableManager;
 
 void ProcessPacket(const std::vector<char>& currentPacketData)
 {
+	auto currentPosition = currentPacketData.begin();
+
 	// Search for path in packet and read path
 	std::string path;
 	{
-		auto pathPosition = std::search(currentPacketData.begin(), currentPacketData.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
-		auto nullTerminator = std::find(pathPosition, currentPacketData.end(), '\0');
-		path = std::string(pathPosition + strlen(tpp::PathString), nullTerminator);
+		auto nullTerminator = std::find(currentPosition + sizeof(tpp::MessageHeader), currentPacketData.end(), '\0');
+		path = std::string(currentPacketData.begin() + sizeof(tpp::MessageHeader), nullTerminator);
+		currentPosition = nullTerminator + 1;
 	}
 
-	auto variablePosition = std::search(currentPacketData.begin(), currentPacketData.end(), tpp::VariableString, tpp::VariableString + strlen(tpp::VariableString));
+	auto valueIndex = currentPosition - currentPacketData.begin();
+	const tpp::VariableHeader* variablePacket = reinterpret_cast<const tpp::VariableHeader*>(&currentPacketData[valueIndex]);
 
-	if (variablePosition != currentPacketData.end())
+	auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
+
+	tpp::Variable variable(variablePacket->type, path);
+
+	if (variablePacket->type == tpp::VariableType::Float)
 	{
-		auto valueIndex = variablePosition - currentPacketData.begin();
-		const tpp::VariableHeader* variablePacket = reinterpret_cast<const tpp::VariableHeader*>(&currentPacketData[valueIndex]);
-
-		auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
-
-		tpp::Variable variable(variablePacket->type, path);
-
-		if (variablePacket->type == tpp::VariableType::Float)
-		{
-			variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]);
+		variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]);
 			
-		}
-		else if (variablePacket->type == tpp::VariableType::Color3)
-		{
-			variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]);
-		}
-
-		GlobalServerVariableManager.AddVariable(variable);
 	}
+	else if (variablePacket->type == tpp::VariableType::Color3)
+	{
+		variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]);
+	}
+
+	GlobalServerVariableManager.AddVariable(variable);
 }
 
 int main(void)
@@ -123,8 +100,7 @@ int main(void)
 	std::vector<char> currentPacketData;
 	currentPacketData.reserve(DEFAULT_BUFLEN);
 
-	std::vector<char> currentSendPacket;
-	currentSendPacket.reserve(DEFAULT_BUFLEN);
+	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(DEFAULT_BUFLEN);
 
 	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
@@ -228,16 +204,12 @@ int main(void)
 			}
 
 			// TODO Check if it's still connected as we might have dropped the connection here!
-			if (!messages.empty())
+
+			if(!serializationWriter.GetStream().Empty())
 			{
-				const std::vector<char>& message = messages.back();
-
-				uiLog.Log(message.data());
-
-				tpp::SocketReturn::T sendResult = clientSocket->Send(message.data(), message.size());
-
 				// TODO Handle send issues
-				messages.pop_back();
+				tpp::SocketReturn::T sendResult = clientSocket->Send(serializationWriter.GetStream().Data(), serializationWriter.GetStream().Size());
+				serializationWriter.Clear();
 			}
 		}
 		else
@@ -348,9 +320,7 @@ int main(void)
 
 			if (modifiedVariable)
 			{
-				currentSendPacket.clear();
-				PrepareUpdatePacket(currentSendPacket, modifiedVariable);
-				messages.push_back(currentSendPacket);
+				serializationWriter.SerializeTppVariableUpdatePacket(*modifiedVariable);
 			}
 		}
 

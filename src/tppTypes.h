@@ -217,6 +217,8 @@ namespace tpp
 
 #if defined(TPP_SERVER)
 
+		Variable() {}
+
 		Variable(tpp::VariableType type, const std::string& path) : type(type), path(path)
 		{
 			if (path.size() > 0)

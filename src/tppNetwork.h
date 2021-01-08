@@ -34,7 +34,7 @@ namespace tpp
 
 		MessageHeader(uint32_t size, MessageType type) : size(size), type(type) {}
 
-		const char tpp[3] = { 't', 'p', 'p' };
+		char tpp[3] = { 't', 'p', 'p' };
 		Version version = Version::CurrentVersion;
 		uint32_t size;
 		MessageType type;
@@ -48,7 +48,6 @@ namespace tpp
 
 		VariableHeader(tpp::VariableType type, uint32_t size) : type(type), size(size) {}
 
-		const char var[3] = { 'v', 'a', 'r' };
 		VariableType type;
 		uint32_t size;
 	};
