@@ -55,7 +55,7 @@ bool IsCopyable(tpp::VariableType type)
 
 void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::RawStreamWrite>& variableDescriptionTable)
 {
-	tpp::GlobalClientVariableManager->ForEachVariable([&variableDescriptionTable](const std::string& path, const tpp::Variable& variable)
+	tpp::GetClientVariableManager()->ForEachVariable([&variableDescriptionTable](const std::string& path, const tpp::Variable& variable)
 	{
 		variableDescriptionTable.SerializeVariableDescription(path, variable);
 	});
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
 					// Use the type to read in the value
 					{
-						const tpp::Variable& variable = tpp::GlobalClientVariableManager->Find(path);
+						const tpp::Variable& variable = tpp::GetClientVariableManager()->Find(path);
 
 						if (variable.memory != nullptr)
 						{

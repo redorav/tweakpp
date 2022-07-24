@@ -23,7 +23,7 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 			// Exit header row
 			ImGui::TableNextRow();
 
-			variableManager.ForEachVariableInGroup(variableGroupNode->path, [this, &modifiedVariable](const tpp::Variable* variable)
+			variableManager.ForEachVariableInGroup(variableGroupNode->path, [this, &modifiedVariable](tpp::Variable* variable)
 			{
 				ImGui::TableNextRow();
 
@@ -44,13 +44,25 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 					ImGui::SameLine();
 					ImGui::Text("%f", variable->vdFloat.maxValue);
 				}
+				else if (variable->type == tpp::VariableType::UnsignedInteger)
+				{
+					ImGui::Text("%i", variable->vdUInt.minValue);
+					ImGui::SameLine();
+					wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &variable->vdInt.currentValue, &variable->vdUInt.minValue, &variable->vdUInt.maxValue);
+					ImGui::SameLine();
+					ImGui::Text("%i", variable->vdUInt.maxValue);
+				}
 				else if (variable->type == tpp::VariableType::Color3)
 				{
-					wasModified = ImGui::ColorEdit3(mangledName.c_str(), &variable->vdFloat.currentValue);
+					wasModified = ImGui::ColorEdit3(mangledName.c_str(), &variable->vdColor3.r);
+				}
+				else if (variable->type == tpp::VariableType::Color4)
+				{
+					wasModified = ImGui::ColorEdit4(mangledName.c_str(), &variable->vdColor4.r);
 				}
 				else
 				{
-					printf("Variable type not implemented");
+					printf("Variable type not implemented\n");
 				}
 
 				if (wasModified)

@@ -162,6 +162,31 @@ namespace tpp
 		};
 	};
 
+	class Vector2
+	{
+	public:
+
+		Vector2(const char* path, float x, float y);
+
+		union
+		{
+			struct
+			{
+				float x, y;
+			};
+
+			struct Data
+			{
+				float data[2];
+			} currentValue;
+		};
+
+		enum : uint32_t
+		{
+			type = VariableType::Vector2
+		};
+	};
+
 	class Vector3
 	{
 	public:
@@ -276,6 +301,8 @@ namespace tpp
 			tpp::Color3 vdColor3;
 			
 			tpp::Color4 vdColor4;
+
+			tpp::Vector2 vdVector2;
 
 			tpp::Vector3 vdVector3;
 

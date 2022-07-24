@@ -52,13 +52,5 @@ namespace tpp
 		std::unordered_map<std::string, tpp::Variable> m_hashMap;
 	};
 
-	extern std::unique_ptr<ClientVariableManager> GlobalClientVariableManager;
-
-	inline void InitializeGlobalClientVariableManager()
-	{
-		if (!GlobalClientVariableManager)
-		{
-			GlobalClientVariableManager = std::unique_ptr<ClientVariableManager>(new ClientVariableManager());
-		}
-	}
+	ClientVariableManager* GetClientVariableManager();
 }

@@ -79,7 +79,7 @@ void tpp::ServerVariableManager::AddVariable(const Variable& variable)
 
 	variableGroup = &variableGroupIterator->second;
 
-	const Variable& insertedVariable = m_variableHashMap.insert({ variable.path, variable }).first->second;
+	Variable& insertedVariable = m_variableHashMap.insert({ variable.path, variable }).first->second;
 
 	// Insert a pointer to the variable that we inserted (as a copy)
 	variableGroup->variables.push_back(&insertedVariable);

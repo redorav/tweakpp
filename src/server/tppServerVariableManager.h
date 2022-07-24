@@ -76,7 +76,7 @@ namespace tpp
 	{
 	public:
 
-		std::vector<const tpp::Variable*> variables;
+		std::vector<tpp::Variable*> variables;
 	};
 
 	class ServerVariableManager
@@ -118,7 +118,7 @@ namespace tpp
 		{
 			const VariableGroup& variableGroup = it->second;
 
-			for (const tpp::Variable* variable : variableGroup.variables)
+			for (tpp::Variable* variable : variableGroup.variables)
 			{
 				fn(variable);
 			}
