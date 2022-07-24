@@ -10,6 +10,7 @@ void tpp::UIVariableGroupWindow::Draw(const tpp::ServerVariableManager& variable
 		ImGuiTreeNodeFlags nodeFlags = 0;
 		nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
 		nodeFlags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+		nodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 		
 		if (variable.nodes.empty())
 		{
