@@ -194,6 +194,8 @@ namespace tpp
 		result = close(m_socketHandle);
 #endif
 
+		m_socketHandle = INVALID_SOCKET;
+
 		if (result == SOCKET_ERROR)
 		{
 			return SocketReturn::Error;
