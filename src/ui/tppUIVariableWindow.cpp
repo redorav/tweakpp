@@ -44,6 +44,18 @@ bool DrawVariableWidget(const std::string& mangledName, tpp::Variable* variable)
 	{
 		wasModified = ImGui::ColorEdit4(mangledName.c_str(), &variable->vdColor4.r);
 	}
+	else if (variable->type == tpp::VariableType::Vector2)
+	{
+		wasModified = ImGui::InputFloat2(mangledName.c_str(), &variable->vdVector2.x, "%.3f");
+	}
+	else if (variable->type == tpp::VariableType::Vector3)
+	{
+		wasModified = ImGui::InputFloat3(mangledName.c_str(), &variable->vdVector3.x, "%.3f");
+	}
+	else if (variable->type == tpp::VariableType::Vector4)
+	{
+		wasModified = ImGui::InputFloat4(mangledName.c_str(), &variable->vdVector4.x, "%.3f");
+	}
 	else
 	{
 		printf("Variable type not implemented\n");

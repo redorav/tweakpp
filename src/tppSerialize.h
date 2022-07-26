@@ -147,6 +147,18 @@ namespace tpp
 			{
 				SerializeTppVariable(tpp::MessageType::Update, variable.vdColor4);
 			}
+			else if (variable.type == tpp::VariableType::Vector2)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector2);
+			}
+			else if (variable.type == tpp::VariableType::Vector3)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector3);
+			}
+			else if (variable.type == tpp::VariableType::Vector4)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector4);
+			}
 			else
 			{
 				printf("Variable %s not serialized correctly\n", variable.path.c_str());
@@ -195,6 +207,18 @@ namespace tpp
 			else if (variable.type == tpp::VariableType::Color4)
 			{
 				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdColor4);
+			}
+			else if (variable.type == tpp::VariableType::Vector2)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector2);
+			}
+			else if (variable.type == tpp::VariableType::Vector3)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector3);
+			}
+			else if (variable.type == tpp::VariableType::Vector4)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector4);
 			}
 			else
 			{

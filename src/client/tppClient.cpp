@@ -18,9 +18,12 @@
 tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
 tpp::UInt SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1, 1, 8, 1);
 tpp::Int SSRThicknessBias("Rendering/Post Effects/SSR/Thickness Bias", -1, -10, 10, 2);
+tpp::Bool SSREnabled("Rendering/Post Effects/SSR/Enabled", false);
+tpp::Vector2 SSRDirection2("Rendering/Post Effects/SSR/Direction 2", 1.0f, 0.5f);
+tpp::Vector3 SSRDirection3("Rendering/Post Effects/SSR/Direction 3", 1.0f, 0.5f, 0.3f);
+tpp::Vector4 SSRDirection4("Rendering/Post Effects/SSR/Direction 4", 1.0f, 0.5f, 0.3f, 0.1f);
 tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
 tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 1.0f, 0.5f, 0.3f, 0.2f);
-tpp::Bool SSREnabled("Rendering/Post Effects/SSR/Enabled", false);
 
 // Depth of Field
 tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
