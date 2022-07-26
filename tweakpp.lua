@@ -35,7 +35,7 @@ function AddUIDependencies()
 	files
 	{
 		UIDirectory.."/windows-dx11/**.cpp",
-		UIDirectory.."/*.cpp"
+		UIDirectory.."/*.cpp", UIDirectory.."/*.h"
 	}
 
 	includedirs
