@@ -309,9 +309,4 @@ namespace tpp
 			tpp::Vector4 vdVector4;
 		};
 	};
-
-	template<int N>
-	class dummy;
-
-	//dummy<sizeof(Variable)>;
 }

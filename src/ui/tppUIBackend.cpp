@@ -1,5 +1,3 @@
-#pragma once
-
 #include "tppUIBackend.h"
 
 #include "imgui.h"

@@ -4,6 +4,54 @@
 
 #include "imgui.h"
 
+bool DrawVariableWidget(const std::string& mangledName, tpp::Variable* variable)
+{
+	bool wasModified = false;
+
+	if (variable->type == tpp::VariableType::Float)
+	{
+		ImGui::Text("%.3f", variable->vdFloat.minValue);
+		ImGui::SameLine();
+		wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
+		ImGui::SameLine();
+		ImGui::Text("%.3f", variable->vdFloat.maxValue);
+	}
+	else if (variable->type == tpp::VariableType::UnsignedInteger)
+	{
+		ImGui::Text("%i", variable->vdUInt.minValue);
+		ImGui::SameLine();
+		wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &variable->vdInt.currentValue, &variable->vdUInt.minValue, &variable->vdUInt.maxValue);
+		ImGui::SameLine();
+		ImGui::Text("%i", variable->vdUInt.maxValue);
+	}
+	else if (variable->type == tpp::VariableType::Integer)
+	{
+		ImGui::Text("%i", variable->vdInt.minValue);
+		ImGui::SameLine();
+		wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &variable->vdInt.currentValue, &variable->vdInt.minValue, &variable->vdInt.maxValue);
+		ImGui::SameLine();
+		ImGui::Text("%i", variable->vdInt.maxValue);
+	}
+	else if (variable->type == tpp::VariableType::Bool)
+	{
+		wasModified = ImGui::Checkbox(mangledName.c_str(), &variable->vdBool.currentValue);
+	}
+	else if (variable->type == tpp::VariableType::Color3)
+	{
+		wasModified = ImGui::ColorEdit3(mangledName.c_str(), &variable->vdColor3.r);
+	}
+	else if (variable->type == tpp::VariableType::Color4)
+	{
+		wasModified = ImGui::ColorEdit4(mangledName.c_str(), &variable->vdColor4.r);
+	}
+	else
+	{
+		printf("Variable type not implemented\n");
+	}
+
+	return wasModified;
+}
+
 void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManager, const tpp::VariableGroupNode* variableGroupNode, const tpp::Variable*& modifiedVariable)
 {
 	if (variableGroupNode)
@@ -29,41 +77,12 @@ void tpp::UIVariableWindow::Draw(const tpp::ServerVariableManager& variableManag
 
 				std::string mangledName = "##" + variable->GetName();
 
-				bool wasModified = false;
-
 				ImGui::TableSetColumnIndex(0);
 				ImGui::Text(variable->GetName().c_str());
 
 				ImGui::TableSetColumnIndex(1);
 
-				if (variable->type == tpp::VariableType::Float)
-				{
-					ImGui::Text("%.3f", variable->vdFloat.minValue);
-					ImGui::SameLine();
-					wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
-					ImGui::SameLine();
-					ImGui::Text("%f", variable->vdFloat.maxValue);
-				}
-				else if (variable->type == tpp::VariableType::UnsignedInteger)
-				{
-					ImGui::Text("%i", variable->vdUInt.minValue);
-					ImGui::SameLine();
-					wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &variable->vdInt.currentValue, &variable->vdUInt.minValue, &variable->vdUInt.maxValue);
-					ImGui::SameLine();
-					ImGui::Text("%i", variable->vdUInt.maxValue);
-				}
-				else if (variable->type == tpp::VariableType::Color3)
-				{
-					wasModified = ImGui::ColorEdit3(mangledName.c_str(), &variable->vdColor3.r);
-				}
-				else if (variable->type == tpp::VariableType::Color4)
-				{
-					wasModified = ImGui::ColorEdit4(mangledName.c_str(), &variable->vdColor4.r);
-				}
-				else
-				{
-					printf("Variable type not implemented\n");
-				}
+				bool wasModified = DrawVariableWidget(mangledName, variable);
 
 				if (wasModified)
 				{

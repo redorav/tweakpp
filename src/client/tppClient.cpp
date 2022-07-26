@@ -16,8 +16,11 @@
 
 // SSR
 tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1.0f, 1.0f, 2.0f, 0.001f);
+tpp::UInt SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1, 1, 8, 1);
+tpp::Int SSRThicknessBias("Rendering/Post Effects/SSR/Thickness Bias", -1, -10, 10, 2);
 tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
+tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 1.0f, 0.5f, 0.3f, 0.2f);
+tpp::Bool SSREnabled("Rendering/Post Effects/SSR/Enabled", false);
 
 // Depth of Field
 tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
@@ -61,7 +64,6 @@ void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::
 	});
 }
 
-
 int main(int argc, char **argv)
 {
 	static const int DEFAULT_BUFLEN = 512;
@@ -80,7 +82,8 @@ int main(int argc, char **argv)
 
 	bool sentVariableTable = false;
 
-	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> variableDescriptionTable(DEFAULT_BUFLEN);
+	tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> writerStream(DEFAULT_BUFLEN);
+	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> variableDescriptionTable(writerStream);
 
 	while (!shutdown)
 	{
@@ -155,13 +158,19 @@ int main(int argc, char **argv)
 					headerPosition = nextHeaderPosition;
 				}
 			}
-			else if (receiveResult == 0)
+			else if (receiveResult == tpp::SocketReturn::Ok || receiveResult == tpp::SocketReturn::WouldBlock)
 			{
-				printf("Connection closed\n");
+				// Ignore
 			}
-			else if (receiveResult == tpp::SocketReturn::WouldBlock)
+			else if (receiveResult == tpp::SocketReturn::ConnectionClosed)
 			{
-			
+				// Close the socket. This means we've closed the server				
+				clientSocket->Close();
+				printf("Connection closed\n");
+
+				// Reopen and leave in a good state
+				clientSocket->Create();
+				clientSocket->SetBlocking(false);
 			}
 			else if (receiveResult < 0)
 			{

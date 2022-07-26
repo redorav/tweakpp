@@ -53,11 +53,43 @@ namespace tpp
 
 		SerializationStream& operator << (const std::string& v)
 		{
-			m_data.insert(m_data.end(), v.c_str(), v.c_str() + v.size());
+			m_data.insert(m_data.end(), v.c_str(), v.c_str() + v.size() + 1); // Include null terminator
 			return *this;
 		}
 
-	private:
+	//private:
+
+		std::vector<char> m_data;
+	};
+
+	template<>
+	class SerializationStream<SerializationStreamType::RawStreamRead>
+	{
+	public:
+
+		SerializationStream(uint32_t initialSize)
+		{
+			m_data.reserve(initialSize);
+		}
+
+		template<typename S>
+		SerializationStream& operator << (S& v)
+		{
+			v = *reinterpret_cast<S*>(&m_data[m_currentPosition]);
+			m_currentPosition += sizeof(v);
+			return *this;
+		}
+
+		SerializationStream& operator << (std::string& v)
+		{
+			v = &m_data[m_currentPosition];
+			m_currentPosition += v.size() + 1; // Include null terminator
+			return *this;
+		}
+
+	//private:
+
+		size_t m_currentPosition = 0;
 
 		std::vector<char> m_data;
 	};
@@ -67,7 +99,7 @@ namespace tpp
 	{
 	public:
 
-		Archive(uint32_t initialSize)
+		Archive(SerializationStream<StreamType>& stream) : m_stream(stream)
 		{
 	
 		}
@@ -77,8 +109,12 @@ namespace tpp
 			m_stream.Clear();
 		}
 
-		void SerializeTppVariableUpdatePacket(const tpp::Variable& variable)
+		// TODO Remove ugly const_cast and just make explicit that things can be modified. It does
+		// mean that we have to change the code upstream
+		void SerializeTppVariableUpdatePacket(const tpp::Variable& inVariable)
 		{
+			tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
+
 			size_t startSize = m_stream.Size();
 
 			// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
@@ -91,9 +127,29 @@ namespace tpp
 			{
 				SerializeTppVariable(tpp::MessageType::Update, variable.vdFloat);
 			}
+			else if (variable.type == tpp::VariableType::UnsignedInteger)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdInt);
+			}
+			else if (variable.type == tpp::VariableType::Integer)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdInt);
+			}
+			else if (variable.type == tpp::VariableType::Bool)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdBool);
+			}
 			else if (variable.type == tpp::VariableType::Color3)
 			{
 				SerializeTppVariable(tpp::MessageType::Update, variable.vdColor3);
+			}
+			else if (variable.type == tpp::VariableType::Color4)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdColor4);
+			}
+			else
+			{
+				printf("Variable %s not serialized correctly\n", variable.path.c_str());
 			}
 
 			size_t totalSize = m_stream.Size() - startSize;
@@ -103,8 +159,11 @@ namespace tpp
 			header->size = (decltype(header->size))packetSize;
 		}
 
-		void SerializeVariableDescription(const std::string& path, const tpp::Variable& variable)
+		void SerializeVariableDescription(const std::string& inPath, const tpp::Variable& inVariable)
 		{
+			tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
+			std::string& path = const_cast<std::string&>(inPath);
+
 			size_t startSize = m_stream.Size();
 
 			// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
@@ -117,9 +176,29 @@ namespace tpp
 			{
 				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdFloat);
 			}
+			else if (variable.type == tpp::VariableType::UnsignedInteger)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdUInt);
+			}
+			else if (variable.type == tpp::VariableType::Integer)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdInt);
+			}
+			else if (variable.type == tpp::VariableType::Bool)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdBool);
+			}
 			else if (variable.type == tpp::VariableType::Color3)
 			{
 				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdColor3);
+			}
+			else if (variable.type == tpp::VariableType::Color4)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdColor4);
+			}
+			else
+			{
+				printf("Variable %s not serialized correctly\n", path.c_str());
 			}
 
 			size_t totalSize = m_stream.Size() - startSize;
@@ -130,7 +209,7 @@ namespace tpp
 		}
 
 		template<typename TppVariable>
-		void SerializeTppVariable(const tpp::MessageType messageType, const TppVariable& variable)
+		void SerializeTppVariable(tpp::MessageType messageType, TppVariable& variable)
 		{
 			// If we're updating, we only need to send the current value. Otherwise, we send the entire variable
 			if (messageType == tpp::MessageType::Update)
@@ -145,9 +224,9 @@ namespace tpp
 			}
 		}
 	
-		void SerializePath(const std::string& path)
+		void SerializePath(std::string& path)
 		{
-			m_stream << path << '\0';
+			m_stream << path;
 		}
 
 		const SerializationStream<StreamType>& GetStream() const
@@ -157,42 +236,6 @@ namespace tpp
 
 	private:
 	
-		SerializationStream<StreamType> m_stream = SerializationStream<StreamType>(512);
+		SerializationStream<StreamType>& m_stream;
 	};
-
-	template<typename S>
-	void SerializeRaw(std::vector<char>& stream, const S& s)
-	{
-		stream.insert(stream.end(), reinterpret_cast<const char*>(&s), reinterpret_cast<const char*>(&s) + sizeof(s));
-	}
-
-	void Serialize(std::vector<char>& stream, float value)
-	{
-		SerializeRaw(stream, tpp::VariableHeader(tpp::VariableType::Float, sizeof(value)));
-		SerializeRaw(stream, value);
-	}
-
-	void SerializeColor3(std::vector<char>& stream, const float* value)
-	{
-		SerializeRaw(stream, tpp::VariableHeader(tpp::VariableType::Color3, 4 * 3));
-		stream.insert(stream.end(), reinterpret_cast<const char*>(value), reinterpret_cast<const char*>(value) + 4 * 3);
-	}
-
-	void Serialize(std::vector<char>& stream, const tpp::Float& variable)
-	{
-		SerializeRaw(stream, tpp::VariableHeader(variable.type, sizeof(variable)));
-		SerializeRaw(stream, variable);
-	}
-
-	void Serialize(std::vector<char>& stream, const tpp::Color3& variable)
-	{
-		SerializeRaw(stream, tpp::VariableHeader(variable.type, sizeof(variable)));
-		SerializeRaw(stream, variable);
-	}
-
-	void Serialize(std::vector<char>& stream, const std::string& path)
-	{
-		stream.insert(stream.end(), tpp::PathString, tpp::PathString + strlen(tpp::PathString));
-		stream.insert(stream.end(), path.begin(), path.end() + 1); // Include null terminator
-	}
 }

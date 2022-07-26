@@ -42,19 +42,32 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 
 	auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
 
+	bool validVariable = true;
+
 	tpp::Variable variable(variablePacket->type, path);
 
-	if (variablePacket->type == tpp::VariableType::Float)
+	switch (variablePacket->type)
 	{
-		variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]);
-			
-	}
-	else if (variablePacket->type == tpp::VariableType::Color3)
-	{
-		variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]);
+		case tpp::VariableType::Float: variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::UnsignedInteger: variable.vdUInt = *reinterpret_cast<const tpp::UInt*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Integer: variable.vdInt = *reinterpret_cast<const tpp::Int*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Bool: variable.vdBool = *reinterpret_cast<const tpp::Bool*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Vector2: variable.vdVector2 = *reinterpret_cast<const tpp::Vector2*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Vector3: variable.vdVector3 = *reinterpret_cast<const tpp::Vector3*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Vector4: variable.vdVector4 = *reinterpret_cast<const tpp::Vector4*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Color3: variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Color4: variable.vdColor4 = *reinterpret_cast<const tpp::Color4*>(&currentPacketData[variableIndex]); break;
+		default: validVariable = false;
 	}
 
-	GlobalServerVariableManager.AddVariable(variable);
+	if (validVariable)
+	{
+		GlobalServerVariableManager.AddVariable(variable);
+	}
+	else
+	{
+		printf("Unrecognized variable found while processing packet\n");
+	}
 }
 
 int main(void)
@@ -100,7 +113,8 @@ int main(void)
 	std::vector<char> currentPacketData;
 	currentPacketData.reserve(DEFAULT_BUFLEN);
 
-	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(DEFAULT_BUFLEN);
+	tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> writerStream(DEFAULT_BUFLEN);
+	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(writerStream);
 
 	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
