@@ -15,8 +15,7 @@
 #include "tppServerVariableManager.h"
 #include "tppUIBackend.h"
 #include "tppUILog.h"
-#include "tppUIVariableGroupWindow.h"
-#include "tppUIVariableWindow.h"
+#include "tppUIConnectionWindow.h"
 #include "tppSerialize.h"
 #include "tppTypes.h"
 
@@ -83,8 +82,7 @@ int main(void)
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 	tpp::UILog uiLog;
-	tpp::UIVariableGroupWindow uiVariableGroupWindow;
-	tpp::UIVariableWindow uiVariableWindow;
+	tpp::UIConnectionWindow uiConnectionWindow;
 
 	static const int DEFAULT_BUFLEN = 512;
 
@@ -282,37 +280,7 @@ int main(void)
 			{
 				ImGui::BeginTabBar("Tab Bar");
 				{
-					if (ImGui::BeginTabItem("Local : 192.168.0.1"))
-					{
-						ImGuiTableFlags tableFlags = 0;
-						tableFlags |= ImGuiTableFlags_Resizable;
-						tableFlags |= ImGuiTableFlags_BordersOuter;
-						tableFlags |= ImGuiTableFlags_BordersV;
-						tableFlags |= ImGuiTableFlags_ScrollY;
-
-						if (ImGui::BeginTable("##table1", 2, tableFlags))
-						{
-							// Set up header rows
-							ImGui::TableSetupColumn("Variable Groups");
-							//ImGui::TableSetupColumn("Variables");
-							ImGui::TableHeadersRow();
-							
-							// Exit header row
-							ImGui::TableNextRow();
-
-							// Show variable groups
-							ImGui::TableSetColumnIndex(0);
-							uiVariableGroupWindow.Draw(GlobalServerVariableManager, "Variable Groups", nullptr);
-
-							// Show Variables and record which variable was modified through the UI
-							ImGui::TableSetColumnIndex(1);
-							uiVariableWindow.Draw(GlobalServerVariableManager, uiVariableGroupWindow.GetSelectedGroup(), modifiedVariable);
-
-							ImGui::EndTable();
-						}
-
-						ImGui::EndTabItem();
-					}
+					uiConnectionWindow.Draw(GlobalServerVariableManager, "Local : 192.168.0.1", modifiedVariable);
 				
 					if (ImGui::BeginTabItem("Xbox One : 192.168.0.32"))
 					{

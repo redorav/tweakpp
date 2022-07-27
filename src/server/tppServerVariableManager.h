@@ -56,6 +56,8 @@ namespace tpp
 
 		bool Exists(const std::string& path);
 
+		const VariableGroupNode* GetVariableGroupNode(const std::string& path) const;
+
 		template<typename FnOpen, typename FnClose>
 		void ForEachNode(const FnOpen& fnOpen, const FnClose& fnClose) const
 		{
@@ -69,7 +71,7 @@ namespace tpp
 		// Check to see if path already exists (when adding a new variable)
 		// This also points to leaf nodes that are guaranteed to exist in 
 		// the variable tree
-		std::unordered_map<std::string, VariableGroupNode*> m_pathExistenceHashMap;
+		std::unordered_map<std::string, VariableGroupNode*> m_variableGroupNodeHashMap;
 	};
 
 	class VariableGroup
@@ -85,7 +87,7 @@ namespace tpp
 
 		void AddVariable(const Variable& variable);
 
-		const Variable& GetVariable(const std::string& path) const;
+		const Variable* GetVariable(const std::string& path) const;
 
 		void Clear();
 
@@ -98,9 +100,11 @@ namespace tpp
 		template<typename FnOpen, typename FnClose>
 		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const;
 
-	private:
+		const VariableGroup* GetVariableGroup(const std::string& path) const;
 
-		const Variable Dummy = Variable(tpp::VariableType::Invalid, "");
+		const VariableGroupNode* GetVariableGroupNode(const std::string& path) const;
+
+	private:
 
 		VariableGroupTree m_variableGroupTree;
 

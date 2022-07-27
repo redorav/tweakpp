@@ -46,19 +46,33 @@ void tpp::VariableGroupTree::AddPath(const std::string& path)
 			}
 		}
 
-		m_pathExistenceHashMap.insert({ path, currentNode });
+		m_variableGroupNodeHashMap.insert({ path, currentNode });
 	}
 }
 
 bool tpp::VariableGroupTree::Exists(const std::string& path)
 {
-	return m_pathExistenceHashMap.find(path) != m_pathExistenceHashMap.end();
+	return m_variableGroupNodeHashMap.find(path) != m_variableGroupNodeHashMap.end();
+}
+
+const tpp::VariableGroupNode* tpp::VariableGroupTree::GetVariableGroupNode(const std::string& path) const
+{
+	auto variableGroupNode = m_variableGroupNodeHashMap.find(path);
+
+	if (variableGroupNode != m_variableGroupNodeHashMap.end())
+	{
+		return variableGroupNode->second;
+	}
+	else
+	{
+		return nullptr;
+	}
 }
 
 void tpp::VariableGroupTree::Clear()
 {
 	m_root = VariableGroupNode("");
-	m_pathExistenceHashMap.clear();
+	m_variableGroupNodeHashMap.clear();
 }
 
 void tpp::ServerVariableManager::AddVariable(const Variable& variable)
@@ -85,17 +99,17 @@ void tpp::ServerVariableManager::AddVariable(const Variable& variable)
 	variableGroup->variables.push_back(&insertedVariable);
 }
 
-const tpp::Variable& tpp::ServerVariableManager::GetVariable(const std::string& path) const
+const tpp::Variable* tpp::ServerVariableManager::GetVariable(const std::string& path) const
 {
 	auto variable = m_variableHashMap.find(path);
 
 	if (variable != m_variableHashMap.end())
 	{
-		return variable->second;
+		return &variable->second;
 	}
 	else
 	{
-		return Dummy;
+		return nullptr;
 	}
 }
 
@@ -106,4 +120,23 @@ void tpp::ServerVariableManager::Clear()
 	m_variableGroupHashMap.clear();
 
 	m_variableHashMap.clear();
+}
+
+const tpp::VariableGroup* tpp::ServerVariableManager::GetVariableGroup(const std::string& path) const
+{
+	auto variableGroup = m_variableGroupHashMap.find(path);
+
+	if (variableGroup != m_variableGroupHashMap.end())
+	{
+		return &variableGroup->second;
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+const tpp::VariableGroupNode* tpp::ServerVariableManager::GetVariableGroupNode(const std::string& path) const
+{
+	return m_variableGroupTree.GetVariableGroupNode(path);
 }
