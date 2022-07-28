@@ -19,15 +19,18 @@ tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.
 tpp::UInt SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1, 1, 8, 1);
 tpp::Int SSRThicknessBias("Rendering/Post Effects/SSR/Thickness Bias", -1, -10, 10, 2);
 tpp::Bool SSREnabled("Rendering/Post Effects/SSR/Enabled", false);
-tpp::Vector2 SSRDirection2("Rendering/Post Effects/SSR/Direction 2", 1.0f, 0.5f);
-tpp::Vector3 SSRDirection3("Rendering/Post Effects/SSR/Direction 3", 1.0f, 0.5f, 0.3f);
-tpp::Vector4 SSRDirection4("Rendering/Post Effects/SSR/Direction 4", 1.0f, 0.5f, 0.3f, 0.1f);
 tpp::Vector2 SSRDirection2("Rendering/Post Effects/SSR/Direction 2", 1.0f, 0.7f);
 tpp::Vector3 SSRDirection3("Rendering/Post Effects/SSR/Direction 3", 0.4f, 0.2f, 0.3f);
 tpp::Vector4 SSRDirection4("Rendering/Post Effects/SSR/Direction 4", 0.34f, 0.5f, 0.6f, 0.1f);
 tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
-tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 1.0f, 0.5f, 0.3f, 0.2f);
 tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 0.7f, 0.4f, 0.2f, 0.2f);
+
+void RecompileShadersCallback()
+{
+	printf("I recompiled shaders\n");
+}
+
+tpp::Callback RecompileShaders("Rendering/Post Effects/SSR/Recompile Shaders", RecompileShadersCallback);
 
 // Depth of Field
 tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
@@ -51,17 +54,6 @@ tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f
 
 tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
 tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
-
-bool IsCopyable(tpp::VariableType type)
-{
-	switch (type)
-	{
-		case tpp::VariableType::Function:
-			return false;
-	}
-
-	return true;
-}
 
 void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::RawStreamWrite>& variableDescriptionTable)
 {
@@ -153,7 +145,11 @@ int main(int argc, char **argv)
 
 							auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
 
-							if (IsCopyable(variablePacket->type))
+							if (variablePacket->type == tpp::VariableType::Callback)
+							{
+								variable.vdCallback.currentValue();
+							}
+							else if (variablePacket->size > 0)
 							{
 								memcpy(variable.memory, &packetData[variableIndex], variablePacket->size);
 							}
@@ -171,7 +167,7 @@ int main(int argc, char **argv)
 			}
 			else if (receiveResult == tpp::SocketReturn::ConnectionClosed)
 			{
-				// Close the socket. This means we've closed the server				
+				// Close the socket. This means we've closed the server
 				clientSocket->Close();
 				printf("Connection closed\n");
 

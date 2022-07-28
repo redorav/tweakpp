@@ -122,4 +122,16 @@ namespace tpp
 		GetClientVariableManager()->Register(std::string(path), variable);
 		#endif
 	}
+
+	Callback::Callback(const char* path, void(*callback)(void))
+		: currentValue(callback)
+	{
+		#if !defined(TPP_SERVER)
+		tpp::Variable variable(tpp::VariableType::Callback);
+		variable.size = 0;
+		variable.memory = callback;
+		variable.vdCallback = *this;
+		GetClientVariableManager()->Register(std::string(path), variable);
+		#endif
+	}
 }

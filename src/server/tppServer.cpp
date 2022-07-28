@@ -56,6 +56,7 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 		case tpp::VariableType::Vector4: variable.vdVector4 = *reinterpret_cast<const tpp::Vector4*>(&currentPacketData[variableIndex]); break;
 		case tpp::VariableType::Color3: variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]); break;
 		case tpp::VariableType::Color4: variable.vdColor4 = *reinterpret_cast<const tpp::Color4*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Callback: break;
 		default: validVariable = false;
 	}
 

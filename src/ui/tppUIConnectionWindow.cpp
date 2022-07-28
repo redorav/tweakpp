@@ -58,6 +58,11 @@ namespace tpp
 		{
 			wasModified = ImGui::InputFloat4(mangledName.c_str(), &variable->vdVector4.x, "%.3f");
 		}
+		else if (variable->type == tpp::VariableType::Callback)
+		{
+			// Use the original name here as we want to display it on top of the button
+			wasModified = ImGui::Button(variable->GetName().c_str());
+		}
 		else
 		{
 			printf("Variable type not implemented\n");

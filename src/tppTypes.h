@@ -21,7 +21,7 @@ namespace tpp
 		Vector4 = 8,
 		String = 9,
 		Enum = 10,
-		Function = 11,
+		Callback = 11,
 		Invalid = 0xff
 	};
 
@@ -235,6 +235,20 @@ namespace tpp
 		};
 	};
 
+	class Callback
+	{
+	public:
+
+		Callback(const char* path, void(*callback)(void));
+
+		enum : uint32_t
+		{
+			type = VariableType::Callback
+		};
+
+		void(*currentValue)(void);
+	};
+
 	// Can be any of the allowed types
 	class Variable
 	{
@@ -305,6 +319,8 @@ namespace tpp
 			tpp::Vector3 vdVector3;
 
 			tpp::Vector4 vdVector4;
+
+			tpp::Callback vdCallback;
 		};
 	};
 }

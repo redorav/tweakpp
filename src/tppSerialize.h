@@ -159,6 +159,10 @@ namespace tpp
 			{
 				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector4);
 			}
+			else if (variable.type == tpp::VariableType::Callback)
+			{
+				SerializeTppVariable(tpp::MessageType::Update, variable.vdCallback);
+			}
 			else
 			{
 				printf("Variable %s not serialized correctly\n", variable.path.c_str());
@@ -220,6 +224,10 @@ namespace tpp
 			{
 				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector4);
 			}
+			else if (variable.type == tpp::VariableType::Callback)
+			{
+				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdCallback);
+			}
 			else
 			{
 				printf("Variable %s not serialized correctly\n", path.c_str());
@@ -246,6 +254,12 @@ namespace tpp
 				m_stream << tpp::VariableHeader(variable.type, sizeof(variable));
 				m_stream << variable;
 			}
+		}
+
+		template<>
+		void SerializeTppVariable<tpp::Callback>(tpp::MessageType messageType, tpp::Callback& variable)
+		{
+			m_stream << tpp::VariableHeader(variable.type, 0);
 		}
 	
 		void SerializePath(std::string& path)
