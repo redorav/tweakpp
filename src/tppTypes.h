@@ -2,8 +2,6 @@
 
 #include "tppCommon.h"
 
-#include <cstdint>
-
 #if defined(TPP_SERVER)
 #include <string>
 #endif
