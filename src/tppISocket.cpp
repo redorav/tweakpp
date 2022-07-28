@@ -1,5 +1,7 @@
 #include "tppISocket.h"
 
+#include "string.h"
+
 namespace tpp
 {
 	NetworkAddress::NetworkAddress(const char* in_address, int in_port)
