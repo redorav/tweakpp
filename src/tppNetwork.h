@@ -2,8 +2,6 @@
 
 #include "tppCommon.h"
 
-#include <string>
-
 namespace tpp
 {
 	static const char* HeaderString   = "tpp";
