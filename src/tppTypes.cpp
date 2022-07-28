@@ -64,6 +64,7 @@ namespace tpp
 	}
 
 	Color3::Color3(const char* path, float r, float g, float b)
+		: r(r), g(g), b(b)
 	{
 		#if !defined(TPP_SERVER)
 		tpp::Variable variable(tpp::VariableType::Color3);
@@ -75,6 +76,7 @@ namespace tpp
 	}
 
 	Color4::Color4(const char* path, float r, float g, float b, float a)
+		: r(r), g(g), b(b), a(a)
 	{
 		#if !defined(TPP_SERVER)
 		tpp::Variable variable(tpp::VariableType::Color4);
@@ -86,6 +88,7 @@ namespace tpp
 	}
 
 	Vector2::Vector2(const char* path, float x, float y)
+		: x(x), y(y)
 	{
 #if !defined(TPP_SERVER)
 		tpp::Variable variable(tpp::VariableType::Vector2);
@@ -97,6 +100,7 @@ namespace tpp
 	}
 
 	Vector3::Vector3(const char* path, float x, float y, float z)
+		: x(x), y(y), z(z)
 	{
 		#if !defined(TPP_SERVER)
 		tpp::Variable variable(tpp::VariableType::Vector3);
@@ -108,6 +112,7 @@ namespace tpp
 	}
 
 	Vector4::Vector4(const char* path, float x, float y, float z, float w)
+		: x(x), y(y), z(z), w(w)
 	{
 		#if !defined(TPP_SERVER)
 		tpp::Variable variable(tpp::VariableType::Vector4);
