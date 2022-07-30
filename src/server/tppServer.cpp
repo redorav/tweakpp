@@ -153,8 +153,6 @@ int main(void)
 				{
 					headerPosition = std::search(receivedData.begin() + offset, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
 
-					size_t headerIndex = headerPosition - receivedData.begin();
-
 					if (headerPosition != receivedData.end())
 					{
 						// If we found the header, there are several possible cases

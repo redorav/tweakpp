@@ -17,24 +17,9 @@ namespace tpp
 	{
 	public:
 
-		void Register(const std::string& path, const tpp::Variable& data)
-		{
-			m_hashMap.insert({ path, data });
-		}
+		void Register(const std::string& path, const tpp::Variable& data);
 
-		const tpp::Variable& Find(const std::string& path) const
-		{
-			auto dataIterator = m_hashMap.find(path);
-
-			if (dataIterator != m_hashMap.end())
-			{
-				return dataIterator->second;
-			}
-			else
-			{
-				return Dummy;
-			}
-		}
+		const tpp::Variable& Find(const std::string& path) const;
 
 		template<typename Fn>
 		void ForEachVariable(Fn fn) const
