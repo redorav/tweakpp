@@ -4,6 +4,7 @@
 
 #if defined(TPP_SERVER)
 #include <string>
+#include "tppHash.h"
 #endif
 
 namespace tpp
@@ -258,7 +259,8 @@ namespace tpp
 
 		Variable() {}
 
-		Variable(tpp::VariableType type, const std::string& path) : type(type), path(path)
+		Variable(tpp::VariableType type, const std::string& path, const tpp::Hash& hash)
+			: type(type), path(path), hash(hash)
 		{
 			if (path.size() > 0)
 			{
@@ -286,6 +288,8 @@ namespace tpp
 		std::string path;
 
 		std::string groupPath;
+
+		tpp::Hash hash;
 
 		std::string name;
 #else

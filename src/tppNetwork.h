@@ -14,12 +14,13 @@ namespace tpp
 	{
 		Declaration = 0, // Client tells server a variable of a certain type and parameters exists
 		Update      = 1, // Server tells client to update a variable's value
+		None        = 255,
 	};
 
 	enum class Version : uint16_t
 	{
 		InitialVersion = 0,
-		CurrentVersion = InitialVersion
+		CurrentVersion = InitialVersion,
 	};
 
 	// Pack so we can serialize directly from the incoming message
@@ -34,20 +35,26 @@ namespace tpp
 
 		char tpp[3] = { 't', 'p', 'p' };
 		Version version = Version::CurrentVersion;
-		uint32_t size;
-		MessageType type;
+		uint32_t size = 0;
+		MessageType type = MessageType::None;
 	};
 	TPP_PACK_END
 
 	TPP_PACK_BEGIN
 	struct VariableHeader
 	{
-		VariableHeader(uint32_t type, uint32_t size) : type(static_cast<tpp::VariableType>(type)), size(size) {}
+		VariableHeader(tpp::VariableType type, uint32_t size, uint64_t hash) : type(type), size(size), hash(hash) {}
 
-		VariableHeader(tpp::VariableType type, uint32_t size) : type(type), size(size) {}
+		VariableHeader(uint32_t type, uint32_t size, uint64_t hash) : VariableHeader(static_cast<tpp::VariableType>(type), size, hash) {}
 
+		// Type of variable
 		VariableType type;
+		
+		// Size of the variable data
 		uint32_t size;
+		
+		// Unique identifier. Typically formed from the path
+		uint64_t hash;
 	};
 	TPP_PACK_END
 

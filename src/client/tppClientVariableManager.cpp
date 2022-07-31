@@ -1,23 +1,27 @@
 #include "tppClientVariableManager.h"
 
+#include "tppHash.h"
+
 #include <memory>
 
 namespace tpp
 {
 	std::unique_ptr<ClientVariableManager> GlobalClientVariableManager;
 
-	void ClientVariableManager::Register(const std::string& path, const tpp::Variable& data)
+	void ClientVariableManager::Register(const tpp::VariableDescription& variableDescription)
 	{
-		m_hashMap.insert({ path, data });
+		tpp::Hash hash(variableDescription.path.data(), variableDescription.path.size());
+
+		m_variableHashmap.insert({ hash, variableDescription });
 	}
 
-	const tpp::Variable& ClientVariableManager::Find(const std::string& path) const
+	const tpp::Variable& ClientVariableManager::Find(const tpp::Hash& hash) const
 	{
-		auto dataIterator = m_hashMap.find(path);
+		auto dataIterator = m_variableHashmap.find(hash);
 
-		if (dataIterator != m_hashMap.end())
+		if (dataIterator != m_variableHashmap.end())
 		{
-			return dataIterator->second;
+			return dataIterator->second.variable;
 		}
 		else
 		{

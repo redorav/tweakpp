@@ -57,9 +57,9 @@ tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1
 
 void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::RawStreamWrite>& variableDescriptionTable)
 {
-	tpp::GetClientVariableManager()->ForEachVariable([&variableDescriptionTable](const std::string& path, const tpp::Variable& variable)
+	tpp::GetClientVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash)
 	{
-		variableDescriptionTable.SerializeVariableDescription(path, variable);
+		variableDescriptionTable.SerializeVariableDescription(variable, path, hash);
 	});
 }
 
@@ -126,31 +126,25 @@ int main(int argc, char **argv)
 
 					auto currentPosition = packetData.begin();
 
-					// Search for path in packet and read path
-					std::string path;
-					{
-						auto nullTerminator = std::find(currentPosition, packetData.end(), '\0');
-						path = std::string(packetData.begin(), nullTerminator);
-						currentPosition = nullTerminator + 1;
-					}
-
 					// Use the type to read in the value
 					{
-						const tpp::Variable& variable = tpp::GetClientVariableManager()->Find(path);
+						auto valueIndex = currentPosition - packetData.begin();
+						tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
 
-						if (variable.memory != nullptr)
+						const tpp::Variable& variable = tpp::GetClientVariableManager()->Find(variablePacket->hash);
+
+						if (variable.type != tpp::VariableType::Invalid)
 						{
-							auto valueIndex = currentPosition - packetData.begin();
-							tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
-
 							auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
 
 							if (variablePacket->type == tpp::VariableType::Callback)
 							{
+								// Invoke the callback
 								variable.vdCallback.currentValue();
 							}
 							else if (variablePacket->size > 0)
 							{
+								// Copy the memory over as-is, we assume the format is correct
 								memcpy(variable.memory, &packetData[variableIndex], variablePacket->size);
 							}
 						}

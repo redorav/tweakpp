@@ -1,5 +1,9 @@
 #pragma once
 
+#include "tppHash.h"
+
+#include "tppNetwork.h"
+
 // Example
 //
 // HEADER
@@ -57,7 +61,7 @@ namespace tpp
 			return *this;
 		}
 
-	//private:
+	private:
 
 		std::vector<char> m_data;
 	};
@@ -87,7 +91,7 @@ namespace tpp
 			return *this;
 		}
 
-	//private:
+	private:
 
 		size_t m_currentPosition = 0;
 
@@ -121,53 +125,54 @@ namespace tpp
 			// size that we know once the whole message has been constructed
 			m_stream << tpp::MessageHeader(0, tpp::MessageType::Update);
 
-			SerializePath(variable.path);
-			
+			// We don't serialize the path when updating the packet, as we pass in the hash
+
 			if (variable.type == tpp::VariableType::Float)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdFloat);
+				SerializeTppVariableUpdate(variable.vdFloat, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::UnsignedInteger)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdInt);
+				SerializeTppVariableUpdate(variable.vdInt, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Integer)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdInt);
+				SerializeTppVariableUpdate(variable.vdInt, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Bool)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdBool);
+				SerializeTppVariableUpdate(variable.vdBool, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Color3)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdColor3);
+				SerializeTppVariableUpdate(variable.vdColor3, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Color4)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdColor4);
+				SerializeTppVariableUpdate(variable.vdColor4, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Vector2)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector2);
+				SerializeTppVariableUpdate(variable.vdVector2, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Vector3)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector3);
+				SerializeTppVariableUpdate(variable.vdVector3, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Vector4)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdVector4);
+				SerializeTppVariableUpdate(variable.vdVector4, variable.hash);
 			}
 			else if (variable.type == tpp::VariableType::Callback)
 			{
-				SerializeTppVariable(tpp::MessageType::Update, variable.vdCallback);
+				SerializeTppVariableUpdate(variable.vdCallback, variable.hash);
 			}
 			else
 			{
 				printf("Variable %s not serialized correctly\n", variable.path.c_str());
 			}
 
+			// Patch in the packet size
 			size_t totalSize = m_stream.Size() - startSize;
 			size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
 
@@ -175,7 +180,7 @@ namespace tpp
 			header->size = (decltype(header->size))packetSize;
 		}
 
-		void SerializeVariableDescription(const std::string& inPath, const tpp::Variable& inVariable)
+		void SerializeVariableDescription(const tpp::Variable& inVariable, const std::string& inPath, const tpp::Hash& hash)
 		{
 			tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
 			std::string& path = const_cast<std::string&>(inPath);
@@ -186,47 +191,48 @@ namespace tpp
 			// size that we know once the whole message has been constructed
 			m_stream << tpp::MessageHeader(0, tpp::MessageType::Declaration);
 
+			// Serialize the path of the variable so the server can display it
 			SerializePath(path);
 
 			if (variable.type == tpp::VariableType::Float)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdFloat);
+				SerializeTppVariableDeclaration(variable.vdFloat, hash);
 			}
 			else if (variable.type == tpp::VariableType::UnsignedInteger)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdUInt);
+				SerializeTppVariableDeclaration(variable.vdUInt, hash);
 			}
 			else if (variable.type == tpp::VariableType::Integer)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdInt);
+				SerializeTppVariableDeclaration(variable.vdInt, hash);
 			}
 			else if (variable.type == tpp::VariableType::Bool)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdBool);
+				SerializeTppVariableDeclaration(variable.vdBool, hash);
 			}
 			else if (variable.type == tpp::VariableType::Color3)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdColor3);
+				SerializeTppVariableDeclaration(variable.vdColor3, hash);
 			}
 			else if (variable.type == tpp::VariableType::Color4)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdColor4);
+				SerializeTppVariableDeclaration(variable.vdColor4, hash);
 			}
 			else if (variable.type == tpp::VariableType::Vector2)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector2);
+				SerializeTppVariableDeclaration(variable.vdVector2, hash);
 			}
 			else if (variable.type == tpp::VariableType::Vector3)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector3);
+				SerializeTppVariableDeclaration(variable.vdVector3, hash);
 			}
 			else if (variable.type == tpp::VariableType::Vector4)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdVector4);
+				SerializeTppVariableDeclaration(variable.vdVector4, hash);
 			}
 			else if (variable.type == tpp::VariableType::Callback)
 			{
-				SerializeTppVariable(tpp::MessageType::Declaration, variable.vdCallback);
+				SerializeTppVariableDeclaration(variable.vdCallback, hash);
 			}
 			else
 			{
@@ -241,25 +247,31 @@ namespace tpp
 		}
 
 		template<typename TppVariable>
-		void SerializeTppVariable(tpp::MessageType messageType, TppVariable& variable)
+		void SerializeTppVariableDeclaration(TppVariable& variable, const tpp::Hash& hash)
 		{
-			// If we're updating, we only need to send the current value. Otherwise, we send the entire variable
-			if (messageType == tpp::MessageType::Update)
-			{
-				m_stream << tpp::VariableHeader(variable.type, sizeof(variable.currentValue));
-				m_stream << variable.currentValue;
-			}
-			else
-			{
-				m_stream << tpp::VariableHeader(variable.type, sizeof(variable));
-				m_stream << variable;
-			}
+			// Send the entire variable as it contains the description
+			m_stream << tpp::VariableHeader(variable.type, sizeof(variable), hash);
+			m_stream << variable;
 		}
-
-		template<>
-		void SerializeTppVariable<tpp::Callback>(tpp::MessageType messageType, tpp::Callback& variable)
+		
+		template<typename TppVariable>
+		void SerializeTppVariableUpdate(TppVariable& variable, const tpp::Hash& hash)
 		{
-			m_stream << tpp::VariableHeader(variable.type, 0);
+			// If we're updating, we only need to send the current value
+			m_stream << tpp::VariableHeader(variable.type, sizeof(variable.currentValue), (uint64_t)hash);
+			m_stream << variable.currentValue;
+		}
+		
+		template<>
+		void SerializeTppVariableDeclaration<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash)
+		{
+			m_stream << tpp::VariableHeader(variable.type, 0, hash);
+		}
+		
+		template<>
+		void SerializeTppVariableUpdate<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash)
+		{
+			m_stream << tpp::VariableHeader(variable.type, 0, hash);
 		}
 	
 		void SerializePath(std::string& path)

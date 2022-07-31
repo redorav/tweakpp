@@ -43,7 +43,7 @@ void ProcessPacket(const std::vector<char>& currentPacketData)
 
 	bool validVariable = true;
 
-	tpp::Variable variable(variablePacket->type, path);
+	tpp::Variable variable(variablePacket->type, path, variablePacket->hash);
 
 	switch (variablePacket->type)
 	{

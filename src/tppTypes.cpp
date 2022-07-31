@@ -17,7 +17,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdFloat = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -32,7 +32,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdUInt = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -47,7 +47,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdInt = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -59,7 +59,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdBool = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -71,7 +71,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdColor3 = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -83,7 +83,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdColor4 = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -95,7 +95,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdVector2 = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 #endif
 	}
 
@@ -107,7 +107,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdVector3 = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -119,7 +119,7 @@ namespace tpp
 		variable.size = sizeof(currentValue);
 		variable.memory = &currentValue;
 		variable.vdVector4 = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 
@@ -131,7 +131,7 @@ namespace tpp
 		variable.size = 0;
 		variable.memory = callback;
 		variable.vdCallback = *this;
-		GetClientVariableManager()->Register(std::string(path), variable);
+		GetClientVariableManager()->Register(tpp::VariableDescription(variable, std::string(path)));
 		#endif
 	}
 }
