@@ -24,7 +24,7 @@
 // TODO There should be one per connection
 tpp::ServerVariableManager GlobalServerVariableManager;
 
-void ProcessPacket(const std::vector<char>& currentPacketData)
+void ProcessDeclarationPacket(const std::vector<char>& currentPacketData)
 {
 	auto currentPosition = currentPacketData.begin();
 
@@ -145,7 +145,7 @@ int main(void)
 					if (headerPosition != receivedData.end())
 					{
 						currentPacketData.insert(currentPacketData.end(), receivedData.begin(), headerPosition);
-						ProcessPacket(currentPacketData);
+						ProcessDeclarationPacket(currentPacketData);
 					}
 				}
 
@@ -169,7 +169,7 @@ int main(void)
 							{
 								currentPacketData.clear();
 								currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + sizeof(tpp::MessageHeader) + packetSize);
-								ProcessPacket(currentPacketData);
+								ProcessDeclarationPacket(currentPacketData);
 								offset = (headerPosition - receivedData.begin()) + sizeof(tpp::MessageHeader) + packetSize;
 							}
 							else
