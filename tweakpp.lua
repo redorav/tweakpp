@@ -64,6 +64,21 @@ function AddImguiDependencies()
 
 end
 
+function AddXxHashDependencies()
+
+	files
+	{
+		"external/xxhash/xxhash.c",
+		"external/xxhash/xxhash.h"
+	}
+
+	includedirs
+	{
+		"external/xxhash"
+	}
+
+end
+
 function AddGraphicsApiDependencies()
 
 	links { "d3d11", "d3dcompiler", "dxgi" }
@@ -83,6 +98,7 @@ project "Server"
 	AddImguiDependencies()
 	AddGraphicsApiDependencies()
 	AddUIDependencies()
+	AddXxHashDependencies()
 	includedirs (SourceDirectory)
 	defines ("TPP_SERVER")
 	files
@@ -101,6 +117,7 @@ project "Client"
 	language("C++")
 	architecture("x64")
 	AddNetworkDependencies()
+	AddXxHashDependencies()
 	includedirs (SourceDirectory)
 	files
 	{
