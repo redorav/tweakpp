@@ -4,9 +4,7 @@
 
 namespace tpp
 {
-	static const char* HeaderString   = "tpp";
-	static const char* PathString     = "path";
-	static const char* VariableString = "var";
+	static const char HeaderString[3] = { 't', 'p', 'p' };
 
 	enum class VariableType : uint8_t;
 
@@ -33,12 +31,14 @@ namespace tpp
 
 		MessageHeader(uint32_t size, MessageType type) : size(size), type(type) {}
 
-		char tpp[3] = { 't', 'p', 'p' };
+		const char tpp[3] = { HeaderString[0], HeaderString[1], HeaderString[2] };
 		Version version = Version::CurrentVersion;
 		uint32_t size = 0;
 		MessageType type = MessageType::None;
 	};
 	TPP_PACK_END
+
+	static_assert(sizeof(HeaderString) == sizeof(MessageHeader::tpp), "MessageHeader size mismatch");
 
 	TPP_PACK_BEGIN
 	struct VariableHeader
