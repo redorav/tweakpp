@@ -22,9 +22,9 @@
 #include "imgui.h"
 
 // TODO There should be one per connection
-tpp::ServerVariableManager GlobalServerVariableManager;
+std::unique_ptr<tpp::ServerVariableManager> GlobalServerVariableManager;
 
-void ProcessDeclarationPacket(const std::vector<char>& currentPacketData)
+void ProcessDeclarationPacket(tpp::ServerVariableManager* serverVariableManager, const std::vector<char>& currentPacketData)
 {
 	auto currentPosition = currentPacketData.begin();
 
@@ -62,7 +62,7 @@ void ProcessDeclarationPacket(const std::vector<char>& currentPacketData)
 
 	if (validVariable)
 	{
-		GlobalServerVariableManager.AddVariable(variable);
+		serverVariableManager->AddVariable(variable);
 	}
 	else
 	{
@@ -99,6 +99,8 @@ int main(void)
 	serverSocket->Create();
 	serverSocket->SetBlocking(false);
 	serverSocket->Listen(address.port);
+
+	GlobalServerVariableManager = std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager());
 
 	std::vector<std::vector<char>> messages;
 
@@ -145,7 +147,7 @@ int main(void)
 					if (headerPosition != receivedData.end())
 					{
 						currentPacketData.insert(currentPacketData.end(), receivedData.begin(), headerPosition);
-						ProcessDeclarationPacket(currentPacketData);
+						ProcessDeclarationPacket(GlobalServerVariableManager.get(), currentPacketData);
 					}
 				}
 
@@ -169,7 +171,7 @@ int main(void)
 							{
 								currentPacketData.clear();
 								currentPacketData.insert(currentPacketData.end(), headerPosition, headerPosition + sizeof(tpp::MessageHeader) + packetSize);
-								ProcessDeclarationPacket(currentPacketData);
+								ProcessDeclarationPacket(GlobalServerVariableManager.get(), currentPacketData);
 								offset = (headerPosition - receivedData.begin()) + sizeof(tpp::MessageHeader) + packetSize;
 							}
 							else
@@ -211,7 +213,7 @@ int main(void)
 				clientSocket->Close();
 
 				// TODO Clear everything related to a connection
-				GlobalServerVariableManager.Clear();
+				GlobalServerVariableManager->Clear();
 			}
 
 			// TODO Check if it's still connected as we might have dropped the connection here!
@@ -279,7 +281,7 @@ int main(void)
 			{
 				ImGui::BeginTabBar("Tab Bar");
 				{
-					uiConnectionWindow.Draw(GlobalServerVariableManager, "Local : 192.168.0.1", modifiedVariable);
+					uiConnectionWindow.Draw(GlobalServerVariableManager.get(), "Local : 192.168.0.1", modifiedVariable);
 				
 					if (ImGui::BeginTabItem("Xbox One : 192.168.0.32"))
 					{
