@@ -9,7 +9,6 @@
 #include "tppTypes.h"
 
 #include <unordered_map>
-#include <memory>
 
 namespace tpp
 {

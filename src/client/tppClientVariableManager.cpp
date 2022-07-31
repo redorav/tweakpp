@@ -1,5 +1,7 @@
 #include "tppClientVariableManager.h"
 
+#include <memory>
+
 namespace tpp
 {
 	std::unique_ptr<ClientVariableManager> GlobalClientVariableManager;
