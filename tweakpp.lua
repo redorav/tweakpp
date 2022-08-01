@@ -48,18 +48,20 @@ end
 function AddImguiDependencies()
 
 	-- Disable obsolete stuff so we don't rely on it
-	defines { "IMGUI_DISABLE_OBSOLETE_FUNCTIONS" }
+	defines { "IMGUI_DISABLE_OBSOLETE_FUNCTIONS", "IMGUI_ENABLE_FREETYPE" }
 
 	files
 	{
 		"external/imgui/*.cpp",
+		"external/imgui/misc/freetype/*.cpp",
 		"external/imgui/backends/imgui_impl_win32.cpp",
 		"external/imgui/backends/imgui_impl_dx11.cpp"
 	}
 
 	includedirs
 	{
-		"external/imgui"
+		"external/imgui",
+		"external/imgui/misc/freetype"
 	}
 
 end
@@ -75,6 +77,76 @@ function AddXxHashDependencies()
 	includedirs
 	{
 		"external/xxhash"
+	}
+
+end
+
+function AddFreetypeDependencies()
+
+	local freetype = "external/freetype/"
+	local src = freetype.."src/"
+
+	files
+	{
+		src.."base/ftbbox.c",
+		src.."base/ftbdf.c",
+		src.."base/ftbitmap.c",
+		src.."base/ftcid.c",
+		src.."base/ftfstype.c",
+		src.."base/ftgasp.c",
+		src.."base/ftglyph.c",
+		src.."base/ftgxval.c",
+		src.."base/ftmm.c",
+		src.."base/ftotval.c",
+		src.."base/ftpatent.c",
+		src.."base/ftpfr.c",
+		src.."base/ftstroke.c",
+		src.."base/ftsynth.c",
+		src.."base/fttype1.c",
+		src.."base/ftwinfnt.c",
+	
+		src.."autofit/autofit.c",
+		src.."bdf/bdf.c",
+		src.."cff/cff.c",
+		src.."dlg/dlgwrap.c",
+		src.."base/ftbase.c",
+		src.."cache/ftcache.c",
+		src.."gzip/ftgzip.c",
+		src.."base/ftinit.c",
+		src.."lzw/ftlzw.c",
+		src.."pcf/pcf.c",
+		src.."pfr/pfr.c",
+		
+		src.."psaux/psaux.c",
+		src.."pshinter/pshinter.c",
+		src.."psnames/psmodule.c",
+		src.."raster/raster.c",
+		src.."sdf/sdf.c",
+		src.."sfnt/sfnt.c",
+		src.."smooth/smooth.c",
+		src.."svg/svg.c",
+		src.."truetype/truetype.c",
+		src.."type1/type1.c",
+		src.."cid/type1cid.c",
+		src.."type42/type42.c",
+		src.."winfonts/winfnt.c",
+		
+		freetype.."**.h",
+		
+		-- Windows-specific
+		freetype.."builds/windows/ftsystem.c",
+		freetype.."builds/windows/ftdebug.c",
+	}
+
+	includedirs
+	{
+		freetype,
+		freetype.."include"
+	}
+	
+	defines
+	{
+		"FT2_BUILD_LIBRARY"
 	}
 
 end
@@ -99,8 +171,9 @@ project "Server"
 	AddGraphicsApiDependencies()
 	AddUIDependencies()
 	AddXxHashDependencies()
+	AddFreetypeDependencies()
 	includedirs (SourceDirectory)
-	defines ("TPP_SERVER")
+	defines { "TPP_SERVER" }
 	files
 	{
 		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
