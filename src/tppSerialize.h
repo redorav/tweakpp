@@ -33,7 +33,7 @@ namespace tpp
 	{
 	public:
 
-		SerializationStream(uint32_t initialSize)
+		SerializationStream(uint32_t initialSize = 0)
 		{
 			m_data.reserve(initialSize);
 		}

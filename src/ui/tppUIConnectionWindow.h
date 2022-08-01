@@ -12,9 +12,7 @@ namespace tpp
 
 		UIConnectionWindow() {}
 
-		void Draw(const tpp::ServerVariableManager& variableManager, const char* title, const tpp::Variable*& modifiedVariable);
-
-		const VariableGroupNode* GetSelectedGroup() const;
+		void Draw(const tpp::ServerVariableManager* variableManager, const char* title, const tpp::Variable*& modifiedVariable);
 
 	private:
 

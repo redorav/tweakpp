@@ -6,6 +6,8 @@
 #include <map>
 
 #include "tppTypes.h"
+#include "tppSerialize.h"
+#include "tppISocket.h"
 
 namespace tpp
 {
@@ -85,9 +87,19 @@ namespace tpp
 	{
 	public:
 
+		ServerVariableManager(const char* ipAddress, uint32_t port);
+
+		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
+
+		void UpdateConnection();
+
 		void AddVariable(const Variable& variable);
 
+		void NotifyVariableModified(const tpp::Variable& inVariable);
+
 		const Variable* GetVariable(const std::string& path) const;
+
+		const char* GetDisplayString() const;
 
 		void Clear();
 
@@ -105,6 +117,26 @@ namespace tpp
 		const VariableGroupNode* GetVariableGroupNode(const std::string& path) const;
 
 	private:
+
+		std::vector<char> m_receivedData;
+
+		std::vector<char> m_currentPacketData;
+
+		tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> m_writerStream;
+
+		std::string m_ipAddress;
+
+		uint32_t m_port = 0;
+
+		tpp::NetworkAddress m_networkAddress;
+
+		tpp::ISocket* m_serverSocket = nullptr;
+
+		tpp::ISocket* m_clientSocket = nullptr;
+
+		uint64_t m_lastAttemptedConnection = 0;
+
+		std::string m_displayString;
 
 		VariableGroupTree m_variableGroupTree;
 

@@ -30,10 +30,11 @@ namespace tpp
 
 	struct NetworkAddress
 	{
+		NetworkAddress() {}
 		NetworkAddress(const char* inAddress, int inPort);
 
-		char address[32];
-		int  port;
+		char address[32] = {};
+		int  port = 0;
 	};
 
 	// Interface to a socket

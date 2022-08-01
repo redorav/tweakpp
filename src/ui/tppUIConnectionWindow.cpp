@@ -76,9 +76,9 @@ namespace tpp
 		return 0;
 	}
 
-	void UIConnectionWindow::Draw(const tpp::ServerVariableManager& variableManager, const char* title, const tpp::Variable*& modifiedVariable)
+	void UIConnectionWindow::Draw(const tpp::ServerVariableManager* variableManager, const char* title, const tpp::Variable*& modifiedVariable)
 	{
-		if (ImGui::BeginTabItem(title))
+		if (ImGui::BeginTabItem(variableManager->GetDisplayString(), nullptr))
 		{
 			// Address. We can pick up this address and modify it based on the selection, or parse it and navigate through it
 			ImGui::Text("Address:");
@@ -90,7 +90,7 @@ namespace tpp
 			if (modifiedAddress)
 			{
 				// Navigate to the appropriate place
-				const VariableGroupNode* candidateGroupNode = variableManager.GetVariableGroupNode(std::string(m_currentAddress));
+				const VariableGroupNode* candidateGroupNode = variableManager->GetVariableGroupNode(std::string(m_currentAddress));
 
 				if (candidateGroupNode)
 				{
@@ -116,7 +116,7 @@ namespace tpp
 				// Show variable groups
 				ImGui::TableSetColumnIndex(0);
 
-				variableManager.ForEachVariableGroup
+				variableManager->ForEachVariableGroup
 				(
 					[this](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
 					{
@@ -177,7 +177,7 @@ namespace tpp
 						// Exit header row
 						ImGui::TableNextRow();
 
-						variableManager.ForEachVariableInGroup(m_selectedGroup->path, [this, &modifiedVariable](tpp::Variable* variable)
+						variableManager->ForEachVariableInGroup(m_selectedGroup->path, [this, &modifiedVariable](tpp::Variable* variable)
 						{
 							ImGui::TableNextRow();
 

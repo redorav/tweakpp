@@ -31,10 +31,10 @@ namespace tpp
 
 		MessageHeader(uint32_t size, MessageType type) : size(size), type(type) {}
 
-		const char tpp[3] = { HeaderString[0], HeaderString[1], HeaderString[2] };
-		Version version = Version::CurrentVersion;
-		uint32_t size = 0;
-		MessageType type = MessageType::None;
+		const char tpp[3] = { HeaderString[0], HeaderString[1], HeaderString[2] }; // 3 bytes
+		Version version = Version::CurrentVersion; // 2 bytes
+		uint32_t size = 0; // 4 bytes
+		MessageType type = MessageType::None; // 1 byte
 	};
 	TPP_PACK_END
 
@@ -48,13 +48,13 @@ namespace tpp
 		VariableHeader(uint32_t type, uint32_t size, uint64_t hash) : VariableHeader(static_cast<tpp::VariableType>(type), size, hash) {}
 
 		// Type of variable
-		VariableType type;
+		VariableType type; // 1 byte
 		
 		// Size of the variable data
-		uint32_t size;
+		uint32_t size; // 4 bytes
 		
 		// Unique identifier. Typically formed from the path
-		uint64_t hash;
+		uint64_t hash; // 8 bytes
 	};
 	TPP_PACK_END
 
