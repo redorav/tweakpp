@@ -84,6 +84,7 @@ namespace tpp
 			ImGui::Text("Address:");
 			ImGui::SameLine();
 			ImGuiInputTextFlags addressFlags = 0;
+			addressFlags |= ImGuiInputTextFlags_AutoSelectAll;
 			//addressFlags |= ImGuiInputTextFlags_CharsDecimal;
 			bool modifiedAddress = ImGui::InputText("##Address:", m_currentAddress, 512, addressFlags);
 
