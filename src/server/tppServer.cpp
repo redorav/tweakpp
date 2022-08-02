@@ -98,18 +98,7 @@ int main(void)
 				{
 					for (auto& serverVariableManager : ServerVariableManagers)
 					{
-						uiConnectionWindow.Draw(serverVariableManager.get(), "Local : 192.168.0.1", modifiedVariable);
-
-						if (modifiedVariable)
-						{
-							serverVariableManager->NotifyVariableModified(*modifiedVariable);
-						}
-					}
-
-					if (ImGui::BeginTabItem("Xbox One : 192.168.0.32", nullptr))
-					{
-						ImGui::Text("This is the Xbox tab!");
-						ImGui::EndTabItem();
+						serverVariableManager->DrawConnectionWindow();
 					}
 
 					static bool leOpen = false;

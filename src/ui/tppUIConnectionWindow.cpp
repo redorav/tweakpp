@@ -136,7 +136,7 @@ namespace tpp
 							nodeFlags |= ImGuiTreeNodeFlags_Selected;
 						}
 
-						// TODO More efficient than copy
+						// TODO Make more efficient than heap copy
 						std::string patchedName = u8"\uf1c9 " + nodeName;
 
 						// Take the address of the variable as the unique id so it remains consistent across frames

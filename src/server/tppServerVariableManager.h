@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include <memory>
 
 #include "tppTypes.h"
 #include "tppSerialize.h"
@@ -11,6 +12,8 @@
 
 namespace tpp
 {
+	class UIConnectionWindow;
+
 	// Represents a node in the variable group tree, that is itself a group and
 	// can have other groups under it. A group with an empty array of nodes is a leaf
 	class VariableGroupNode
@@ -89,9 +92,14 @@ namespace tpp
 
 		ServerVariableManager(const char* ipAddress, uint32_t port);
 
+		~ServerVariableManager();
+
 		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
 
+		// Receives incoming data, parses and makes sense of incoming variable definitions
 		void UpdateConnection();
+
+		void DrawConnectionWindow();
 
 		void AddVariable(const Variable& variable);
 
@@ -118,15 +126,13 @@ namespace tpp
 
 	private:
 
+		// Connection management
+
 		std::vector<char> m_receivedData;
 
 		std::vector<char> m_currentPacketData;
 
 		tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> m_writerStream;
-
-		std::string m_ipAddress;
-
-		uint32_t m_port = 0;
 
 		tpp::NetworkAddress m_networkAddress;
 
@@ -136,13 +142,19 @@ namespace tpp
 
 		uint64_t m_lastAttemptedConnection = 0;
 
-		std::string m_displayString;
+		// Variable management
 
 		VariableGroupTree m_variableGroupTree;
 
 		std::unordered_map<std::string, VariableGroup> m_variableGroupHashMap;
 
 		std::unordered_map<std::string, Variable> m_variableHashMap;
+
+		// UI Management
+
+		std::string m_displayString;
+
+		tpp::UIConnectionWindow* m_uiConnectionWindow;
 	};
 
 	template<typename Fn>

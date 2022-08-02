@@ -1,6 +1,7 @@
 #include "tppServerVariableManager.h"
 
 #include "tppISocket.h"
+#include "tppUIConnectionWindow.h"
 
 #include <algorithm>
 #include <chrono>
@@ -82,20 +83,24 @@ void tpp::VariableGroupTree::Clear()
 
 tpp::ServerVariableManager::ServerVariableManager(const char* ipAddress, uint32_t port)
 {
-	m_ipAddress = ipAddress;
-	m_port = port;
-
 	m_serverSocket = tpp::Network::CreateSocket();
 	m_clientSocket = tpp::Network::CreateSocket();
 
-	m_networkAddress = tpp::NetworkAddress(m_ipAddress.c_str(), m_port);
+	m_networkAddress = tpp::NetworkAddress(ipAddress, port);
 	m_serverSocket->Create();
 	m_serverSocket->SetBlocking(false);
 	m_serverSocket->Listen(m_networkAddress.port);
 
-	m_displayString = m_ipAddress;
+	m_displayString = ipAddress;
 	m_displayString += ":";
-	m_displayString += std::to_string(m_port);
+	m_displayString += std::to_string(port);
+
+	m_uiConnectionWindow = new tpp::UIConnectionWindow();
+}
+
+tpp::ServerVariableManager::~ServerVariableManager()
+{
+	delete m_uiConnectionWindow;
 }
 
 static const int DEFAULT_BUFLEN = 512;
@@ -123,17 +128,17 @@ void tpp::ServerVariableManager::ProcessDeclarationPacket(const std::vector<char
 
 	switch (variablePacket->type)
 	{
-	case tpp::VariableType::Float:           variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::UnsignedInteger: variable.vdUInt = *reinterpret_cast<const tpp::UInt*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Integer:         variable.vdInt = *reinterpret_cast<const tpp::Int*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Bool:            variable.vdBool = *reinterpret_cast<const tpp::Bool*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Vector2:         variable.vdVector2 = *reinterpret_cast<const tpp::Vector2*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Vector3:         variable.vdVector3 = *reinterpret_cast<const tpp::Vector3*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Vector4:         variable.vdVector4 = *reinterpret_cast<const tpp::Vector4*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Color3:          variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Color4:          variable.vdColor4 = *reinterpret_cast<const tpp::Color4*>(&currentPacketData[variableIndex]); break;
-	case tpp::VariableType::Callback: break;
-	default: validVariable = false;
+		case tpp::VariableType::Float:           variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::UnsignedInteger: variable.vdUInt = *reinterpret_cast<const tpp::UInt*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Integer:         variable.vdInt = *reinterpret_cast<const tpp::Int*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Bool:            variable.vdBool = *reinterpret_cast<const tpp::Bool*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Vector2:         variable.vdVector2 = *reinterpret_cast<const tpp::Vector2*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Vector3:         variable.vdVector3 = *reinterpret_cast<const tpp::Vector3*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Vector4:         variable.vdVector4 = *reinterpret_cast<const tpp::Vector4*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Color3:          variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Color4:          variable.vdColor4 = *reinterpret_cast<const tpp::Color4*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Callback: break;
+		default: validVariable = false;
 	}
 
 	if (validVariable)
@@ -279,6 +284,18 @@ void tpp::ServerVariableManager::UpdateConnection()
 
 			m_lastAttemptedConnection = currentTime;
 		}
+	}
+}
+
+void tpp::ServerVariableManager::DrawConnectionWindow()
+{
+	const tpp::Variable* modifiedVariable = nullptr;
+	m_uiConnectionWindow->Draw(this, m_displayString.c_str(), modifiedVariable);
+
+	if (modifiedVariable)
+	{
+		tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(m_writerStream);
+		serializationWriter.SerializeTppVariableUpdatePacket(*modifiedVariable);
 	}
 }
 

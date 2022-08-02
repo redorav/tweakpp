@@ -10,8 +10,6 @@ namespace tpp
 	{
 	public:
 
-		UIConnectionWindow() {}
-
 		void Draw(const tpp::ServerVariableManager* variableManager, const char* title, const tpp::Variable*& modifiedVariable);
 
 	private:
