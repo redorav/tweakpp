@@ -58,9 +58,6 @@ int main(void)
 
 			if (ImGui::BeginMainMenuBar())
 			{
-				ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.0f, 0.0f, 1.0f));
-				//ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(255.0f, 255.0f, 255.0f, 255.0f));
-
 				if (ImGui::BeginMenu("File"))
 				{
 					if (ImGui::MenuItem("New Connection", "Ctrl + N"))
@@ -78,8 +75,6 @@ int main(void)
 					}
 					ImGui::EndMenu();
 				}
-
-				ImGui::PopStyleColor(1);
 
 				ImGui::EndMainMenuBar();
 			}
