@@ -126,7 +126,7 @@ int main(void)
 		tpp::UIBackend::Render();
 	}
 
-	// TODO Destroy all server variable managers
+	ServerVariableManagers.clear();
 
 	tpp::Network::Shutdown();
 
