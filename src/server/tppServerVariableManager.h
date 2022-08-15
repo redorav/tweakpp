@@ -94,28 +94,19 @@ namespace tpp
 
 		~ServerVariableManager();
 
-		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
-
 		// Receives incoming data, parses and makes sense of incoming variable definitions
 		void UpdateConnection();
 
 		void DrawConnectionWindow();
 
-		void AddVariable(const Variable& variable);
-
-		void NotifyVariableModified(const tpp::Variable& inVariable);
-
-		const Variable* GetVariable(const std::string& path) const;
-
 		const char* GetDisplayString() const;
 
 		void Clear();
 
-		template<typename Fn>
-		void ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const;
+		bool MarkedAsClosed() const;
 
 		template<typename Fn>
-		void ForEachVariable(const Fn& fn) const;
+		void ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const;
 
 		template<typename FnOpen, typename FnClose>
 		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const;
@@ -125,6 +116,12 @@ namespace tpp
 		const VariableGroupNode* GetVariableGroupNode(const std::string& path) const;
 
 	private:
+
+		void AddVariable(const Variable& variable);
+
+		const Variable* GetVariable(const std::string& path) const;
+
+		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
 
 		// Connection management
 
@@ -152,6 +149,8 @@ namespace tpp
 
 		// UI Management
 
+		bool m_windowOpen;
+
 		std::string m_displayString;
 
 		tpp::UIConnectionWindow* m_uiConnectionWindow;
@@ -170,15 +169,6 @@ namespace tpp
 			{
 				fn(variable);
 			}
-		}
-	}
-
-	template<typename Fn>
-	void tpp::ServerVariableManager::ForEachVariable(const Fn& fn) const
-	{
-		for (const auto& it : m_variableHashMap)
-		{
-			fn(it.first, it.second);
 		}
 	}
 

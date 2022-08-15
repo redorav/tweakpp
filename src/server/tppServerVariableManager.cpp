@@ -82,6 +82,7 @@ void tpp::VariableGroupTree::Clear()
 }
 
 tpp::ServerVariableManager::ServerVariableManager(const char* ipAddress, uint32_t port)
+	: m_windowOpen(true)
 {
 	m_serverSocket = tpp::Network::CreateSocket();
 	m_clientSocket = tpp::Network::CreateSocket();
@@ -91,9 +92,11 @@ tpp::ServerVariableManager::ServerVariableManager(const char* ipAddress, uint32_
 	m_serverSocket->SetBlocking(false);
 	m_serverSocket->Listen(m_networkAddress.port);
 
-	m_displayString = ipAddress;
+	m_displayString += ipAddress;
 	m_displayString += ":";
 	m_displayString += std::to_string(port);
+	m_displayString += "##";
+	m_displayString += std::to_string((uintptr_t)this);
 
 	m_uiConnectionWindow = new tpp::UIConnectionWindow();
 }
@@ -290,7 +293,7 @@ void tpp::ServerVariableManager::UpdateConnection()
 void tpp::ServerVariableManager::DrawConnectionWindow()
 {
 	const tpp::Variable* modifiedVariable = nullptr;
-	m_uiConnectionWindow->Draw(this, m_displayString.c_str(), modifiedVariable);
+	m_uiConnectionWindow->Draw(this, m_displayString.c_str(), &m_windowOpen, modifiedVariable);
 
 	if (modifiedVariable)
 	{
@@ -323,12 +326,6 @@ void tpp::ServerVariableManager::AddVariable(const Variable& variable)
 	variableGroup->variables.push_back(&insertedVariable);
 }
 
-void tpp::ServerVariableManager::NotifyVariableModified(const tpp::Variable& modifiedVariable)
-{
-	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(m_writerStream);
-	serializationWriter.SerializeTppVariableUpdatePacket(modifiedVariable);
-}
-
 const tpp::Variable* tpp::ServerVariableManager::GetVariable(const std::string& path) const
 {
 	auto variable = m_variableHashMap.find(path);
@@ -355,6 +352,11 @@ void tpp::ServerVariableManager::Clear()
 	m_variableGroupHashMap.clear();
 
 	m_variableHashMap.clear();
+}
+
+bool tpp::ServerVariableManager::MarkedAsClosed() const
+{
+	return !m_windowOpen;
 }
 
 const tpp::VariableGroup* tpp::ServerVariableManager::GetVariableGroup(const std::string& path) const

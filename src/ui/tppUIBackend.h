@@ -1,5 +1,7 @@
 #pragma once
 
+struct ImGuiStyle;
+
 namespace tpp
 {
 	enum class UIBackendResult
@@ -20,6 +22,7 @@ namespace tpp
 	{
 	public:
 
+		
 		static bool Initialize(const UIInitializeParams& params);
 
 		static bool Shutdown();
@@ -35,6 +38,8 @@ namespace tpp
 	private:
 
 		static bool InitializePlatform(const UIInitializeParams& params);
+
+		static void ApplyStyles(ImGuiStyle* dst = nullptr);
 
 		static bool ShutdownPlatform();
 

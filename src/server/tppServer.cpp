@@ -40,7 +40,7 @@ int main(void)
 
 	tpp::Network::Initialize();
 
-	ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager("127.0.0.1", 27001)));
+	ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager("localhost", 27001)));
 	ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager("127.0.0.1", 27002)));
 
 	std::vector<std::vector<char>> messages;
@@ -52,6 +52,8 @@ int main(void)
 			serverVariableManager->UpdateConnection();
 		}
 
+		bool popupOpen = false;
+
 		// Prepare the UI elements
 		{
 			const tpp::Variable* modifiedVariable = nullptr;
@@ -62,7 +64,7 @@ int main(void)
 				{
 					if (ImGui::MenuItem("New Connection", "Ctrl + N"))
 					{
-
+						popupOpen = true;
 					}
 
 					ImGui::EndMenu();
@@ -79,42 +81,70 @@ int main(void)
 				ImGui::EndMainMenuBar();
 			}
 
-			ImGuiWindowFlags windowFlags = 0;
-			windowFlags |= ImGuiWindowFlags_NoCollapse;
-			//windowFlags |= ImGuiWindowFlags_NoResize;
-			//windowFlags |= ImGuiWindowFlags_AlwaysAutoResize;
-			ImGui::Begin("Connections", nullptr, windowFlags);
+			if (popupOpen)
 			{
-				ImGuiTabBarFlags tabBarFlags = 0;
-				tabBarFlags |= ImGuiTabBarFlags_Reorderable;
-				tabBarFlags |= ImGuiTabBarFlags_FittingPolicyResizeDown;
-
-				ImGui::BeginTabBar("Tab Bar", tabBarFlags);
-				{
-					for (auto& serverVariableManager : ServerVariableManagers)
-					{
-						serverVariableManager->DrawConnectionWindow();
-					}
-
-					static bool leOpen = false;
-
-					ImGuiTabItemFlags tabButtonFlags = 0;
-					tabButtonFlags |= ImGuiTabItemFlags_Trailing;
-					if (ImGui::TabItemButton("+", tabButtonFlags))
-					{
-						// TODO Create new tab
-						leOpen = true;
-					}
-
-					if (ImGui::BeginTabItem("Xbox Scarlett : 192.168.0.354", &leOpen))
-					{
-						ImGui::Text("This is the Xbox Scarlett tab!");
-						ImGui::EndTabItem();
-					}
-				}
-				ImGui::EndTabBar();
+				ImGui::OpenPopup("New Connection");
 			}
-			ImGui::End();
+
+			// Make dimensions adequate
+			{
+				ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+				if (ImGui::BeginPopupModal("New Connection", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("Enter IP Address and port\n\n");
+					ImGui::Separator();
+
+					static char IPBuffer[16] = "localhost";
+					ImGui::Text("IP Address");
+					ImGui::InputText("##IP Address", IPBuffer, sizeof(IPBuffer));
+					ImGui::SameLine();
+
+					static char portBuffer[16] = "27001";
+					ImGui::InputText("##Port", portBuffer, sizeof(portBuffer));
+
+					if (ImGui::Button("OK", ImVec2(60, 0)))
+					{
+						// TODO std::stoi crashes if input is malformed. Create a simple function to parse a port
+						uint32_t port = std::stoi(portBuffer);
+						ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager(IPBuffer, port)));
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::SetItemDefaultFocus();
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel", ImVec2(60, 0)))
+					{
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::EndPopup();
+				}
+				else
+				{
+					popupOpen = false;
+				}
+			}
+
+			ImGuiID mainDockspaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+
+			for (auto& iter = ServerVariableManagers.begin(); iter != ServerVariableManagers.end();)
+			{
+				const auto& serverVariableManager = *iter;
+
+				ImGui::SetNextWindowDockID(mainDockspaceID, ImGuiCond_Once);
+				serverVariableManager->DrawConnectionWindow();
+
+				if (serverVariableManager->MarkedAsClosed())
+				{
+					iter = ServerVariableManagers.erase(iter);
+				}
+				else
+				{
+					++iter;
+				}
+			}
 
 			// Log
 			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
@@ -122,6 +152,8 @@ int main(void)
 
 			uiLog.Draw("Log", nullptr);
 		}
+
+		ImGui::ShowDemoWindow(nullptr);
 
 		tpp::UIBackend::Render();
 	}

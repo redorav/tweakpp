@@ -76,9 +76,12 @@ namespace tpp
 		return 0;
 	}
 
-	void UIConnectionWindow::Draw(const tpp::ServerVariableManager* variableManager, const char* title, const tpp::Variable*& modifiedVariable)
+	void UIConnectionWindow::Draw(const tpp::ServerVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable)
 	{
-		if (ImGui::BeginTabItem(variableManager->GetDisplayString(), nullptr))
+		ImGuiWindowFlags windowFlags = 0;
+		windowFlags |= ImGuiWindowFlags_NoCollapse;
+
+		ImGui::Begin(variableManager->GetDisplayString(), open, windowFlags);
 		{
 			// Address. We can pick up this address and modify it based on the selection, or parse it and navigate through it
 			ImGui::Text("Address:");
@@ -206,8 +209,7 @@ namespace tpp
 
 				ImGui::EndTable();
 			}
-
-			ImGui::EndTabItem();
 		}
+		ImGui::End();
 	}
 }
