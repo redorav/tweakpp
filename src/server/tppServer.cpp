@@ -55,11 +55,91 @@ tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f
 tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
 tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
 
-void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::BinaryWrite>& variableDescriptionTable)
+template<typename TppVariable>
+void SerializeTppVariableDeclaration(TppVariable& variable, const tpp::Hash& hash, tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& stream)
+{
+	// Send the entire variable as it contains the description
+	stream << tpp::VariableHeader(variable.type, sizeof(variable), hash);
+	stream << variable;
+}
+
+template<>
+void SerializeTppVariableDeclaration<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& stream)
+{
+	stream << tpp::VariableHeader(variable.type, 0, hash);
+}
+
+void SerializeVariableDescription(const tpp::Variable& inVariable, const std::string& inPath, const tpp::Hash& hash, tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& stream)
+{
+	tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
+	std::string& path = const_cast<std::string&>(inPath);
+
+	size_t startSize = stream.Size();
+
+	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
+	// size that we know once the whole message has been constructed
+	stream << tpp::MessageHeader(0, tpp::MessageType::Declaration);
+
+	// Serialize the path of the variable so the server can display it
+	stream << path;
+
+	if (variable.type == tpp::VariableType::Float)
+	{
+		SerializeTppVariableDeclaration(variable.vdFloat, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::UnsignedInteger)
+	{
+		SerializeTppVariableDeclaration(variable.vdUInt, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Integer)
+	{
+		SerializeTppVariableDeclaration(variable.vdInt, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Bool)
+	{
+		SerializeTppVariableDeclaration(variable.vdBool, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Color3)
+	{
+		SerializeTppVariableDeclaration(variable.vdColor3, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Color4)
+	{
+		SerializeTppVariableDeclaration(variable.vdColor4, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Vector2)
+	{
+		SerializeTppVariableDeclaration(variable.vdVector2, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Vector3)
+	{
+		SerializeTppVariableDeclaration(variable.vdVector3, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Vector4)
+	{
+		SerializeTppVariableDeclaration(variable.vdVector4, hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Callback)
+	{
+		SerializeTppVariableDeclaration(variable.vdCallback, hash, stream);
+	}
+	else
+	{
+		printf("Variable %s not serialized correctly\n", path.c_str());
+	}
+
+	size_t totalSize = stream.Size() - startSize;
+	size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
+
+	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(stream.Back() - totalSize + 1);
+	header->size = (decltype(header->size))packetSize;
+}
+
+void PrepareVariableDescriptionTable(tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& variableDescriptionTable)
 {
 	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash)
 	{
-		variableDescriptionTable.SerializeVariableDescription(variable, path, hash);
+		SerializeVariableDescription(variable, path, hash, variableDescriptionTable);
 	});
 }
 
@@ -81,8 +161,7 @@ int main(int argc, char **argv)
 
 	bool sentVariableTable = false;
 
-	tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite> writerStream(DEFAULT_BUFLEN);
-	tpp::Archive<tpp::SerializationStreamType::BinaryWrite> variableDescriptionTable(writerStream);
+	tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite> variableDescriptionTable(DEFAULT_BUFLEN);
 
 	while (!shutdown)
 	{
@@ -92,7 +171,7 @@ int main(int argc, char **argv)
 			{
 				variableDescriptionTable.Clear();
 				PrepareVariableDescriptionTable(variableDescriptionTable);
-				clientSocket->Send(variableDescriptionTable.GetStream().Data(), variableDescriptionTable.GetStream().Size());
+				clientSocket->Send(variableDescriptionTable.Data(), variableDescriptionTable.Size());
 				sentVariableTable = true;
 			}
 
