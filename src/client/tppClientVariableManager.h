@@ -129,7 +129,7 @@ namespace tpp
 
 		std::vector<char> m_currentPacketData;
 
-		tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> m_writerStream;
+		tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite> m_writerStream;
 
 		tpp::NetworkAddress m_networkAddress;
 

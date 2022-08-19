@@ -55,7 +55,7 @@ tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f
 tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
 tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
 
-void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::RawStreamWrite>& variableDescriptionTable)
+void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::BinaryWrite>& variableDescriptionTable)
 {
 	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash)
 	{
@@ -81,8 +81,8 @@ int main(int argc, char **argv)
 
 	bool sentVariableTable = false;
 
-	tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> writerStream(DEFAULT_BUFLEN);
-	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> variableDescriptionTable(writerStream);
+	tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite> writerStream(DEFAULT_BUFLEN);
+	tpp::Archive<tpp::SerializationStreamType::BinaryWrite> variableDescriptionTable(writerStream);
 
 	while (!shutdown)
 	{

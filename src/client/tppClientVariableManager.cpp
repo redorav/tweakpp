@@ -159,7 +159,7 @@ void tpp::ClientVariableManager::UpdateConnection()
 	char receiveBuffer[DEFAULT_BUFLEN];
 	int receiveBufferLength = DEFAULT_BUFLEN;
 
-	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(m_writerStream);
+	tpp::Archive<tpp::SerializationStreamType::BinaryWrite> serializationWriter(m_writerStream);
 
 	if (m_clientSocket->IsConnected())
 	{
@@ -297,7 +297,7 @@ void tpp::ClientVariableManager::DrawConnectionWindow()
 
 	if (modifiedVariable)
 	{
-		tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> serializationWriter(m_writerStream);
+		tpp::Archive<tpp::SerializationStreamType::BinaryWrite> serializationWriter(m_writerStream);
 		serializationWriter.SerializeTppVariableUpdatePacket(*modifiedVariable);
 	}
 }

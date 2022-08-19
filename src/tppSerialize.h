@@ -10,8 +10,8 @@ namespace tpp
 	{
 		enum T
 		{
-			RawStreamWrite,
-			RawStreamRead
+			BinaryWrite,
+			BinaryRead
 		};
 	}
 
@@ -19,7 +19,7 @@ namespace tpp
 	class SerializationStream {};
 
 	template<>
-	class SerializationStream<SerializationStreamType::RawStreamWrite>
+	class SerializationStream<SerializationStreamType::BinaryWrite>
 	{
 	public:
 
@@ -57,7 +57,7 @@ namespace tpp
 	};
 
 	template<>
-	class SerializationStream<SerializationStreamType::RawStreamRead>
+	class SerializationStream<SerializationStreamType::BinaryRead>
 	{
 	public:
 
