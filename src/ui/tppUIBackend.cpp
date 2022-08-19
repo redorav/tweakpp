@@ -192,7 +192,7 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 		fontAwesomeConfig.MergeMode = true;
 		fontAwesomeConfig.GlyphRanges = fontAwesomeRanges.Data;
 		//fontAwesomeConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
-		io.Fonts->AddFontFromFileTTF("FontAwesome.otf", fontSize, &fontAwesomeConfig);
+		io.Fonts->AddFontFromFileTTF("Font Awesome 6 Free-Regular-400.otf", fontSize, &fontAwesomeConfig);
 		io.Fonts->Build();
 	}
 

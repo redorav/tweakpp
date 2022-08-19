@@ -1,6 +1,6 @@
 #include "tppUIConnectionWindow.h"
 
-#include "server/tppServerVariableManager.h"
+#include "client/tppClientVariableManager.h"
 
 #include "imgui.h"
 
@@ -76,7 +76,7 @@ namespace tpp
 		return 0;
 	}
 
-	void UIConnectionWindow::Draw(const tpp::ServerVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable)
+	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable)
 	{
 		ImGuiWindowFlags windowFlags = 0;
 		windowFlags |= ImGuiWindowFlags_NoCollapse;

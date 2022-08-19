@@ -1,168 +1,196 @@
-﻿#include <stdlib.h>
+#include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 #include <vector>
-#include <chrono>
-#include <thread>
-#include <algorithm>
 #include <string>
-#include <memory>
-#include <unordered_map>
+#include <algorithm>
 
 #include "tppNetwork.h"
 #include "tppISocket.h"
-
-#include "tppServerVariableManager.h"
-#include "tppUIBackend.h"
-#include "tppUILog.h"
-#include "tppUIConnectionWindow.h"
-#include "tppSerialize.h"
 #include "tppTypes.h"
+#include "tppSerialize.h"
+#include "server/tppServerVariableManager.h"
 
-#include "imgui.h"
+//---------
+// EXAMPLES
+//---------
 
-std::vector<std::unique_ptr<tpp::ServerVariableManager>> ServerVariableManagers;
+// SSR
+tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::UInt SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1, 1, 8, 1);
+tpp::Int SSRThicknessBias("Rendering/Post Effects/SSR/Thickness Bias", -1, -10, 10, 2);
+tpp::Bool SSREnabled("Rendering/Post Effects/SSR/Enabled", false);
+tpp::Vector2 SSRDirection2("Rendering/Post Effects/SSR/Direction 2", 1.0f, 0.7f);
+tpp::Vector3 SSRDirection3("Rendering/Post Effects/SSR/Direction 3", 0.4f, 0.2f, 0.3f);
+tpp::Vector4 SSRDirection4("Rendering/Post Effects/SSR/Direction 4", 0.34f, 0.5f, 0.6f, 0.1f);
+tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
+tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 0.7f, 0.4f, 0.2f, 0.2f);
 
-int main(void)
+void RecompileShadersCallback()
 {
-	tpp::UIInitializeParams params;
-	params.windowPositionX = 100;
-	params.windowPositionY = 100;
-	params.windowWidth = 1280;
-	params.windowHeight = 800;
+	printf("I recompiled shaders\n");
+}
 
-	tpp::UIBackend::Initialize(params);
+tpp::Callback RecompileShaders("Rendering/Post Effects/SSR/Recompile Shaders", RecompileShadersCallback);
 
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+// Depth of Field
+tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
+tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field/Bokeh Size", 2.5f, 1.0f, 32.0f, 1.0f);
 
-	tpp::UILog uiLog;
-	tpp::UIConnectionWindow uiConnectionWindow;
+// TAA
+tpp::Float TAAJitterX("Rendering/Post Effects/TAA/TAA Jitter X", 0.5f, 0.0f, 128.0f, 1.0f);
+tpp::Float TAAJitterY("Rendering/Post Effects/TAA/TAA Jitter Y", 0.5f, 0.0f, 128.0f, 1.0f);
+
+tpp::Float PerformanceGraphScaleX("Rendering/Performance/Graph Scale X", 1.5f, 0.1f, 4.0f, 1.0f);
+tpp::Float PerformanceGraphScaleY("Rendering/Performance/Graph Scale Y", 1.5f, 0.1f, 4.0f, 1.0f);
+
+tpp::Float CoreGraphScaleX("Core/Performance/Graph Scale X", 1.3f, 0.1f, 4.0f, 1.0f);
+tpp::Float CoreGraphScaleY("Core/Performance/Graph Scale Y", 1.3f, 0.1f, 4.0f, 1.0f);
+
+tpp::Float AnimationTimeScale("Animation/Time Scale", 1.0f, 0.0f, 2.0f, 1.0f);
+tpp::Float AnimationThreshold("Animation/Threshold", 1.0f, 1.0f, 3.0f, 1.0f);
+
+tpp::Float PhysicsTargetFPS("Physics/Target FPS", 60.0f, 1.0f, 120.0f, 1.0f);
+tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f, 1.0f);
+
+tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
+tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
+
+void PrepareVariableDescriptionTable(tpp::Archive<tpp::SerializationStreamType::RawStreamWrite>& variableDescriptionTable)
+{
+	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash)
+	{
+		variableDescriptionTable.SerializeVariableDescription(variable, path, hash);
+	});
+}
+
+int main(int argc, char **argv)
+{
+	static const int DEFAULT_BUFLEN = 512;
+
+	char receiveBuffer[DEFAULT_BUFLEN] = {};
+	int receiveBufferLength = DEFAULT_BUFLEN;
 
 	tpp::Network::Initialize();
 
-	ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager("localhost", 27001)));
-	ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager("127.0.0.1", 27002)));
+	tpp::NetworkAddress address("127.0.0.1", 27001);
+	tpp::ISocket* clientSocket = tpp::Network::CreateSocket();
+	clientSocket->Create();
+	clientSocket->SetBlocking(false);
 
-	std::vector<std::vector<char>> messages;
+	bool shutdown = false;
 
-	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
+	bool sentVariableTable = false;
+
+	tpp::SerializationStream<tpp::SerializationStreamType::RawStreamWrite> writerStream(DEFAULT_BUFLEN);
+	tpp::Archive<tpp::SerializationStreamType::RawStreamWrite> variableDescriptionTable(writerStream);
+
+	while (!shutdown)
 	{
-		for (auto& serverVariableManager : ServerVariableManagers)
+		if (clientSocket->IsConnected())
 		{
-			serverVariableManager->UpdateConnection();
+			if (!sentVariableTable)
+			{
+				variableDescriptionTable.Clear();
+				PrepareVariableDescriptionTable(variableDescriptionTable);
+				clientSocket->Send(variableDescriptionTable.GetStream().Data(), variableDescriptionTable.GetStream().Size());
+				sentVariableTable = true;
+			}
+
+			tpp::SocketReturn::T receiveResult = clientSocket->Receive(receiveBuffer, receiveBufferLength);
+
+			// If we have received valid data
+			if (receiveResult > 0)
+			{
+				// Copy all the data into a vector
+				// TODO Use the original buffer instead
+				std::vector<char> receivedData(receiveBuffer, receiveBuffer + receiveResult);
+
+				// Search for the first appearance of the header
+				auto headerPosition = std::search(receivedData.begin(), receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+
+				// While we have headers (there could be multiple messages in the data) process them
+				while (headerPosition != receivedData.end())
+				{
+					// Cast the start of the message to the header, and extract relevant information
+					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
+					tpp::MessageType messageType = header->type;
+					tpp::Version version = header->version;
+					uint32_t packetSize = header->size;
+
+					// Find where the header starts, and copy the data onward
+					auto index = headerPosition + sizeof(tpp::MessageHeader) - receivedData.begin();
+
+					std::vector<char> packetData;
+					packetData.reserve(packetSize);
+					packetData.insert(packetData.end(), &receivedData[index], &receivedData[index] + packetSize);
+
+					auto currentPosition = packetData.begin();
+
+					// Use the type to read in the value
+					{
+						auto valueIndex = currentPosition - packetData.begin();
+						tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
+
+						const tpp::Variable& variable = tpp::GetServerVariableManager()->Find(variablePacket->hash);
+
+						if (variable.type != tpp::VariableType::Invalid)
+						{
+							auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
+
+							if (variablePacket->type == tpp::VariableType::Callback)
+							{
+								// Invoke the callback
+								variable.vdCallback.currentValue();
+							}
+							else if (variablePacket->size > 0)
+							{
+								// Copy the memory over as-is, we assume the format is correct
+								memcpy(variable.memory, &packetData[variableIndex], variablePacket->size);
+							}
+						}
+					}
+
+					auto nextHeaderPosition = std::search(headerPosition + 1, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
+
+					headerPosition = nextHeaderPosition;
+				}
+			}
+			else if (receiveResult == tpp::SocketReturn::Ok || receiveResult == tpp::SocketReturn::WouldBlock)
+			{
+				// Ignore
+			}
+			else if (receiveResult == tpp::SocketReturn::ConnectionClosed)
+			{
+				// Close the socket. This means we've closed the server
+				clientSocket->Close();
+				printf("Connection closed\n");
+
+				// Reopen and leave in a good state
+				clientSocket->Create();
+				clientSocket->SetBlocking(false);
+			}
+			else if (receiveResult < 0)
+			{
+				//wchar_t errorString[256] = {};
+				//int size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), 0, (LPWSTR)&errorString, sizeof(errorString), NULL);
+				//
+				//printf("recv failed with error: %S\n", errorString);
+			}
 		}
-
-		bool popupOpen = false;
-
-		// Prepare the UI elements
+		else
 		{
-			const tpp::Variable* modifiedVariable = nullptr;
+			tpp::SocketReturn::T connectReturn = clientSocket->Connect(address);
 
-			if (ImGui::BeginMainMenuBar())
+			if (connectReturn == tpp::SocketReturn::Ok)
 			{
-				if (ImGui::BeginMenu("File"))
-				{
-					if (ImGui::MenuItem("New Connection", "Ctrl + N"))
-					{
-						popupOpen = true;
-					}
-
-					ImGui::EndMenu();
-				}
-				if (ImGui::BeginMenu("Help"))
-				{
-					if (ImGui::MenuItem("About"))
-					{
-
-					}
-					ImGui::EndMenu();
-				}
-
-				ImGui::EndMainMenuBar();
+				sentVariableTable = false;
 			}
-
-			if (popupOpen)
-			{
-				ImGui::OpenPopup("New Connection");
-			}
-
-			// Make dimensions adequate
-			{
-				ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-				if (ImGui::BeginPopupModal("New Connection", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					ImGui::Text("Enter IP Address and port\n\n");
-					ImGui::Separator();
-
-					static char IPBuffer[16] = "localhost";
-					ImGui::Text("IP Address");
-					ImGui::InputText("##IP Address", IPBuffer, sizeof(IPBuffer));
-					ImGui::SameLine();
-
-					static char portBuffer[16] = "27001";
-					ImGui::InputText("##Port", portBuffer, sizeof(portBuffer));
-
-					if (ImGui::Button("OK", ImVec2(60, 0)))
-					{
-						// TODO std::stoi crashes if input is malformed. Create a simple function to parse a port
-						uint32_t port = std::stoi(portBuffer);
-						ServerVariableManagers.push_back(std::unique_ptr<tpp::ServerVariableManager>(new tpp::ServerVariableManager(IPBuffer, port)));
-						ImGui::CloseCurrentPopup();
-					}
-
-					ImGui::SetItemDefaultFocus();
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel", ImVec2(60, 0)))
-					{
-						ImGui::CloseCurrentPopup();
-					}
-
-					ImGui::EndPopup();
-				}
-				else
-				{
-					popupOpen = false;
-				}
-			}
-
-			ImGuiID mainDockspaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-
-			for (auto& iter = ServerVariableManagers.begin(); iter != ServerVariableManagers.end();)
-			{
-				const auto& serverVariableManager = *iter;
-
-				ImGui::SetNextWindowDockID(mainDockspaceID, ImGuiCond_Once);
-				serverVariableManager->DrawConnectionWindow();
-
-				if (serverVariableManager->MarkedAsClosed())
-				{
-					iter = ServerVariableManagers.erase(iter);
-				}
-				else
-				{
-					++iter;
-				}
-			}
-
-			// Log
-			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
-			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth(), 200), ImGuiCond_Appearing);
-
-			uiLog.Draw("Log", nullptr);
 		}
-
-		ImGui::ShowDemoWindow(nullptr);
-
-		tpp::UIBackend::Render();
 	}
-
-	ServerVariableManagers.clear();
 
 	tpp::Network::Shutdown();
 
-	tpp::UIBackend::Shutdown();
+	printf("Client closed successfully\n");
 
 	return 0;
 }

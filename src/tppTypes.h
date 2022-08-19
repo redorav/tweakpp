@@ -2,7 +2,7 @@
 
 #include "tppCommon.h"
 
-#if defined(TPP_SERVER)
+#if defined(TPP_CLIENT)
 #include <string>
 #include "tppHash.h"
 #endif
@@ -255,7 +255,7 @@ namespace tpp
 	{
 	public:
 
-#if defined(TPP_SERVER)
+#if defined(TPP_CLIENT)
 
 		Variable() {}
 

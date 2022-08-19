@@ -2,7 +2,7 @@
 
 namespace tpp
 {
-	class ServerVariableManager;
+	class ClientVariableManager;
 	class VariableGroupNode;
 	class Variable;
 
@@ -10,7 +10,7 @@ namespace tpp
 	{
 	public:
 
-		void Draw(const tpp::ServerVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable);
+		void Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable);
 
 	private:
 

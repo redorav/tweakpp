@@ -157,12 +157,12 @@ function AddGraphicsApiDependencies()
 
 end
 
-workspace "Tweak++ Server"
+workspace "Tweak++ Client"
 	configurations { "Debug", "Release" }
-	location (Workspace.."/Server")
+	location (Workspace.."/Client")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
-project "Server"
+project "Client"
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")
@@ -173,19 +173,19 @@ project "Server"
 	AddXxHashDependencies()
 	AddFreetypeDependencies()
 	includedirs (SourceDirectory)
-	defines { "TPP_SERVER" }
+	defines { "TPP_CLIENT" }
 	files
 	{
 		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
-		SourceDirectory.."/server/*.cpp",
+		SourceDirectory.."/client/*.cpp",
 	}
 	
-workspace "Tweak++ Client"
+workspace "Tweak++ Server"
 	configurations { "Debug", "Release" }	
-	location (Workspace.."/Client")
+	location (Workspace.."/Server")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
 	
-project "Client"
+project "Server"
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")
@@ -195,5 +195,5 @@ project "Client"
 	files
 	{
 		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
-		SourceDirectory.."/client/*.cpp",
+		SourceDirectory.."/server/*.cpp",
 	}
