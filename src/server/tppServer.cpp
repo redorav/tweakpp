@@ -56,7 +56,7 @@ tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals
 tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
 
 template<typename TppVariable>
-void SerializeTppVariableDeclaration(TppVariable& variable, const tpp::Hash& hash, tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& stream)
+void SerializeTppVariableDeclaration(TppVariable& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
 {
 	// Send the entire variable as it contains the description
 	stream << tpp::VariableHeader(variable.type, sizeof(variable), hash);
@@ -64,12 +64,12 @@ void SerializeTppVariableDeclaration(TppVariable& variable, const tpp::Hash& has
 }
 
 template<>
-void SerializeTppVariableDeclaration<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& stream)
+void SerializeTppVariableDeclaration<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
 {
 	stream << tpp::VariableHeader(variable.type, 0, hash);
 }
 
-void SerializeVariableDescription(const tpp::Variable& inVariable, const std::string& inPath, const tpp::Hash& hash, tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& stream)
+void SerializeVariableDescription(const tpp::Variable& inVariable, const std::string& inPath, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
 {
 	tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
 	std::string& path = const_cast<std::string&>(inPath);
@@ -135,7 +135,7 @@ void SerializeVariableDescription(const tpp::Variable& inVariable, const std::st
 	header->size = (decltype(header->size))packetSize;
 }
 
-void PrepareVariableDescriptionTable(tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite>& variableDescriptionTable)
+void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDescriptionTable)
 {
 	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash)
 	{
@@ -161,7 +161,7 @@ int main(int argc, char **argv)
 
 	bool sentVariableTable = false;
 
-	tpp::SerializationStream<tpp::SerializationStreamType::BinaryWrite> variableDescriptionTable(DEFAULT_BUFLEN);
+	tpp::BinarySerializationWriter variableDescriptionTable(DEFAULT_BUFLEN);
 
 	while (!shutdown)
 	{

@@ -6,6 +6,87 @@
 #include <algorithm>
 #include <chrono>
 
+template<typename TppVariable>
+void SerializeTppVariableUpdate(TppVariable& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
+{
+	// If we're updating, we only need to send the current value
+	stream << tpp::VariableHeader(variable.type, sizeof(variable.currentValue), (uint64_t)hash);
+	stream << variable.currentValue;
+}
+
+template<>
+void SerializeTppVariableUpdate<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
+{
+	stream << tpp::VariableHeader(variable.type, 0, hash);
+}
+
+// TODO Remove ugly const_cast and just make explicit that things can be modified. It does
+// mean that we have to change the code upstream
+void SerializeTppVariableUpdatePacket(const tpp::Variable& inVariable, tpp::BinarySerializationWriter& stream)
+{
+	tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
+
+	size_t startSize = stream.Size();
+
+	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
+	// size that we know once the whole message has been constructed
+	stream << tpp::MessageHeader(0, tpp::MessageType::Update);
+
+	// We don't serialize the path when updating the packet, as we pass in the hash
+
+	if (variable.type == tpp::VariableType::Float)
+	{
+		SerializeTppVariableUpdate(variable.vdFloat, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::UnsignedInteger)
+	{
+		SerializeTppVariableUpdate(variable.vdInt, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Integer)
+	{
+		SerializeTppVariableUpdate(variable.vdInt, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Bool)
+	{
+		SerializeTppVariableUpdate(variable.vdBool, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Color3)
+	{
+		SerializeTppVariableUpdate(variable.vdColor3, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Color4)
+	{
+		SerializeTppVariableUpdate(variable.vdColor4, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Vector2)
+	{
+		SerializeTppVariableUpdate(variable.vdVector2, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Vector3)
+	{
+		SerializeTppVariableUpdate(variable.vdVector3, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Vector4)
+	{
+		SerializeTppVariableUpdate(variable.vdVector4, variable.hash, stream);
+	}
+	else if (variable.type == tpp::VariableType::Callback)
+	{
+		SerializeTppVariableUpdate(variable.vdCallback, variable.hash, stream);
+	}
+	else
+	{
+		printf("Variable %s not serialized correctly\n", variable.path.c_str());
+	}
+
+	// Patch in the packet size
+	size_t totalSize = stream.Size() - startSize;
+	size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
+
+	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(stream.Back() - totalSize + 1);
+	header->size = (decltype(header->size))packetSize;
+}
+
 tpp::VariableGroupNode* tpp::VariableGroupNode::AddFindNode(const std::string& path, const std::string& nodeName)
 {
 	auto it = nodes.find(nodeName);
@@ -159,8 +240,6 @@ void tpp::ClientVariableManager::UpdateConnection()
 	char receiveBuffer[DEFAULT_BUFLEN];
 	int receiveBufferLength = DEFAULT_BUFLEN;
 
-	tpp::Archive<tpp::SerializationStreamType::BinaryWrite> serializationWriter(m_writerStream);
-
 	if (m_clientSocket->IsConnected())
 	{
 		tpp::SocketReturn::T receiveResult = m_clientSocket->Receive(receiveBuffer, receiveBufferLength);
@@ -260,11 +339,11 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 		// TODO Check if it's still connected as we might have dropped the connection here!
 
-		if (!serializationWriter.GetStream().Empty())
+		if (!m_writerStream.Empty())
 		{
 			// TODO Handle send issues
-			tpp::SocketReturn::T sendResult = m_clientSocket->Send(serializationWriter.GetStream().Data(), serializationWriter.GetStream().Size());
-			serializationWriter.Clear();
+			tpp::SocketReturn::T sendResult = m_clientSocket->Send(m_writerStream.Data(), m_writerStream.Size());
+			m_writerStream.Clear();
 		}
 	}
 	else
@@ -297,8 +376,7 @@ void tpp::ClientVariableManager::DrawConnectionWindow()
 
 	if (modifiedVariable)
 	{
-		tpp::Archive<tpp::SerializationStreamType::BinaryWrite> serializationWriter(m_writerStream);
-		serializationWriter.SerializeTppVariableUpdatePacket(*modifiedVariable);
+		SerializeTppVariableUpdatePacket(*modifiedVariable, m_writerStream);
 	}
 }
 
