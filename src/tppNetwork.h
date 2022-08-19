@@ -4,6 +4,9 @@
 
 namespace tpp
 {
+	// Example Header
+	// tpp MessageType::Update 33 2 - Update message that is 33 bytes, version 2
+
 	static const char HeaderString[3] = { 't', 'p', 'p' };
 
 	enum class VariableType : uint8_t;

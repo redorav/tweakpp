@@ -4,16 +4,6 @@
 
 #include "tppNetwork.h"
 
-// Example
-//
-// HEADER
-// tpp MessageType::Update 33 2 - Update message that is 33 bytes, version 2
-// 
-// MESSAGE
-// [Header][path]Rendering/SSR/Number of Rays\0 [var][tppFloat]
-// [Header][path]Rendering/SSR/Optimized\0      [var][tppBool]
-// [Header][path]Rendering/SSR/Clear\0          [var][tppString]
-
 namespace tpp
 {
 	namespace SerializationStreamType
