@@ -15,7 +15,7 @@ namespace tpp
 		m_variableHashmap.insert({ hash, variableDescription });
 	}
 
-	const tpp::Variable& ServerVariableManager::Find(const tpp::Hash& hash) const
+	const tpp::VariableBase* ServerVariableManager::Find(const tpp::Hash& hash) const
 	{
 		auto dataIterator = m_variableHashmap.find(hash);
 
@@ -25,7 +25,7 @@ namespace tpp
 		}
 		else
 		{
-			return Dummy;
+			return nullptr;
 		}
 	}
 

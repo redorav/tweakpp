@@ -55,7 +55,7 @@ tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f
 tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
 tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
 
-void SerializeVariableDescription(const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& writer)
+void SerializeVariableDescription(const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& writer)
 {
 	size_t startSize = writer.Size();
 
@@ -66,60 +66,8 @@ void SerializeVariableDescription(const tpp::Variable& variable, const std::stri
 	// Serialize the path of the variable so the server can display it
 	writer << path;
 
-	if (variable.type == tpp::VariableType::Float)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdFloat.metadata), hash);
-		variable.vdFloat.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::UnsignedInteger)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdUInt.metadata), hash);
-		variable.vdUInt.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Integer)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdInt.metadata), hash);
-		variable.vdInt.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Bool)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdBool.metadata), hash);
-		variable.vdBool.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Color3)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdColor3.metadata), hash);
-		variable.vdColor3.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Color4)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdColor4.metadata), hash);
-		variable.vdColor4.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Vector2)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdVector2.metadata), hash);
-		variable.vdVector2.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Vector3)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdVector3.metadata), hash);
-		variable.vdVector3.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Vector4)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdVector4.metadata), hash);
-		variable.vdVector4.SerializeMetadata(writer);
-	}
-	else if (variable.type == tpp::VariableType::Callback)
-	{
-		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdCallback), hash);
-		writer << variable.vdCallback;
-	}
-	else
-	{
-		printf("Variable %s not serialized correctly\n", path.c_str());
-	}
+	writer << tpp::VariableHeader(variable->type, 0, hash);
+	variable->SerializeMetadata(writer);
 
 	size_t totalSize = writer.Size() - startSize;
 	size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
@@ -130,7 +78,7 @@ void SerializeVariableDescription(const tpp::Variable& variable, const std::stri
 
 void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDescriptionTable)
 {
-	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash)
+	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash)
 	{
 		SerializeVariableDescription(variable, path, hash, variableDescriptionTable);
 	});
@@ -203,21 +151,21 @@ int main(int argc, char **argv)
 						auto valueIndex = currentPosition - packetData.begin();
 						tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
 
-						const tpp::Variable& variable = tpp::GetServerVariableManager()->Find(variablePacket->hash);
+						const tpp::VariableBase* variable = tpp::GetServerVariableManager()->Find(variablePacket->hash);
 
-						if (variable.type != tpp::VariableType::Invalid)
+						if (variable->type != tpp::VariableType::Invalid)
 						{
 							auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
 
 							if (variablePacket->type == tpp::VariableType::Callback)
 							{
 								// Invoke the callback
-								variable.vdCallback.currentValue();
+								((tpp::Callback*)variable)->currentValue();
 							}
 							else if (variablePacket->size > 0)
 							{
 								// Copy the memory over as-is, we assume the format is correct
-								memcpy(variable.memory, &packetData[variableIndex], variablePacket->size);
+								memcpy(variable->memory, &packetData[variableIndex], variablePacket->size);
 							}
 						}
 					}
