@@ -55,80 +55,76 @@ tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f
 tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
 tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
 
-template<typename TppVariable>
-void SerializeTppVariableDeclaration(TppVariable& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
+void SerializeVariableDescription(const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& writer)
 {
-	// Send the entire variable as it contains the description
-	stream << tpp::VariableHeader(variable.type, sizeof(variable), hash);
-	stream << variable;
-}
-
-template<>
-void SerializeTppVariableDeclaration<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
-{
-	stream << tpp::VariableHeader(variable.type, 0, hash);
-}
-
-void SerializeVariableDescription(const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
-{
-	size_t startSize = stream.Size();
+	size_t startSize = writer.Size();
 
 	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
 	// size that we know once the whole message has been constructed
-	stream << tpp::MessageHeader(0, tpp::MessageType::Declaration);
+	writer << tpp::MessageHeader(0, tpp::MessageType::Declaration);
 
 	// Serialize the path of the variable so the server can display it
-	stream << path;
+	writer << path;
 
 	if (variable.type == tpp::VariableType::Float)
 	{
-		SerializeTppVariableDeclaration(variable.vdFloat, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdFloat.metadata), hash);
+		variable.vdFloat.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::UnsignedInteger)
 	{
-		SerializeTppVariableDeclaration(variable.vdUInt, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdUInt.metadata), hash);
+		variable.vdUInt.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Integer)
 	{
-		SerializeTppVariableDeclaration(variable.vdInt, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdInt.metadata), hash);
+		variable.vdInt.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Bool)
 	{
-		SerializeTppVariableDeclaration(variable.vdBool, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdBool.metadata), hash);
+		variable.vdBool.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Color3)
 	{
-		SerializeTppVariableDeclaration(variable.vdColor3, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdColor3.metadata), hash);
+		variable.vdColor3.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Color4)
 	{
-		SerializeTppVariableDeclaration(variable.vdColor4, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdColor4.metadata), hash);
+		variable.vdColor4.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Vector2)
 	{
-		SerializeTppVariableDeclaration(variable.vdVector2, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdVector2.metadata), hash);
+		variable.vdVector2.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Vector3)
 	{
-		SerializeTppVariableDeclaration(variable.vdVector3, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdVector3.metadata), hash);
+		variable.vdVector3.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Vector4)
 	{
-		SerializeTppVariableDeclaration(variable.vdVector4, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdVector4.metadata), hash);
+		variable.vdVector4.SerializeMetadata(writer);
 	}
 	else if (variable.type == tpp::VariableType::Callback)
 	{
-		SerializeTppVariableDeclaration(variable.vdCallback, hash, stream);
+		writer << tpp::VariableHeader(variable.type, sizeof(variable.vdCallback), hash);
+		writer << variable.vdCallback;
 	}
 	else
 	{
 		printf("Variable %s not serialized correctly\n", path.c_str());
 	}
 
-	size_t totalSize = stream.Size() - startSize;
+	size_t totalSize = writer.Size() - startSize;
 	size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
 
-	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(stream.Back() - totalSize + 1);
+	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(writer.Back() - totalSize + 1);
 	header->size = (decltype(header->size))packetSize;
 }
 

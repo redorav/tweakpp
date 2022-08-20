@@ -12,27 +12,27 @@ namespace tpp
 
 		if (variable->type == tpp::VariableType::Float)
 		{
-			ImGui::Text("%.3f", variable->vdFloat.minValue);
+			ImGui::Text("%.3f", variable->vdFloat.metadata.minValue);
 			ImGui::SameLine();
-			wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.minValue, variable->vdFloat.maxValue);
+			wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.metadata.minValue, variable->vdFloat.metadata.maxValue);
 			ImGui::SameLine();
-			ImGui::Text("%.3f", variable->vdFloat.maxValue);
+			ImGui::Text("%.3f", variable->vdFloat.metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::UnsignedInteger)
 		{
-			ImGui::Text("%i", variable->vdUInt.minValue);
+			ImGui::Text("%i", variable->vdUInt.metadata.minValue);
 			ImGui::SameLine();
-			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &variable->vdInt.currentValue, &variable->vdUInt.minValue, &variable->vdUInt.maxValue);
+			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &variable->vdInt.currentValue, &variable->vdUInt.metadata.minValue, &variable->vdUInt.metadata.maxValue);
 			ImGui::SameLine();
-			ImGui::Text("%i", variable->vdUInt.maxValue);
+			ImGui::Text("%i", variable->vdUInt.metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Integer)
 		{
-			ImGui::Text("%i", variable->vdInt.minValue);
+			ImGui::Text("%i", variable->vdInt.metadata.minValue);
 			ImGui::SameLine();
-			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &variable->vdInt.currentValue, &variable->vdInt.minValue, &variable->vdInt.maxValue);
+			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &variable->vdInt.currentValue, &variable->vdInt.metadata.minValue, &variable->vdInt.metadata.maxValue);
 			ImGui::SameLine();
-			ImGui::Text("%i", variable->vdInt.maxValue);
+			ImGui::Text("%i", variable->vdInt.metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Bool)
 		{

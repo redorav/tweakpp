@@ -209,15 +209,15 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 
 	switch (variableHeader.type)
 	{
-		case tpp::VariableType::Float:           reader << variable.vdFloat; break;
-		case tpp::VariableType::UnsignedInteger: reader << variable.vdUInt; break;
-		case tpp::VariableType::Integer:         reader << variable.vdInt; break;
-		case tpp::VariableType::Bool:            reader << variable.vdBool; break;
-		case tpp::VariableType::Vector2:         reader << variable.vdVector2; break;
-		case tpp::VariableType::Vector3:         reader << variable.vdVector3; break;
-		case tpp::VariableType::Vector4:         reader << variable.vdVector4; break;
-		case tpp::VariableType::Color3:          reader << variable.vdColor3; break;
-		case tpp::VariableType::Color4:          reader << variable.vdColor4; break;
+		case tpp::VariableType::Float:           variable.vdFloat.DeserializeMetadata(reader); break;
+		case tpp::VariableType::UnsignedInteger: variable.vdUInt.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Integer:         variable.vdInt.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Bool:            variable.vdBool.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Color3:          variable.vdColor3.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Color4:          variable.vdColor4.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Vector2:         variable.vdVector2.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Vector3:         variable.vdVector3.DeserializeMetadata(reader); break;
+		case tpp::VariableType::Vector4:         variable.vdVector4.DeserializeMetadata(reader); break;
 		case tpp::VariableType::Callback: break;
 		default: validVariable = false;
 	}

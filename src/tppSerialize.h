@@ -11,7 +11,7 @@ namespace tpp
 {
 	namespace SerializationStreamType
 	{
-		enum T
+		enum T : uint32_t
 		{
 			Write,
 			Read
