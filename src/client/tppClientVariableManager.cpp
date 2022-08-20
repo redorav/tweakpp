@@ -191,36 +191,33 @@ static const int DEFAULT_BUFLEN = 512;
 
 void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char>& currentPacketData)
 {
-	auto currentPosition = currentPacketData.begin();
+	tpp::BinarySerializationReader reader(currentPacketData);
 
 	// Search for path in packet and read path
+	tpp::MessageHeader messageHeader;
+	reader << messageHeader;
+
 	std::string path;
-	{
-		auto nullTerminator = std::find(currentPosition + sizeof(tpp::MessageHeader), currentPacketData.end(), '\0');
-		path = std::string(currentPacketData.begin() + sizeof(tpp::MessageHeader), nullTerminator);
-		currentPosition = nullTerminator + 1;
-	}
+	reader << path;
 
-	auto valueIndex = currentPosition - currentPacketData.begin();
-	const tpp::VariableHeader* variablePacket = reinterpret_cast<const tpp::VariableHeader*>(&currentPacketData[valueIndex]);
-
-	auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
+	tpp::VariableHeader variableHeader;
+	reader << variableHeader;
 
 	bool validVariable = true;
 
-	tpp::Variable variable(variablePacket->type, path, variablePacket->hash);
+	tpp::Variable variable(variableHeader.type, path, variableHeader.hash);
 
-	switch (variablePacket->type)
+	switch (variableHeader.type)
 	{
-		case tpp::VariableType::Float:           variable.vdFloat = *reinterpret_cast<const tpp::Float*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::UnsignedInteger: variable.vdUInt = *reinterpret_cast<const tpp::UInt*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Integer:         variable.vdInt = *reinterpret_cast<const tpp::Int*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Bool:            variable.vdBool = *reinterpret_cast<const tpp::Bool*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Vector2:         variable.vdVector2 = *reinterpret_cast<const tpp::Vector2*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Vector3:         variable.vdVector3 = *reinterpret_cast<const tpp::Vector3*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Vector4:         variable.vdVector4 = *reinterpret_cast<const tpp::Vector4*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Color3:          variable.vdColor3 = *reinterpret_cast<const tpp::Color3*>(&currentPacketData[variableIndex]); break;
-		case tpp::VariableType::Color4:          variable.vdColor4 = *reinterpret_cast<const tpp::Color4*>(&currentPacketData[variableIndex]); break;
+		case tpp::VariableType::Float:           reader << variable.vdFloat; break;
+		case tpp::VariableType::UnsignedInteger: reader << variable.vdUInt; break;
+		case tpp::VariableType::Integer:         reader << variable.vdInt; break;
+		case tpp::VariableType::Bool:            reader << variable.vdBool; break;
+		case tpp::VariableType::Vector2:         reader << variable.vdVector2; break;
+		case tpp::VariableType::Vector3:         reader << variable.vdVector3; break;
+		case tpp::VariableType::Vector4:         reader << variable.vdVector4; break;
+		case tpp::VariableType::Color3:          reader << variable.vdColor3; break;
+		case tpp::VariableType::Color4:          reader << variable.vdColor4; break;
 		case tpp::VariableType::Callback: break;
 		default: validVariable = false;
 	}

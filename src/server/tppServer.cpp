@@ -69,11 +69,8 @@ void SerializeTppVariableDeclaration<tpp::Callback>(tpp::Callback& variable, con
 	stream << tpp::VariableHeader(variable.type, 0, hash);
 }
 
-void SerializeVariableDescription(const tpp::Variable& inVariable, const std::string& inPath, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
+void SerializeVariableDescription(const tpp::Variable& variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
 {
-	tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
-	std::string& path = const_cast<std::string&>(inPath);
-
 	size_t startSize = stream.Size();
 
 	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
