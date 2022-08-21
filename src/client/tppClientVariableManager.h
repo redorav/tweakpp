@@ -133,8 +133,6 @@ namespace tpp
 
 		tpp::NetworkAddress m_networkAddress;
 
-		std::unique_ptr<tpp::ISocket> m_serverSocket = nullptr;
-
 		std::unique_ptr<tpp::ISocket> m_clientSocket = nullptr;
 
 		uint64_t m_lastAttemptedConnection = 0;

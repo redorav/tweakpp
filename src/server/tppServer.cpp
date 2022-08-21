@@ -86,6 +86,13 @@ void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDes
 
 int main(int argc, char **argv)
 {
+	int port = 27001;
+
+	if (argc > 1)
+	{
+		port = atoi(argv[1]);
+	}
+
 	static const int DEFAULT_BUFLEN = 512;
 
 	char receiveBuffer[DEFAULT_BUFLEN] = {};
@@ -93,7 +100,12 @@ int main(int argc, char **argv)
 
 	tpp::Network::Initialize();
 
-	tpp::NetworkAddress address("127.0.0.1", 27001);
+	tpp::NetworkAddress address("127.0.0.1", port);
+	tpp::ISocket* serverSocket = tpp::Network::CreateSocket();
+	serverSocket->Create();
+	serverSocket->SetBlocking(false);
+	serverSocket->Listen(address.port);
+
 	tpp::ISocket* clientSocket = tpp::Network::CreateSocket();
 	clientSocket->Create();
 	clientSocket->SetBlocking(false);
@@ -199,10 +211,13 @@ int main(int argc, char **argv)
 		}
 		else
 		{
-			tpp::SocketReturn::T connectReturn = clientSocket->Connect(address);
+			// TODO Try to connect every heartbeat to avoid spamming
 
-			if (connectReturn == tpp::SocketReturn::Ok)
+			tpp::SocketReturn::T acceptReturn = serverSocket->Accept(address, clientSocket);
+
+			if (acceptReturn != tpp::SocketReturn::Ok)
 			{
+				serverSocket->Close();
 				sentVariableTable = false;
 			}
 		}

@@ -70,6 +70,11 @@ namespace tpp
 	{
 	}
 
+	SocketPOSIX::~SocketPOSIX()
+	{
+		Close();
+	}
+
 	SocketReturn::T SocketPOSIX::Accept(const NetworkAddress& address, ISocket* const clientSocket)
 	{
 		if (clientSocket)
@@ -87,7 +92,7 @@ namespace tpp
 			}
 			else
 			{
-				SocketReturn::InvalidSocket;
+				return GetLastError();
 			}
 		}
 
@@ -115,7 +120,7 @@ namespace tpp
 	{
 		SocketReturn::T result;
 
-		addrinfo  hints = {};
+		addrinfo hints = {};
 		hints.ai_family = AF_INET;
 		hints.ai_socktype = SOCK_STREAM;
 		hints.ai_protocol = IPPROTO_TCP;

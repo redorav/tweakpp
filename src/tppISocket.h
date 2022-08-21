@@ -42,6 +42,8 @@ namespace tpp
 	{
 	public:
 
+		virtual ~ISocket() {}
+
 		// Accept incoming connection that is being listened to. Typically the server does this
 		virtual SocketReturn::T Accept(const NetworkAddress& address, ISocket* const clientSocket) = 0;
 

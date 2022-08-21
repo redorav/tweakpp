@@ -121,13 +121,11 @@ void tpp::VariableGroupTree::Clear()
 tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_t port)
 	: m_windowOpen(true)
 {
-	m_serverSocket = std::unique_ptr<tpp::ISocket>(tpp::Network::CreateSocket());
-	m_clientSocket = std::unique_ptr<tpp::ISocket>(tpp::Network::CreateSocket());
-
 	m_networkAddress = tpp::NetworkAddress(ipAddress, port);
-	m_serverSocket->Create();
-	m_serverSocket->SetBlocking(false);
-	m_serverSocket->Listen(m_networkAddress.port);
+
+	m_clientSocket = std::unique_ptr<tpp::ISocket>(tpp::Network::CreateSocket());
+	m_clientSocket->Create();
+	m_clientSocket->SetBlocking(false);
 
 	m_displayString += ipAddress;
 	m_displayString += ":";
@@ -290,6 +288,8 @@ void tpp::ClientVariableManager::UpdateConnection()
 		else
 		{
 			m_clientSocket->Close();
+			m_clientSocket->Create();
+			m_clientSocket->SetBlocking(false);
 
 			// TODO Clear everything related to a connection
 			Clear();
@@ -313,15 +313,9 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 		if (timeDelta > 0)
 		{
-			//uiLog.Log("Listening for connections... (%lli)\n", currentTime);
-			printf("Listening for connections... (%lli)\n", currentTime);
-			tpp::SocketReturn::T acceptReturn = m_serverSocket->Accept(m_networkAddress, m_clientSocket.get());
-
-			if (acceptReturn != tpp::SocketReturn::Ok)
-			{
-				m_serverSocket->Close();
-			}
-
+			//uiLog.Log("Trying to connect to server... (%lli)\n", currentTime);
+			printf("Trying to connect to server... (%lli)\n", currentTime);
+			tpp::SocketReturn::T connectReturn = m_clientSocket->Connect(m_networkAddress);
 			m_lastAttemptedConnection = currentTime;
 		}
 	}
