@@ -7,13 +7,10 @@
 namespace tpp
 {
 	Float::Float(const char* path, float initialValue, float minValue, float maxValue, float step)
-		: VariableBase((VariableType)Type)
-
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -27,12 +24,10 @@ namespace tpp
 	void Float::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	UInt::UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -46,12 +41,10 @@ namespace tpp
 	void UInt::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Int::Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -65,12 +58,10 @@ namespace tpp
 	void Int::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Bool::Bool(const char* path, bool initialValue)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -84,12 +75,10 @@ namespace tpp
 	void Bool::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Color3::Color3(const char* path, float r, float g, float b)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, r(r), g(g), b(b)
 		, metadata(r, g, b)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -103,12 +92,10 @@ namespace tpp
 	void Color3::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Color4::Color4(const char* path, float r, float g, float b, float a)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, r(r), g(g), b(b), a(a)
 		, metadata(r, g, b, a)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -122,12 +109,10 @@ namespace tpp
 	void Color4::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Vector2::Vector2(const char* path, float x, float y)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, x(x), y(y)
 		, metadata(x, y)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -141,12 +126,10 @@ namespace tpp
 	void Vector2::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Vector3::Vector3(const char* path, float x, float y, float z)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, x(x), y(y), z(z)
 		, metadata(x, y, z)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -160,12 +143,10 @@ namespace tpp
 	void Vector3::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Vector4::Vector4(const char* path, float x, float y, float z, float w)
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, x(x), y(y), z(z), w(w)
 		, metadata(x, y, z, w)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
@@ -179,11 +160,9 @@ namespace tpp
 	void Vector4::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	Callback::Callback(const char* path, void(*callback)(void))
-		: VariableBase((VariableType)Type)
+		: VariableBase((VariableType)Type, 0)
 		, currentValue(callback)
 	{
-		size = sizeof(currentValue);
-
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));

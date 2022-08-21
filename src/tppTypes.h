@@ -40,8 +40,6 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 
-		VariableBase(tpp::VariableType type) : type(type) {}
-		
 		void SetPath(const std::string& path)
 		{
 			this->path = path;
@@ -79,11 +77,11 @@ namespace tpp
 
 #else
 
-		VariableBase(tpp::VariableType type) : type(type) {}
-
 		void* memory = nullptr;
 
 #endif
+
+		VariableBase(tpp::VariableType type, uint32_t size) : type(type), size(size) {}
 
 		uint32_t size = 0;
 
@@ -95,12 +93,12 @@ namespace tpp
 		virtual void DeserializeValue(tpp::BinarySerializationReader & reader) = 0;
 	};
 
-	class Float : public VariableBase
+	class Float final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Float() : VariableBase((VariableType)Type) {}
+		Float() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Float(const char* path, float initialValue, float minValue, float maxValue, float step);
 
@@ -137,12 +135,12 @@ namespace tpp
 		};
 	};
 
-	class UInt : public VariableBase
+	class UInt final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		UInt() : VariableBase((VariableType)Type) {}
+		UInt() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step);
 
@@ -178,12 +176,12 @@ namespace tpp
 		};
 	};
 
-	class Int : public VariableBase
+	class Int final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Int() : VariableBase((VariableType)Type) {}
+		Int() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step);
 
@@ -216,12 +214,12 @@ namespace tpp
 
 	
 
-	class Bool : public VariableBase
+	class Bool final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Bool() : VariableBase((VariableType)Type) {}
+		Bool() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Bool(const char* path, bool initialValue);
 
@@ -247,12 +245,12 @@ namespace tpp
 		};
 	};
 	
-	class Color3 : public VariableBase
+	class Color3 final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Color3() : VariableBase((VariableType)Type) {}
+		Color3() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Color3(const char* path, float r, float g, float b);
 
@@ -287,12 +285,12 @@ namespace tpp
 		};
 	};
 
-	class Color4 : public VariableBase
+	class Color4 final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Color4() : VariableBase((VariableType)Type) {}
+		Color4() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Color4(const char* path, float r, float g, float b, float a);
 
@@ -327,12 +325,12 @@ namespace tpp
 		};
 	};
 
-	class Vector2 : public VariableBase
+	class Vector2 final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Vector2() : VariableBase((VariableType)Type) {}
+		Vector2() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Vector2(const char* path, float x, float y);
 
@@ -367,12 +365,12 @@ namespace tpp
 		};
 	};
 
-	class Vector3 : public VariableBase
+	class Vector3 final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Vector3() : VariableBase((VariableType)Type) {}
+		Vector3() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Vector3(const char* path, float x, float y, float z);
 
@@ -406,12 +404,12 @@ namespace tpp
 		};
 	};
 
-	class Vector4 : public VariableBase
+	class Vector4 final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Vector4() : VariableBase((VariableType)Type) {}
+		Vector4() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Vector4(const char* path, float x, float y, float z, float w);
 
@@ -446,12 +444,12 @@ namespace tpp
 		};
 	};
 
-	class Callback : public VariableBase
+	class Callback final : public VariableBase
 	{
 	public:
 
 #if defined(TPP_CLIENT)
-		Callback() : VariableBase((VariableType)Type) {}
+		Callback() : VariableBase((VariableType)Type, 0) {}
 #endif
 		Callback(const char* path, void(*callback)(void));
 
