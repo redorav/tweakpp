@@ -61,6 +61,31 @@ namespace tpp
 		{
 			wasModified = ImGui::InputFloat4(mangledName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
 		}
+		else if (variable->type == tpp::VariableType::Enum)
+		{
+			tpp::Enum* enumVariable = static_cast<tpp::Enum*>(variable);
+			const auto& entries = enumVariable->metadata.entries;
+
+			ImGuiComboFlags comboFlags = 0;
+			if (ImGui::BeginCombo(mangledName.c_str(), entries[enumVariable->currentValue].name.c_str(), comboFlags))
+			{
+				for (int n = 0; n < entries.size(); n++)
+				{
+					bool isSelected = enumVariable->currentValue == n;
+					if (ImGui::Selectable(entries[n].name.c_str(), isSelected))
+					{
+						wasModified = !isSelected;
+						enumVariable->currentValue = n;
+					}
+					
+					if (isSelected)
+					{
+						ImGui::SetItemDefaultFocus();
+					}
+				}
+				ImGui::EndCombo();
+			}
+		}
 		else if (variable->type == tpp::VariableType::Callback)
 		{
 			// Use the original name here as we want to display it on top of the button

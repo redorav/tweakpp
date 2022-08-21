@@ -174,4 +174,33 @@ namespace tpp
 
 	void Callback::SerializeValue(tpp::BinarySerializationWriter& writer) const {}
 	void Callback::DeserializeValue(tpp::BinarySerializationReader& reader) {}
+
+	Enum::Enum(const char* path, int defaultValue, const std::vector<EnumEntry>& entries)
+		: VariableBase((VariableType)Type, sizeof(currentValue))
+		, currentValue(defaultValue)
+	{
+		metadata.defaultValue = defaultValue;
+		metadata.entries = entries;
+
+		#if !defined(TPP_CLIENT)
+		memory = &currentValue;
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		#endif
+	}
+
+	void Enum::SerializeMetadata(tpp::BinarySerializationWriter& writer) const
+	{
+		writer << metadata.defaultValue;
+		writer << metadata.entries;
+	}
+
+	void Enum::DeserializeMetadata(tpp::BinarySerializationReader& reader)
+	{
+		reader << metadata.defaultValue;
+		reader << metadata.entries;
+		currentValue = metadata.defaultValue;
+	}
+
+	void Enum::SerializeValue(tpp::BinarySerializationWriter& writer) const { writer << currentValue; }
+	void Enum::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 }

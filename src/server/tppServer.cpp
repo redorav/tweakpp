@@ -30,6 +30,27 @@ void RecompileShadersCallback()
 	printf("I recompiled shaders\n");
 }
 
+namespace SSRModes
+{
+	enum T
+	{
+		Reference,
+		Preblur,
+		Postblur,
+		Stochastic
+	};
+};
+
+std::vector<tpp::EnumEntry> Entries =
+{
+	{ SSRModes::Reference,  "Reference" },
+	{ SSRModes::Preblur,    "Preblur" },
+	{ SSRModes::Postblur,   "Postblur" },
+	{ SSRModes::Stochastic, "Stochastic" }
+};
+
+tpp::Enum SSRRenderingMode("Rendering/Post Effects/SSR/Rendering Mode", SSRModes::Preblur, Entries);
+
 tpp::Callback RecompileShaders("Rendering/Post Effects/SSR/Recompile Shaders", RecompileShadersCallback);
 
 // Depth of Field
@@ -66,7 +87,7 @@ void SerializeVariableDescription(const tpp::VariableBase* variable, const std::
 	// Serialize the path of the variable so the server can display it
 	writer << path;
 
-	writer << tpp::VariableHeader(variable->type, 0, hash);
+	writer << tpp::VariableHeader(variable->type, variable->size, hash);
 	variable->SerializeMetadata(writer);
 
 	size_t totalSize = writer.Size() - startSize;

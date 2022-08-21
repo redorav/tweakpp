@@ -127,9 +127,18 @@ namespace tpp
 			return *this;
 		}
 
-		template<typename S>
-		BinarySerializer& operator << (const S& v)
+		template<typename T>
+		BinarySerializer& operator << (const std::vector<T>& v)
 		{
+			Write((uint32_t)v.size());
+			WriteRaw((const char*)v.data(), (uint32_t)(v.size() * sizeof(T)));
+			return *this;
+		}
+
+		template<typename T>
+		BinarySerializer& operator << (const T& v)
+		{
+			static_assert(std::is_trivially_copy_assignable<T>::value, "T must be trivially copy-assignable");
 			Write(v);
 			return *this;
 		}
@@ -157,39 +166,40 @@ namespace tpp
 
 		SerializationStreamBase& operator << (std::string& v)
 		{
-			if (IsWriting())
-			{
-				Write((uint32_t)v.length());
-				WriteRaw(v.c_str(), (uint32_t)v.length());
-			}
-			else
-			{
-				uint32_t size;
-				Read(size);
+			uint32_t sizeBytes;
+			Read(sizeBytes);
 
-				if (size <= m_data.size() - m_currentPosition)
-				{
-					v.reserve(size);
-					v.assign(reinterpret_cast<const char*>(&m_data[m_currentPosition]), size);
-					m_currentPosition += size;
-				}
+			if (sizeBytes <= m_data.size() - m_currentPosition)
+			{
+				v.reserve(sizeBytes);
+				v.assign(reinterpret_cast<const char*>(&m_data[m_currentPosition]), sizeBytes);
+				m_currentPosition += sizeBytes;
 			}
 
 			return *this;
 		}
 
-		template<typename S>
-		SerializationStreamBase& operator << (S& v)
+		template<typename T>
+		BinarySerializer& operator << (std::vector<T>& v)
 		{
-			if (IsWriting())
-			{
-				Write(v);
-			}
-			else
-			{
-				Read(v);
-			}
+			uint32_t size;
+			Read(size);
 
+			uint32_t sizeBytes = size * sizeof(T);
+
+			if (sizeBytes <= m_data.size() - m_currentPosition)
+			{
+				v.assign(reinterpret_cast<const T*>(&m_data[m_currentPosition]), reinterpret_cast<const T*>(&m_data[m_currentPosition]) + size);
+				m_currentPosition += sizeBytes;
+			}
+			return *this;
+		}
+
+		template<typename T>
+		SerializationStreamBase& operator << (T& v)
+		{
+			static_assert(std::is_trivially_copy_assignable<T>::value, "T must be trivially copy-assignable");
+			Read(v);
 			return *this;
 		}
 	};
