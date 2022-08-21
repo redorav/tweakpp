@@ -4,13 +4,13 @@ namespace tpp
 {
 	class ClientVariableManager;
 	class VariableGroupNode;
-	class Variable;
+	class VariableBase;
 
 	class UIConnectionWindow
 	{
 	public:
 
-		void Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable);
+		void Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::VariableBase*& modifiedVariable);
 
 	private:
 

@@ -83,7 +83,7 @@ namespace tpp
 	{
 	public:
 
-		std::vector<tpp::Variable*> variables;
+		std::vector<tpp::VariableBase*> variables;
 	};
 
 	class ClientVariableManager
@@ -117,9 +117,9 @@ namespace tpp
 
 	private:
 
-		void AddVariable(const Variable& variable);
+		void AddVariable(const std::shared_ptr<VariableBase>& variable);
 
-		const Variable* GetVariable(const std::string& path) const;
+		const VariableBase* GetVariable(const std::string& path) const;
 
 		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
 
@@ -133,9 +133,9 @@ namespace tpp
 
 		tpp::NetworkAddress m_networkAddress;
 
-		tpp::ISocket* m_serverSocket = nullptr;
+		std::unique_ptr<tpp::ISocket> m_serverSocket = nullptr;
 
-		tpp::ISocket* m_clientSocket = nullptr;
+		std::unique_ptr<tpp::ISocket> m_clientSocket = nullptr;
 
 		uint64_t m_lastAttemptedConnection = 0;
 
@@ -145,7 +145,7 @@ namespace tpp
 
 		std::unordered_map<std::string, VariableGroup> m_variableGroupHashMap;
 
-		std::unordered_map<std::string, Variable> m_variableHashMap;
+		std::unordered_map<std::string, std::shared_ptr<VariableBase>> m_variableHashMap;
 
 		// UI Management
 
@@ -165,7 +165,7 @@ namespace tpp
 		{
 			const VariableGroup& variableGroup = it->second;
 
-			for (tpp::Variable* variable : variableGroup.variables)
+			for (tpp::VariableBase* variable : variableGroup.variables)
 			{
 				fn(variable);
 			}

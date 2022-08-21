@@ -56,7 +56,7 @@ int main(void)
 
 		// Prepare the UI elements
 		{
-			const tpp::Variable* modifiedVariable = nullptr;
+			const tpp::VariableBase* modifiedVariable = nullptr;
 
 			if (ImGui::BeginMainMenuBar())
 			{

@@ -6,57 +6,60 @@
 
 namespace tpp
 {
-	bool DrawVariableWidget(const std::string& mangledName, tpp::Variable* variable)
+	bool DrawVariableWidget(const std::string& mangledName, tpp::VariableBase* variable)
 	{
 		bool wasModified = false;
 
 		if (variable->type == tpp::VariableType::Float)
 		{
-			ImGui::Text("%.3f", variable->vdFloat.metadata.minValue);
+			tpp::Float* floatVariable = static_cast<tpp::Float*>(variable);
+			ImGui::Text("%.3f", floatVariable->metadata.minValue);
 			ImGui::SameLine();
-			wasModified = ImGui::SliderFloat(mangledName.c_str(), &variable->vdFloat.currentValue, variable->vdFloat.metadata.minValue, variable->vdFloat.metadata.maxValue);
+			wasModified = ImGui::SliderFloat(mangledName.c_str(), &floatVariable->currentValue, floatVariable->metadata.minValue, floatVariable->metadata.maxValue);
 			ImGui::SameLine();
-			ImGui::Text("%.3f", variable->vdFloat.metadata.maxValue);
+			ImGui::Text("%.3f", floatVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::UnsignedInteger)
 		{
-			ImGui::Text("%i", variable->vdUInt.metadata.minValue);
+			tpp::UInt* uintVariable = static_cast<tpp::UInt*>(variable);
+			ImGui::Text("%i", uintVariable->metadata.minValue);
 			ImGui::SameLine();
-			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &variable->vdInt.currentValue, &variable->vdUInt.metadata.minValue, &variable->vdUInt.metadata.maxValue);
+			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &uintVariable->currentValue, &uintVariable->metadata.minValue, &uintVariable->metadata.maxValue);
 			ImGui::SameLine();
-			ImGui::Text("%i", variable->vdUInt.metadata.maxValue);
+			ImGui::Text("%i", uintVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Integer)
 		{
-			ImGui::Text("%i", variable->vdInt.metadata.minValue);
+			tpp::Int* intVariable = static_cast<tpp::Int*>(variable);
+			ImGui::Text("%i", intVariable->metadata.minValue);
 			ImGui::SameLine();
-			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &variable->vdInt.currentValue, &variable->vdInt.metadata.minValue, &variable->vdInt.metadata.maxValue);
+			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &intVariable->currentValue, &intVariable->metadata.minValue, &intVariable->metadata.maxValue);
 			ImGui::SameLine();
-			ImGui::Text("%i", variable->vdInt.metadata.maxValue);
+			ImGui::Text("%i", intVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Bool)
 		{
-			wasModified = ImGui::Checkbox(mangledName.c_str(), &variable->vdBool.currentValue);
+			wasModified = ImGui::Checkbox(mangledName.c_str(), &static_cast<tpp::Bool*>(variable)->currentValue);
 		}
 		else if (variable->type == tpp::VariableType::Color3)
 		{
-			wasModified = ImGui::ColorEdit3(mangledName.c_str(), &variable->vdColor3.r);
+			wasModified = ImGui::ColorEdit3(mangledName.c_str(), &static_cast<tpp::Color3*>(variable)->r);
 		}
 		else if (variable->type == tpp::VariableType::Color4)
 		{
-			wasModified = ImGui::ColorEdit4(mangledName.c_str(), &variable->vdColor4.r);
+			wasModified = ImGui::ColorEdit4(mangledName.c_str(), &static_cast<tpp::Color4*>(variable)->r);
 		}
 		else if (variable->type == tpp::VariableType::Vector2)
 		{
-			wasModified = ImGui::InputFloat2(mangledName.c_str(), &variable->vdVector2.x, "%.3f");
+			wasModified = ImGui::InputFloat2(mangledName.c_str(), &static_cast<tpp::Vector2*>(variable)->x, "%.3f");
 		}
 		else if (variable->type == tpp::VariableType::Vector3)
 		{
-			wasModified = ImGui::InputFloat3(mangledName.c_str(), &variable->vdVector3.x, "%.3f");
+			wasModified = ImGui::InputFloat3(mangledName.c_str(), &static_cast<tpp::Vector3*>(variable)->x, "%.3f");
 		}
 		else if (variable->type == tpp::VariableType::Vector4)
 		{
-			wasModified = ImGui::InputFloat4(mangledName.c_str(), &variable->vdVector4.x, "%.3f");
+			wasModified = ImGui::InputFloat4(mangledName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
 		}
 		else if (variable->type == tpp::VariableType::Callback)
 		{
@@ -76,7 +79,7 @@ namespace tpp
 		return 0;
 	}
 
-	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::Variable*& modifiedVariable)
+	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::VariableBase*& modifiedVariable)
 	{
 		ImGuiWindowFlags windowFlags = 0;
 		windowFlags |= ImGuiWindowFlags_NoCollapse;
@@ -181,7 +184,7 @@ namespace tpp
 						// Exit header row
 						ImGui::TableNextRow();
 
-						variableManager->ForEachVariableInGroup(m_selectedGroup->path, [this, &modifiedVariable](tpp::Variable* variable)
+						variableManager->ForEachVariableInGroup(m_selectedGroup->path, [this, &modifiedVariable](tpp::VariableBase* variable)
 						{
 							ImGui::TableNextRow();
 

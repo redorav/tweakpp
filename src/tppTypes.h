@@ -9,11 +9,6 @@
 
 #include "tppSerialize.h"
 
-#if defined(TPP_CLIENT)
-#define virtual
-#define override
-#endif
-
 namespace tpp
 {
 	enum class VariableType : uint8_t
@@ -39,47 +34,48 @@ namespace tpp
 		T data[N];
 	};
 
-	struct VariableBase
+	class VariableBase
 	{
+	public:
+
 #if defined(TPP_CLIENT)
 
 		VariableBase(tpp::VariableType type) : type(type) {}
+		
+		void SetPath(const std::string& path)
+		{
+			this->path = path;
 
-		//VariableBase() {}
-		//
-		//VariableBase(tpp::VariableType type, const std::string& path, const tpp::Hash& hash)
-		//	: type(type), path(path), hash(hash)
-		//{
-		//	if (path.size() > 0)
-		//	{
-		//		size_t lastSlash = path.find_last_of("/");
-		//		size_t afterLastSlash = lastSlash + 1;
-		//
-		//		if (lastSlash != std::string::npos)
-		//		{
-		//			groupPath = std::string(path.data(), lastSlash);
-		//			name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
-		//		}
-		//	}
-		//}
-		//
-		//const std::string& GetGroupPath() const
-		//{
-		//	return groupPath;
-		//}
-		//
-		//const std::string& GetName() const
-		//{
-		//	return name;
-		//}
-		//
-		//std::string path;
-		//
-		//std::string groupPath;
-		//
-		//tpp::Hash hash;
-		//
-		//std::string name;
+			if (path.size() > 0)
+			{
+				size_t lastSlash = path.find_last_of("/");
+				size_t afterLastSlash = lastSlash + 1;
+			
+				if (lastSlash != std::string::npos)
+				{
+					groupPath = std::string(path.data(), lastSlash);
+					name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
+				}
+			}
+		}
+
+		const std::string& GetGroupPath() const
+		{
+			return groupPath;
+		}
+		
+		const std::string& GetName() const
+		{
+			return name;
+		}
+		
+		std::string path;
+		
+		std::string groupPath;
+		
+		tpp::Hash hash;
+		
+		std::string name;
 
 #else
 
@@ -87,51 +83,25 @@ namespace tpp
 
 		void* memory = nullptr;
 
-		uint32_t size = 0;
-
 #endif
+
+		uint32_t size = 0;
 
 		tpp::VariableType type = tpp::VariableType::Invalid;
 
-		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const
-#if !defined(TPP_CLIENT)
-			= 0
-#endif
-			;
-		virtual void DeserializeMetadata(tpp::BinarySerializationReader & reader)
-#if !defined(TPP_CLIENT)
-			= 0
-#endif
-			;
-		virtual void SerializeValue(tpp::BinarySerializationWriter & writer) const
-#if !defined(TPP_CLIENT)
-			= 0
-#endif
-			;
-		virtual void DeserializeValue(tpp::BinarySerializationReader & reader)
-#if !defined(TPP_CLIENT)
-			= 0
-#endif
-			;
-	};
-
-	struct FloatMetadata
-	{
-		FloatMetadata() {}
-
-		FloatMetadata(float defaultValue, float minValue, float maxValue, float step)
-			: defaultValue(defaultValue), minValue(minValue), maxValue(maxValue), step(step) {}
-
-		float defaultValue = 0.0f;
-		float minValue = 0.0f;
-		float maxValue = 0.0f;
-		float step = 0.0f;
+		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const = 0;
+		virtual void DeserializeMetadata(tpp::BinarySerializationReader & reader) = 0;
+		virtual void SerializeValue(tpp::BinarySerializationWriter & writer) const = 0;
+		virtual void DeserializeValue(tpp::BinarySerializationReader & reader) = 0;
 	};
 
 	class Float : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Float() : VariableBase((VariableType)Type) {}
+#endif
 		Float(const char* path, float initialValue, float minValue, float maxValue, float step);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -147,7 +117,19 @@ namespace tpp
 		// Need mutable for the server to modify value through the UI widgets
 		mutable float currentValue = 0.0f;
 
-		FloatMetadata metadata;
+		struct FloatMetadata
+		{
+#if defined(TPP_CLIENT)
+			FloatMetadata() {}
+#endif
+			FloatMetadata(float defaultValue, float minValue, float maxValue, float step)
+				: defaultValue(defaultValue), minValue(minValue), maxValue(maxValue), step(step) {}
+
+			float defaultValue = 0.0f;
+			float minValue = 0.0f;
+			float maxValue = 0.0f;
+			float step = 0.0f;
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -155,21 +137,13 @@ namespace tpp
 		};
 	};
 
-	struct UIntMetadata
-	{
-		UIntMetadata(uint32_t defaultValue, uint32_t minValue, uint32_t maxValue, uint32_t step)
-			: defaultValue(defaultValue), minValue(minValue), maxValue(maxValue), step(step) {}
-
-		uint32_t defaultValue = 0u;
-		uint32_t minValue = 0u;
-		uint32_t maxValue = 0u;
-		uint32_t step = 0u;
-	};
-
 	class UInt : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		UInt() : VariableBase((VariableType)Type) {}
+#endif
 		UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -184,7 +158,19 @@ namespace tpp
 
 		mutable uint32_t currentValue = 0u;
 
-		UIntMetadata metadata;
+		struct UIntMetadata
+		{
+#if defined(TPP_CLIENT)
+			UIntMetadata() {}
+#endif
+			UIntMetadata(uint32_t defaultValue, uint32_t minValue, uint32_t maxValue, uint32_t step)
+				: defaultValue(defaultValue), minValue(minValue), maxValue(maxValue), step(step) {}
+
+			uint32_t defaultValue = 0u;
+			uint32_t minValue = 0u;
+			uint32_t maxValue = 0u;
+			uint32_t step = 0u;
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -192,21 +178,13 @@ namespace tpp
 		};
 	};
 
-	struct IntMetadata
-	{
-		IntMetadata(int32_t defaultValue, int32_t minValue, int32_t maxValue, int32_t step)
-			: defaultValue(defaultValue), minValue(minValue), maxValue(maxValue), step(step) {}
-
-		int32_t defaultValue = 0;
-		int32_t minValue = 0;
-		int32_t maxValue = 0;
-		int32_t step = 0;
-	};
-
 	class Int : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Int() : VariableBase((VariableType)Type) {}
+#endif
 		Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -216,7 +194,19 @@ namespace tpp
 
 		mutable int32_t currentValue = 0;
 
-		IntMetadata metadata;
+		struct IntMetadata
+		{
+#if defined(TPP_CLIENT)
+			IntMetadata() {}
+#endif
+			IntMetadata(int32_t defaultValue, int32_t minValue, int32_t maxValue, int32_t step)
+				: defaultValue(defaultValue), minValue(minValue), maxValue(maxValue), step(step) {}
+
+			int32_t defaultValue = 0;
+			int32_t minValue = 0;
+			int32_t maxValue = 0;
+			int32_t step = 0;
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -224,16 +214,15 @@ namespace tpp
 		};
 	};
 
-	struct BoolMetadata
-	{
-		BoolMetadata(bool defaultValue) : defaultValue(defaultValue) {}
-		bool defaultValue = false;
-	};
+	
 
 	class Bool : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Bool() : VariableBase((VariableType)Type) {}
+#endif
 		Bool(const char* path, bool initialValue);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -243,22 +232,18 @@ namespace tpp
 
 		mutable bool currentValue = 0;
 
-		BoolMetadata metadata;
+		struct BoolMetadata
+		{
+#if defined(TPP_CLIENT)
+			BoolMetadata() {}
+#endif
+			BoolMetadata(bool defaultValue) : defaultValue(defaultValue) {}
+			bool defaultValue = false;
+		} metadata;
 
 		enum : uint32_t
 		{
 			Type = VariableType::Bool
-		};
-	};
-
-	struct Color3Metadata
-	{
-		Color3Metadata(float r, float g, float b) : r(r), g(g), b(b) {}
-
-		union
-		{
-			struct { float r, g, b; };
-			vector<float, 3> defaultValue;
 		};
 	};
 	
@@ -266,6 +251,9 @@ namespace tpp
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Color3() : VariableBase((VariableType)Type) {}
+#endif
 		Color3(const char* path, float r, float g, float b);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -279,7 +267,19 @@ namespace tpp
 			vector<float, 3> currentValue;
 		};
 
-		Color3Metadata metadata;
+		struct Color3Metadata
+		{
+#if defined(TPP_CLIENT)
+			Color3Metadata() {}
+#endif
+			Color3Metadata(float r, float g, float b) : r(r), g(g), b(b) {}
+
+			union
+			{
+				struct { float r, g, b; };
+				vector<float, 3> defaultValue;
+			};
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -287,21 +287,13 @@ namespace tpp
 		};
 	};
 
-	struct Color4Metadata
-	{
-		Color4Metadata(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
-
-		union
-		{
-			struct { float r, g, b, a; };
-			vector<float, 4> defaultValue;
-		};
-	};
-
 	class Color4 : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Color4() : VariableBase((VariableType)Type) {}
+#endif
 		Color4(const char* path, float r, float g, float b, float a);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -315,7 +307,19 @@ namespace tpp
 			vector<float, 4> currentValue;
 		};
 
-		Color4Metadata metadata;
+		struct Color4Metadata
+		{
+#if defined(TPP_CLIENT)
+			Color4Metadata() {}
+#endif
+			Color4Metadata(float r, float g, float b, float a) : r(r), g(g), b(b), a(a) {}
+
+			union
+			{
+				struct { float r, g, b, a; };
+				vector<float, 4> defaultValue;
+			};
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -323,21 +327,13 @@ namespace tpp
 		};
 	};
 
-	struct Vector2Metadata
-	{
-		Vector2Metadata(float x, float y) : x(x), y(y) {}
-
-		union
-		{
-			struct { float x, y; };
-			vector<float, 2> defaultValue;
-		};
-	};
-
 	class Vector2 : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Vector2() : VariableBase((VariableType)Type) {}
+#endif
 		Vector2(const char* path, float x, float y);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -351,7 +347,19 @@ namespace tpp
 			vector<float, 2> currentValue;
 		};
 
-		Vector2Metadata metadata;
+		struct Vector2Metadata
+		{
+#if defined(TPP_CLIENT)
+			Vector2Metadata() {}
+#endif
+			Vector2Metadata(float x, float y) : x(x), y(y) {}
+
+			union
+			{
+				struct { float x, y; };
+				vector<float, 2> defaultValue;
+			};
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -359,20 +367,13 @@ namespace tpp
 		};
 	};
 
-	struct Vector3Metadata
-	{
-		Vector3Metadata(float x, float y, float z) : x(x), y(y), z(z) {}
-		union
-		{
-			struct { float x, y, z; };
-			vector<float, 3> defaultValue;
-		};
-	};
-
 	class Vector3 : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Vector3() : VariableBase((VariableType)Type) {}
+#endif
 		Vector3(const char* path, float x, float y, float z);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -386,7 +387,18 @@ namespace tpp
 			vector<float, 3> currentValue;
 		};
 
-		Vector3Metadata metadata;
+		struct Vector3Metadata
+		{
+#if defined(TPP_CLIENT)
+			Vector3Metadata() {}
+#endif
+			Vector3Metadata(float x, float y, float z) : x(x), y(y), z(z) {}
+			union
+			{
+				struct { float x, y, z; };
+				vector<float, 3> defaultValue;
+			};
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -394,21 +406,13 @@ namespace tpp
 		};
 	};
 
-	struct Vector4Metadata
-	{
-		Vector4Metadata(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
-
-		union
-		{
-			struct { float x, y, z, w; };
-			vector<float, 4> defaultValue;
-		};
-	};
-
 	class Vector4 : public VariableBase
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Vector4() : VariableBase((VariableType)Type) {}
+#endif
 		Vector4(const char* path, float x, float y, float z, float w);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -422,7 +426,19 @@ namespace tpp
 			vector<float, 4> currentValue;
 		};
 
-		Vector4Metadata metadata;
+		struct Vector4Metadata
+		{
+#if defined(TPP_CLIENT)
+			Vector4Metadata() {}
+#endif
+			Vector4Metadata(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
+
+			union
+			{
+				struct { float x, y, z, w; };
+				vector<float, 4> defaultValue;
+			};
+		} metadata;
 
 		enum : uint32_t
 		{
@@ -434,6 +450,9 @@ namespace tpp
 	{
 	public:
 
+#if defined(TPP_CLIENT)
+		Callback() : VariableBase((VariableType)Type) {}
+#endif
 		Callback(const char* path, void(*callback)(void));
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
@@ -448,89 +467,4 @@ namespace tpp
 
 		void(*currentValue)(void);
 	};
-
-	// Can be any of the allowed types
-	class Variable
-	{
-	public:
-
-#if defined(TPP_CLIENT)
-
-		Variable() {}
-
-		Variable(tpp::VariableType type, const std::string& path, const tpp::Hash& hash)
-			: type(type), path(path), hash(hash)
-		{
-			if (path.size() > 0)
-			{
-				size_t lastSlash = path.find_last_of("/");
-				size_t afterLastSlash = lastSlash + 1;
-
-				if (lastSlash != std::string::npos)
-				{
-					groupPath = std::string(path.data(), lastSlash);
-					name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
-				}
-			}
-		}
-
-		const std::string& GetGroupPath() const
-		{
-			return groupPath;
-		}
-
-		const std::string& GetName() const
-		{
-			return name;
-		}
-
-		std::string path;
-
-		std::string groupPath;
-
-		tpp::Hash hash;
-
-		std::string name;
-#else
-
-		Variable(tpp::VariableType type) : type(type) {}
-
-#endif
-
-		void* memory = nullptr;
-
-		uint32_t size = 0;
-
-		tpp::VariableType type = tpp::VariableType::Invalid;
-
-	#if defined(TPP_CLIENT)
-		union
-		{
-			tpp::Float vdFloat;
-
-			tpp::UInt vdUInt;
-
-			tpp::Int vdInt;
-
-			tpp::Bool vdBool;
-			
-			tpp::Color3 vdColor3;
-			
-			tpp::Color4 vdColor4;
-
-			tpp::Vector2 vdVector2;
-
-			tpp::Vector3 vdVector3;
-
-			tpp::Vector4 vdVector4;
-
-			tpp::Callback vdCallback;
-		};
-	#endif
-	};
 }
-
-#if defined(TPP_CLIENT)
-#undef virtual
-#undef override
-#endif

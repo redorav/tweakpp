@@ -22,10 +22,8 @@ void SerializeTppVariableUpdate<tpp::Callback>(tpp::Callback& variable, const tp
 
 // TODO Remove ugly const_cast and just make explicit that things can be modified. It does
 // mean that we have to change the code upstream
-void SerializeTppVariableUpdatePacket(const tpp::Variable& inVariable, tpp::BinarySerializationWriter& stream)
+void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::BinarySerializationWriter& stream)
 {
-	tpp::Variable& variable = const_cast<tpp::Variable&>(inVariable);
-
 	size_t startSize = stream.Size();
 
 	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
@@ -34,50 +32,8 @@ void SerializeTppVariableUpdatePacket(const tpp::Variable& inVariable, tpp::Bina
 
 	// We don't serialize the path when updating the packet, as we pass in the hash
 
-	if (variable.type == tpp::VariableType::Float)
-	{
-		SerializeTppVariableUpdate(variable.vdFloat, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::UnsignedInteger)
-	{
-		SerializeTppVariableUpdate(variable.vdInt, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Integer)
-	{
-		SerializeTppVariableUpdate(variable.vdInt, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Bool)
-	{
-		SerializeTppVariableUpdate(variable.vdBool, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Color3)
-	{
-		SerializeTppVariableUpdate(variable.vdColor3, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Color4)
-	{
-		SerializeTppVariableUpdate(variable.vdColor4, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Vector2)
-	{
-		SerializeTppVariableUpdate(variable.vdVector2, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Vector3)
-	{
-		SerializeTppVariableUpdate(variable.vdVector3, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Vector4)
-	{
-		SerializeTppVariableUpdate(variable.vdVector4, variable.hash, stream);
-	}
-	else if (variable.type == tpp::VariableType::Callback)
-	{
-		SerializeTppVariableUpdate(variable.vdCallback, variable.hash, stream);
-	}
-	else
-	{
-		printf("Variable %s not serialized correctly\n", variable.path.c_str());
-	}
+	stream << tpp::VariableHeader(variable->type, variable->size, (uint64_t)variable->hash);
+	variable->SerializeValue(stream);
 
 	// Patch in the packet size
 	size_t totalSize = stream.Size() - startSize;
@@ -165,8 +121,8 @@ void tpp::VariableGroupTree::Clear()
 tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_t port)
 	: m_windowOpen(true)
 {
-	m_serverSocket = tpp::Network::CreateSocket();
-	m_clientSocket = tpp::Network::CreateSocket();
+	m_serverSocket = std::unique_ptr<tpp::ISocket>(tpp::Network::CreateSocket());
+	m_clientSocket = std::unique_ptr<tpp::ISocket>(tpp::Network::CreateSocket());
 
 	m_networkAddress = tpp::NetworkAddress(ipAddress, port);
 	m_serverSocket->Create();
@@ -205,22 +161,27 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 
 	bool validVariable = true;
 
-	tpp::Variable variable(variableHeader.type, path, variableHeader.hash);
+	std::shared_ptr<tpp::VariableBase> variable;
 
 	switch (variableHeader.type)
 	{
-		case tpp::VariableType::Float:           variable.vdFloat.DeserializeMetadata(reader); break;
-		case tpp::VariableType::UnsignedInteger: variable.vdUInt.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Integer:         variable.vdInt.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Bool:            variable.vdBool.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Color3:          variable.vdColor3.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Color4:          variable.vdColor4.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Vector2:         variable.vdVector2.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Vector3:         variable.vdVector3.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Vector4:         variable.vdVector4.DeserializeMetadata(reader); break;
-		case tpp::VariableType::Callback: break;
+		case tpp::VariableType::Float: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Float()); break;
+		case tpp::VariableType::UnsignedInteger: variable = std::shared_ptr<tpp::VariableBase>(new tpp::UInt()); break;
+		case tpp::VariableType::Integer: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Int()); break;
+		case tpp::VariableType::Bool: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Bool()); break;
+		case tpp::VariableType::Color3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Color3()); break;
+		case tpp::VariableType::Color4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Color4()); break;
+		case tpp::VariableType::Vector2: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector2()); break;
+		case tpp::VariableType::Vector3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector3()); break;
+		case tpp::VariableType::Vector4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector4()); break;
+		case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
 		default: validVariable = false;
 	}
+	
+	variable->DeserializeMetadata(reader);
+
+	variable->SetPath(path);
+	variable->hash = variableHeader.hash;
 
 	if (validVariable)
 	{
@@ -354,7 +315,7 @@ void tpp::ClientVariableManager::UpdateConnection()
 		{
 			//uiLog.Log("Listening for connections... (%lli)\n", currentTime);
 			printf("Listening for connections... (%lli)\n", currentTime);
-			tpp::SocketReturn::T acceptReturn = m_serverSocket->Accept(m_networkAddress, m_clientSocket);
+			tpp::SocketReturn::T acceptReturn = m_serverSocket->Accept(m_networkAddress, m_clientSocket.get());
 
 			if (acceptReturn != tpp::SocketReturn::Ok)
 			{
@@ -368,19 +329,19 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 void tpp::ClientVariableManager::DrawConnectionWindow()
 {
-	const tpp::Variable* modifiedVariable = nullptr;
+	const tpp::VariableBase* modifiedVariable = nullptr;
 	m_uiConnectionWindow->Draw(this, m_displayString.c_str(), &m_windowOpen, modifiedVariable);
 
 	if (modifiedVariable)
 	{
-		SerializeTppVariableUpdatePacket(*modifiedVariable, m_writerStream);
+		SerializeTppVariableUpdatePacket(modifiedVariable, m_writerStream);
 	}
 }
 
-void tpp::ClientVariableManager::AddVariable(const Variable& variable)
+void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>& variable)
 {
 	// TODO Make this string_view and function take a string_view
-	std::string groupPath = std::string(variable.groupPath);
+	const std::string& groupPath = variable->groupPath;
 
 	m_variableGroupTree.AddPath(groupPath);
 
@@ -395,19 +356,19 @@ void tpp::ClientVariableManager::AddVariable(const Variable& variable)
 
 	variableGroup = &variableGroupIterator->second;
 
-	Variable& insertedVariable = m_variableHashMap.insert({ variable.path, variable }).first->second;
+	std::shared_ptr<VariableBase>& insertedVariable = m_variableHashMap.insert({ variable->path, variable }).first->second;
 
-	// Insert a pointer to the variable that we inserted (as a copy)
-	variableGroup->variables.push_back(&insertedVariable);
+	// Insert a pointer to the variable that we inserted (as a copy of the pointer)
+	variableGroup->variables.push_back(insertedVariable.get());
 }
 
-const tpp::Variable* tpp::ClientVariableManager::GetVariable(const std::string& path) const
+const tpp::VariableBase* tpp::ClientVariableManager::GetVariable(const std::string& path) const
 {
 	auto variable = m_variableHashMap.find(path);
 
 	if (variable != m_variableHashMap.end())
 	{
-		return &variable->second;
+		return variable->second.get();
 	}
 	else
 	{

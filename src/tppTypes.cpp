@@ -8,11 +8,13 @@ namespace tpp
 {
 	Float::Float(const char* path, float initialValue, float minValue, float maxValue, float step)
 		: VariableBase((VariableType)Type)
+
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -29,8 +31,9 @@ namespace tpp
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -47,8 +50,9 @@ namespace tpp
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -65,8 +69,9 @@ namespace tpp
 		, currentValue(initialValue)
 		, metadata(initialValue)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -83,8 +88,9 @@ namespace tpp
 		, r(r), g(g), b(b)
 		, metadata(r, g, b)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -101,8 +107,9 @@ namespace tpp
 		, r(r), g(g), b(b), a(a)
 		, metadata(r, g, b, a)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -119,8 +126,9 @@ namespace tpp
 		, x(x), y(y)
 		, metadata(x, y)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -137,8 +145,9 @@ namespace tpp
 		, x(x), y(y), z(z)
 		, metadata(x, y, z)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -155,8 +164,9 @@ namespace tpp
 		, x(x), y(y), z(z), w(w)
 		, metadata(x, y, z, w)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
@@ -172,8 +182,9 @@ namespace tpp
 		: VariableBase((VariableType)Type)
 		, currentValue(callback)
 	{
-		#if !defined(TPP_CLIENT)
 		size = sizeof(currentValue);
+
+		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
 		#endif
