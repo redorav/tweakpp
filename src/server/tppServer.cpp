@@ -51,6 +51,8 @@ std::vector<tpp::EnumEntry> Entries =
 
 tpp::Enum SSRRenderingMode("Rendering/Post Effects/SSR/Rendering Mode", SSRModes::Preblur, Entries);
 
+tpp::String SSRCompilationFilter("Rendering/Post Effects/SSR/Compilation Filter", "");
+
 tpp::Callback RecompileShaders("Rendering/Post Effects/SSR/Recompile Shaders", RecompileShadersCallback);
 
 // Depth of Field
@@ -194,6 +196,10 @@ int main(int argc, char **argv)
 							{
 								// Invoke the callback
 								((tpp::Callback*)variable)->currentValue();
+							}
+							else if (variablePacket->type == tpp::VariableType::String)
+							{
+								((tpp::String*)variable)->currentValue.assign(&packetData[variableIndex] + sizeof(uint32_t), variablePacket->size);
 							}
 							else if (variablePacket->size > 0)
 							{

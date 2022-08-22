@@ -31,8 +31,15 @@ void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::Bi
 	stream << tpp::MessageHeader(0, tpp::MessageType::Update);
 
 	// We don't serialize the path when updating the packet, as we pass in the hash
+	if (variable->type == tpp::VariableType::String)
+	{
+		stream << tpp::VariableHeader(variable->type, (uint32_t)((tpp::String*)variable)->currentValue.size(), (uint64_t)variable->hash);
+	}
+	else
+	{
+		stream << tpp::VariableHeader(variable->type, variable->size, (uint64_t)variable->hash);
+	}
 
-	stream << tpp::VariableHeader(variable->type, variable->size, (uint64_t)variable->hash);
 	variable->SerializeValue(stream);
 
 	// Patch in the packet size
@@ -172,6 +179,7 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 		case tpp::VariableType::Vector2: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector2()); break;
 		case tpp::VariableType::Vector3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector3()); break;
 		case tpp::VariableType::Vector4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector4()); break;
+		case tpp::VariableType::String: variable = std::shared_ptr<tpp::VariableBase>(new tpp::String()); break;
 		case tpp::VariableType::Enum: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Enum()); break;
 		case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
 		default: validVariable = false;

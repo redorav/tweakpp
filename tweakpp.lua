@@ -53,7 +53,8 @@ function AddImguiDependencies()
 	files
 	{
 		"external/imgui/*.cpp",
-		"external/imgui/misc/freetype/*.cpp",
+		"external/imgui/misc/freetype/*.cpp", "external/imgui/misc/freetype/*.h",
+		"external/imgui/misc/cpp/*.cpp", "external/imgui/misc/cpp/*.h",
 		"external/imgui/backends/imgui_impl_win32.cpp",
 		"external/imgui/backends/imgui_impl_dx11.cpp"
 	}
@@ -61,7 +62,8 @@ function AddImguiDependencies()
 	includedirs
 	{
 		"external/imgui",
-		"external/imgui/misc/freetype"
+		"external/imgui/misc/freetype",
+		"external/imgui/misc/cpp",
 	}
 
 end

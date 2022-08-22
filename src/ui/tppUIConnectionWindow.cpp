@@ -3,6 +3,7 @@
 #include "client/tppClientVariableManager.h"
 
 #include "imgui.h"
+#include "imgui_stdlib.h"
 
 namespace tpp
 {
@@ -60,6 +61,10 @@ namespace tpp
 		else if (variable->type == tpp::VariableType::Vector4)
 		{
 			wasModified = ImGui::InputFloat4(mangledName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
+		}
+		else if (variable->type == tpp::VariableType::String)
+		{
+			wasModified = ImGui::InputText(mangledName.c_str(), &static_cast<tpp::String*>(variable)->currentValue);
 		}
 		else if (variable->type == tpp::VariableType::Enum)
 		{

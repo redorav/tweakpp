@@ -466,6 +466,30 @@ namespace tpp
 		void(*currentValue)(void);
 	};
 
+	class String final : public VariableBase
+	{
+	public:
+
+#if defined(TPP_CLIENT)
+		String() : VariableBase((VariableType)Type, 0) {}
+#endif
+		String(const char* path, const char* defaultValue);
+
+		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
+		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
+		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
+		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+
+		std::string defaultValue;
+
+		enum : uint32_t
+		{
+			Type = VariableType::String
+		};
+
+		std::string currentValue;
+	};
+
 	struct EnumEntry
 	{
 		int value;
@@ -479,6 +503,7 @@ namespace tpp
 #if defined(TPP_CLIENT)
 		Enum() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
+
 		Enum(const char* path, int defaultValue, const std::vector<EnumEntry>& entries);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
