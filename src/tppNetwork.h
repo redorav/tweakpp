@@ -48,18 +48,15 @@ namespace tpp
 	{
 		VariableHeader() {}
 
-		VariableHeader(tpp::VariableType type, uint32_t size, uint64_t hash) : type(type), size(size), hash(hash) {}
+		VariableHeader(tpp::VariableType type, uint64_t hash) : type(type), hash(hash) {}
 
-		VariableHeader(uint32_t type, uint32_t size, uint64_t hash) : VariableHeader(static_cast<tpp::VariableType>(type), size, hash) {}
+		VariableHeader(uint32_t type, uint64_t hash) : VariableHeader(static_cast<tpp::VariableType>(type), hash) {}
+
+		// Unique identifier. Typically formed from the path
+		uint64_t hash; // 8 bytes
 
 		// Type of variable
 		VariableType type; // 1 byte
-		
-		// Size of the variable data
-		uint32_t size; // 4 bytes
-		
-		// Unique identifier. Typically formed from the path
-		uint64_t hash; // 8 bytes
 	};
 	TPP_PACK_END
 

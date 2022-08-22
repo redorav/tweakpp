@@ -10,14 +10,14 @@ template<typename TppVariable>
 void SerializeTppVariableUpdate(TppVariable& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
 {
 	// If we're updating, we only need to send the current value
-	stream << tpp::VariableHeader(variable.type, sizeof(variable.currentValue), (uint64_t)hash);
+	stream << tpp::VariableHeader(variable.type, (uint64_t)hash);
 	stream << variable.currentValue;
 }
 
 template<>
 void SerializeTppVariableUpdate<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
 {
-	stream << tpp::VariableHeader(variable.type, 0, hash);
+	stream << tpp::VariableHeader(variable.type, hash);
 }
 
 // TODO Remove ugly const_cast and just make explicit that things can be modified. It does
@@ -31,14 +31,7 @@ void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::Bi
 	stream << tpp::MessageHeader(0, tpp::MessageType::Update);
 
 	// We don't serialize the path when updating the packet, as we pass in the hash
-	if (variable->type == tpp::VariableType::String)
-	{
-		stream << tpp::VariableHeader(variable->type, (uint32_t)((tpp::String*)variable)->currentValue.size(), (uint64_t)variable->hash);
-	}
-	else
-	{
-		stream << tpp::VariableHeader(variable->type, variable->size, (uint64_t)variable->hash);
-	}
+	stream << tpp::VariableHeader(variable->type, (uint64_t)variable->hash);
 
 	variable->SerializeValue(stream);
 

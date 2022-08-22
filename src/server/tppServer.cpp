@@ -89,7 +89,7 @@ void SerializeVariableDescription(const tpp::VariableBase* variable, const std::
 	// Serialize the path of the variable so the server can display it
 	writer << path;
 
-	writer << tpp::VariableHeader(variable->type, variable->size, hash);
+	writer << tpp::VariableHeader(variable->type, hash);
 	variable->SerializeMetadata(writer);
 
 	size_t totalSize = writer.Size() - startSize;
