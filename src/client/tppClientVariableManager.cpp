@@ -176,14 +176,13 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 		case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
 		default: validVariable = false;
 	}
-	
-	variable->DeserializeMetadata(reader);
-
-	variable->SetPath(path);
-	variable->hash = variableHeader.hash;
 
 	if (validVariable)
 	{
+		variable->DeserializeMetadata(reader);
+		variable->SetPath(path);
+		variable->hash = variableHeader.hash;
+
 		AddVariable(variable);
 	}
 	else
