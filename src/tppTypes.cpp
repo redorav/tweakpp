@@ -173,7 +173,11 @@ namespace tpp
 	void Callback::DeserializeMetadata(tpp::BinarySerializationReader& reader) {}
 
 	void Callback::SerializeValue(tpp::BinarySerializationWriter& writer) const {}
-	void Callback::DeserializeValue(tpp::BinarySerializationReader& reader) {}
+	void Callback::DeserializeValue(tpp::BinarySerializationReader& reader)
+	{
+		// Deserializing the value means calling the function
+		currentValue();
+	}
 
 	String::String(const char* path, const char* defaultValue)
 		: VariableBase((VariableType)Type, 0)

@@ -156,62 +156,25 @@ int main(int argc, char **argv)
 			// If we have received valid data
 			if (receiveResult > 0)
 			{
-				// Copy all the data into a vector
+				// Copy all the data into the serialization stream
 				// TODO Use the original buffer instead
-				std::vector<char> receivedData(receiveBuffer, receiveBuffer + receiveResult);
+				tpp::BinarySerializationReader reader(receiveBuffer, receiveResult);
 
-				// Search for the first appearance of the header
-				auto headerPosition = std::search(receivedData.begin(), receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
-
-				// While we have headers (there could be multiple messages in the data) process them
-				while (headerPosition != receivedData.end())
+				while (reader.HasData())
 				{
-					// Cast the start of the message to the header, and extract relevant information
-					tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
-					tpp::MessageType messageType = header->type;
-					tpp::Version version = header->version;
-					uint32_t packetSize = header->size;
+					tpp::MessageHeader messageHeader;
+					reader << messageHeader;
 
-					// Find where the header starts, and copy the data onward
-					auto index = headerPosition + sizeof(tpp::MessageHeader) - receivedData.begin();
+					tpp::VariableHeader variableHeader;
+					reader << variableHeader;
 
-					std::vector<char> packetData;
-					packetData.reserve(packetSize);
-					packetData.insert(packetData.end(), &receivedData[index], &receivedData[index] + packetSize);
+					tpp::VariableBase* variable = tpp::GetServerVariableManager()->Find(variableHeader.hash);
 
-					auto currentPosition = packetData.begin();
-
-					// Use the type to read in the value
+					if (variable)
 					{
-						auto valueIndex = currentPosition - packetData.begin();
-						tpp::VariableHeader* variablePacket = reinterpret_cast<tpp::VariableHeader*>(&packetData[valueIndex]);
-
-						const tpp::VariableBase* variable = tpp::GetServerVariableManager()->Find(variablePacket->hash);
-
-						if (variable->type != tpp::VariableType::Invalid)
-						{
-							auto variableIndex = valueIndex + sizeof(tpp::VariableHeader);
-
-							if (variablePacket->type == tpp::VariableType::Callback)
-							{
-								// Invoke the callback
-								((tpp::Callback*)variable)->currentValue();
-							}
-							else if (variablePacket->type == tpp::VariableType::String)
-							{
-								((tpp::String*)variable)->currentValue.assign(&packetData[variableIndex] + sizeof(uint32_t), variablePacket->size);
-							}
-							else if (variablePacket->size > 0)
-							{
-								// Copy the memory over as-is, we assume the format is correct
-								memcpy(variable->memory, &packetData[variableIndex], variablePacket->size);
-							}
-						}
+						variable->DeserializeValue(reader);
+						variable->PrintDebug();
 					}
-
-					auto nextHeaderPosition = std::search(headerPosition + 1, receivedData.end(), tpp::HeaderString, tpp::HeaderString + strlen(tpp::HeaderString));
-
-					headerPosition = nextHeaderPosition;
 				}
 			}
 			else if (receiveResult == tpp::SocketReturn::Ok || receiveResult == tpp::SocketReturn::WouldBlock)

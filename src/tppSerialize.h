@@ -28,12 +28,6 @@ namespace tpp
 		static const bool IsReading() { return StreamTypeT == SerializationStreamType::Read; }
 		static const bool IsWriting() { return StreamTypeT == SerializationStreamType::Write; }
 
-		// Pass in data that we want serialized
-		SerializationStreamBase(const std::vector<char>& v)
-		{
-			m_data = v;
-		}
-
 		// Reserve a certain size (this is only useful when writing)
 		SerializationStreamBase(uint32_t initialSize = 0)
 		{
@@ -150,6 +144,22 @@ namespace tpp
 	public:
 
 		using SerializationStreamBase<SerializationStreamType::Read>::SerializationStreamBase;
+
+		// Pass in data that we want serialized
+		BinarySerializer(const std::vector<char>& data)
+		{
+			m_data = data;
+		}
+
+		BinarySerializer(const char* data, size_t size)
+		{
+			m_data.assign(data, data + size);
+		}
+
+		bool HasData() const
+		{
+			return m_currentPosition < m_data.size();
+		}
 
 		BinarySerializer& operator << (bool& value)     { Read(value); return *this; }
 		BinarySerializer& operator << (char& value)     { Read(value); return *this; }

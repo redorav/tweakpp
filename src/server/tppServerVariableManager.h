@@ -16,12 +16,12 @@ namespace tpp
 {
 	struct VariableDescription
 	{
-		VariableDescription(const tpp::VariableBase* variable, const std::string& path)
+		VariableDescription(tpp::VariableBase* variable, const std::string& path)
 		: variable(variable)
 		, path(path)
 		{}
 
-		const tpp::VariableBase* variable;
+		tpp::VariableBase* variable;
 		std::string path;
 	};
 
@@ -31,7 +31,7 @@ namespace tpp
 
 		void Register(const tpp::VariableDescription& variableDescription);
 
-		const tpp::VariableBase* Find(const tpp::Hash& hash) const;
+		tpp::VariableBase* Find(const tpp::Hash& hash) const;
 
 		template<typename Fn>
 		void ForEachVariable(Fn fn) const
