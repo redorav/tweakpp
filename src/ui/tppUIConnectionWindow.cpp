@@ -5,8 +5,147 @@
 #include "imgui.h"
 #include "imgui_stdlib.h"
 
+#include <chrono>
+
 namespace tpp
 {
+	void ShowContextMenu(tpp::VariableBase* variable)
+	{
+		ImGuiPopupFlags popupFlags = ImGuiPopupFlags_MouseButtonRight;
+		if (ImGui::BeginPopupContextItem((const char*)variable, popupFlags))
+		{
+			if (ImGui::MenuItem("Revert To Default"))
+			{
+				variable->RevertToDefault();
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Copy Name"))
+			{
+				ImGui::SetClipboardText(variable->GetName().c_str());
+			}
+
+			if (ImGui::MenuItem("Copy Path"))
+			{
+				ImGui::SetClipboardText(variable->GetGroupPath().c_str());
+			}
+
+			if (ImGui::MenuItem("Copy Full Path"))
+			{
+				ImGui::SetClipboardText(variable->GetPath().c_str());
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
+	void UIConnectionWindow::ShowTooltip(tpp::VariableBase* variable)
+	{
+		using namespace std::chrono;
+
+		if (ImGui::IsItemHovered())
+		{
+			uint64_t currentTime = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+
+			if (!m_wasHovering)
+			{
+				m_lastStartedHover = currentTime;
+				m_wasHovering = variable;
+			}
+
+			uint64_t timeDelta = currentTime - m_lastStartedHover;
+
+			if (timeDelta > 1000)
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(variable->GetPath().c_str());
+
+				if (variable->type != VariableType::Callback)
+				{
+					ImGui::Separator();
+				}
+
+				if (variable->type == tpp::VariableType::Float)
+				{
+					tpp::Float* floatVariable = static_cast<tpp::Float*>(variable);
+					ImGui::Text("Default: %f", floatVariable->metadata.defaultValue);
+					ImGui::Text("Min: %f", floatVariable->metadata.minValue);
+					ImGui::Text("Max: %f", floatVariable->metadata.maxValue);
+					ImGui::Text("Step: %f", floatVariable->metadata.step);
+				}
+				else if (variable->type == tpp::VariableType::UnsignedInteger)
+				{
+					tpp::UInt* uintVariable = static_cast<tpp::UInt*>(variable);
+					ImGui::Text("Default: %i", uintVariable->metadata.defaultValue);
+					ImGui::Text("Min: %i", uintVariable->metadata.minValue);
+					ImGui::Text("Max: %i", uintVariable->metadata.maxValue);
+					ImGui::Text("Step: %i", uintVariable->metadata.step);
+				}
+				else if (variable->type == tpp::VariableType::Integer)
+				{
+					tpp::Int* intVariable = static_cast<tpp::Int*>(variable);
+					ImGui::Text("Default: %i", intVariable->metadata.defaultValue);
+					ImGui::Text("Min: %i", intVariable->metadata.minValue);
+					ImGui::Text("Max: %i", intVariable->metadata.maxValue);
+					ImGui::Text("Step: %i", intVariable->metadata.step);
+				}
+				else if (variable->type == tpp::VariableType::Bool)
+				{
+					tpp::Bool* boolVariable = static_cast<tpp::Bool*>(variable);
+					ImGui::Text("Default: %s", boolVariable->metadata.defaultValue ? "true" : "false");
+				}
+				else if (variable->type == tpp::VariableType::Color3)
+				{
+					tpp::Color3* color3Variable = static_cast<tpp::Color3*>(variable);
+					ImGui::Text("Default: [%f, %f, %f]", color3Variable->metadata.r, color3Variable->metadata.g, color3Variable->metadata.b);
+				}
+				else if (variable->type == tpp::VariableType::Color4)
+				{
+					tpp::Color4* color3Variable = static_cast<tpp::Color4*>(variable);
+					ImGui::Text("Default: [%f, %f, %f, %f]", color3Variable->metadata.r, color3Variable->metadata.g, color3Variable->metadata.b, color3Variable->metadata.a);
+				}
+				else if (variable->type == tpp::VariableType::Vector2)
+				{
+					tpp::Vector2* vector2Variable = static_cast<tpp::Vector2*>(variable);
+					ImGui::Text("Default: [%f, %f]", vector2Variable->metadata.x, vector2Variable->metadata.y);
+				}
+				else if (variable->type == tpp::VariableType::Vector3)
+				{
+					tpp::Vector3* vector3Variable = static_cast<tpp::Vector3*>(variable);
+					ImGui::Text("Default: [%f, %f, %f]", vector3Variable->metadata.x, vector3Variable->metadata.y, vector3Variable->metadata.z);
+				}
+				else if (variable->type == tpp::VariableType::Vector4)
+				{
+					tpp::Vector4* vector4Variable = static_cast<tpp::Vector4*>(variable);
+					ImGui::Text("Default: [%f, %f, %f, %f]", vector4Variable->metadata.x, vector4Variable->metadata.y, vector4Variable->metadata.z, vector4Variable->metadata.w);
+				}
+				else if (variable->type == tpp::VariableType::String)
+				{
+					tpp::String* stringVariable = static_cast<tpp::String*>(variable);
+					ImGui::Text("Default: %s", stringVariable->defaultValue.c_str());
+				}
+				else if (variable->type == tpp::VariableType::Enum)
+				{
+					tpp::Enum* enumVariable = static_cast<tpp::Enum*>(variable);
+					const EnumEntry& defaultEnumEntry = enumVariable->metadata.entries[enumVariable->metadata.defaultValue];
+					ImGui::Text("Default: %s", defaultEnumEntry.name.c_str());
+				}
+
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+		}
+		else
+		{
+			if (m_wasHovering == variable)
+			{
+				m_wasHovering = nullptr;
+			}
+		}
+	}
+
 	bool DrawVariableWidget(const std::string& mangledName, tpp::VariableBase* variable)
 	{
 		bool wasModified = false;
@@ -14,29 +153,17 @@ namespace tpp
 		if (variable->type == tpp::VariableType::Float)
 		{
 			tpp::Float* floatVariable = static_cast<tpp::Float*>(variable);
-			ImGui::Text("%.3f", floatVariable->metadata.minValue);
-			ImGui::SameLine();
 			wasModified = ImGui::SliderFloat(mangledName.c_str(), &floatVariable->currentValue, floatVariable->metadata.minValue, floatVariable->metadata.maxValue);
-			ImGui::SameLine();
-			ImGui::Text("%.3f", floatVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::UnsignedInteger)
 		{
 			tpp::UInt* uintVariable = static_cast<tpp::UInt*>(variable);
-			ImGui::Text("%i", uintVariable->metadata.minValue);
-			ImGui::SameLine();
 			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &uintVariable->currentValue, &uintVariable->metadata.minValue, &uintVariable->metadata.maxValue);
-			ImGui::SameLine();
-			ImGui::Text("%i", uintVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Integer)
 		{
 			tpp::Int* intVariable = static_cast<tpp::Int*>(variable);
-			ImGui::Text("%i", intVariable->metadata.minValue);
-			ImGui::SameLine();
 			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &intVariable->currentValue, &intVariable->metadata.minValue, &intVariable->metadata.maxValue);
-			ImGui::SameLine();
-			ImGui::Text("%i", intVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Bool)
 		{
@@ -222,6 +349,9 @@ namespace tpp
 
 							ImGui::TableSetColumnIndex(0);
 							ImGui::Text(variable->GetName().c_str());
+
+							ShowContextMenu(variable);
+							ShowTooltip(variable);
 
 							ImGui::TableSetColumnIndex(1);
 

@@ -57,6 +57,11 @@ namespace tpp
 			}
 		}
 
+		const std::string& GetPath() const
+		{
+			return path;
+		}
+
 		const std::string& GetGroupPath() const
 		{
 			return groupPath;
@@ -91,6 +96,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader & reader) = 0;
 		virtual void SerializeValue(tpp::BinarySerializationWriter & writer) const = 0;
 		virtual void DeserializeValue(tpp::BinarySerializationReader & reader) = 0;
+		virtual void RevertToDefault() = 0;
 	};
 
 	class Float final : public VariableBase
@@ -106,6 +112,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		operator float()
 		{
@@ -148,6 +155,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		operator uint32_t()
 		{
@@ -189,6 +197,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		mutable int32_t currentValue = 0;
 
@@ -227,6 +236,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		mutable bool currentValue = 0;
 
@@ -258,6 +268,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		union
 		{
@@ -298,6 +309,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		union
 		{
@@ -338,6 +350,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		union
 		{
@@ -378,6 +391,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		union
 		{
@@ -417,6 +431,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		union
 		{
@@ -457,6 +472,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		enum : uint32_t
 		{
@@ -479,6 +495,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		std::string defaultValue;
 
@@ -510,6 +527,7 @@ namespace tpp
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
 
 		enum : uint32_t
 		{
