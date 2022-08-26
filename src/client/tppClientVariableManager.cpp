@@ -6,20 +6,6 @@
 #include <algorithm>
 #include <chrono>
 
-template<typename TppVariable>
-void SerializeTppVariableUpdate(TppVariable& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
-{
-	// If we're updating, we only need to send the current value
-	stream << tpp::VariableHeader(variable.type, (uint64_t)hash);
-	stream << variable.currentValue;
-}
-
-template<>
-void SerializeTppVariableUpdate<tpp::Callback>(tpp::Callback& variable, const tpp::Hash& hash, tpp::BinarySerializationWriter& stream)
-{
-	stream << tpp::VariableHeader(variable.type, hash);
-}
-
 // TODO Remove ugly const_cast and just make explicit that things can be modified. It does
 // mean that we have to change the code upstream
 void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::BinarySerializationWriter& stream)
