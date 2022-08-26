@@ -122,14 +122,25 @@ namespace tpp
 		}
 
 		template<typename T>
-		BinarySerializer& operator << (const std::vector<T>& v)
+		BinarySerializer& operator << (const std::vector<T>& vector)
 		{
-			Write((uint32_t)v.size());
-			WriteRaw((const char*)v.data(), (uint32_t)(v.size() * sizeof(T)));
+			Write((uint32_t)vector.size());
+
+			if (std::is_trivially_copyable<T>::value)
+			{
+				WriteRaw((const char*)vector.data(), (uint32_t)(vector.size() * sizeof(T)));
+			}
+			else
+			{
+				for (const T& v : vector)
+				{
+					*this << v;
+				}
+			}
 			return *this;
 		}
 
-		template<typename T>
+		template<typename T, std::enable_if_t<std::is_trivially_copy_assignable<T>::value, bool> = true>
 		BinarySerializer& operator << (const T& v)
 		{
 			static_assert(std::is_trivially_copy_assignable<T>::value, "T must be trivially copy-assignable");
@@ -179,33 +190,38 @@ namespace tpp
 			uint32_t sizeBytes;
 			Read(sizeBytes);
 
-			if (sizeBytes <= m_data.size() - m_currentPosition)
-			{
-				v.reserve(sizeBytes);
-				v.assign(reinterpret_cast<const char*>(&m_data[m_currentPosition]), sizeBytes);
-				m_currentPosition += sizeBytes;
-			}
+			v.reserve(sizeBytes);
+			v.assign(reinterpret_cast<const char*>(&m_data[m_currentPosition]), sizeBytes);
+			m_currentPosition += sizeBytes;
 
 			return *this;
 		}
 
 		template<typename T>
-		BinarySerializer& operator << (std::vector<T>& v)
+		BinarySerializer& operator << (std::vector<T>& vector)
 		{
 			uint32_t size;
 			Read(size);
 
-			uint32_t sizeBytes = size * sizeof(T);
-
-			if (sizeBytes <= m_data.size() - m_currentPosition)
+			if (std::is_trivially_copyable<T>::value)
 			{
-				v.assign(reinterpret_cast<const T*>(&m_data[m_currentPosition]), reinterpret_cast<const T*>(&m_data[m_currentPosition]) + size);
+				uint32_t sizeBytes = size * sizeof(T);
+				vector.assign(reinterpret_cast<const T*>(&m_data[m_currentPosition]), reinterpret_cast<const T*>(&m_data[m_currentPosition]) + size);
 				m_currentPosition += sizeBytes;
+			}
+			else
+			{
+				vector.resize(size);
+				for (uint32_t i = 0; i < size; ++i)
+				{
+					T& value = vector[i];
+					*this << value;
+				}
 			}
 			return *this;
 		}
 
-		template<typename T>
+		template<typename T, std::enable_if_t<std::is_trivially_copy_assignable<T>::value, bool> = true>
 		SerializationStreamBase& operator << (T& v)
 		{
 			static_assert(std::is_trivially_copy_assignable<T>::value, "T must be trivially copy-assignable");
