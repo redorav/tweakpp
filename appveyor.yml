@@ -16,6 +16,8 @@ environment:
       configuration: Release
 
 install:
+  - git submodule init
+  - git submodule update
   - cmd: if %vsversion%==2022
          start /B /W premake/win/premake5 --file=tweakpp.lua vs2022
 
