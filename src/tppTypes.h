@@ -513,6 +513,14 @@ namespace tpp
 		std::string name;
 	};
 
+	template<SerializationStreamType::T StreamTypeT>
+	inline BinarySerializer<StreamTypeT>& operator << (BinarySerializer<StreamTypeT>& stream, tpp::conditional_t<StreamTypeT == SerializationStreamType::Read, tpp::EnumEntry, const tpp::EnumEntry>& value)
+	{
+		stream << value.value;
+		stream << value.name;
+		return stream;
+	}
+
 	class Enum final : public VariableBase
 	{
 	public:
