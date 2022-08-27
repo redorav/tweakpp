@@ -13,6 +13,7 @@
 namespace tpp
 {
 	class UIConnectionWindow;
+	class UILog;
 
 	// Represents a node in the variable group tree, that is itself a group and
 	// can have other groups under it. A group with an empty array of nodes is a leaf
@@ -92,8 +93,6 @@ namespace tpp
 
 		ClientVariableManager(const char* ipAddress, uint32_t port);
 
-		~ClientVariableManager();
-
 		// Receives incoming data, parses and makes sense of incoming variable definitions
 		void UpdateConnection();
 
@@ -151,7 +150,7 @@ namespace tpp
 
 		std::string m_displayString;
 
-		tpp::UIConnectionWindow* m_uiConnectionWindow;
+		std::unique_ptr<tpp::UIConnectionWindow> m_uiConnectionWindow;
 	};
 
 	template<typename Fn>

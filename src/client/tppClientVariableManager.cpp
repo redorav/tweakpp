@@ -119,12 +119,7 @@ tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_
 	m_displayString += "##";
 	m_displayString += std::to_string((uintptr_t)this);
 
-	m_uiConnectionWindow = new tpp::UIConnectionWindow();
-}
-
-tpp::ClientVariableManager::~ClientVariableManager()
-{
-	delete m_uiConnectionWindow;
+	m_uiConnectionWindow = std::make_unique<tpp::UIConnectionWindow>(this);
 }
 
 static const int DEFAULT_BUFLEN = 512;
@@ -174,7 +169,7 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 	}
 	else
 	{
-		printf("Unrecognized variable found while processing packet\n");
+		m_uiConnectionWindow->Log("Unrecognized variable found while processing packet\n");
 	}
 }
 
@@ -300,9 +295,14 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 		if (timeDelta > 0)
 		{
-			//uiLog.Log("Trying to connect to server... (%lli)\n", currentTime);
-			printf("Trying to connect to server... (%lli)\n", currentTime);
+			m_uiConnectionWindow->Log("Trying to connect to server... (%lli)\n", currentTime);
 			tpp::SocketReturn::T connectReturn = m_clientSocket->Connect(m_networkAddress);
+
+			if (connectReturn == SocketReturn::Ok)
+			{
+				m_uiConnectionWindow->Log("Connected to server %s:%i\n", m_networkAddress.address, m_networkAddress.port);
+			}
+
 			m_lastAttemptedConnection = currentTime;
 		}
 	}

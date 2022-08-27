@@ -1,9 +1,11 @@
 #include "tppUIConnectionWindow.h"
 
 #include "client/tppClientVariableManager.h"
+#include "ui/tppUILog.h"
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
+#include "imgui_internal.h"
 
 #include <chrono>
 
@@ -146,52 +148,53 @@ namespace tpp
 		}
 	}
 
-	bool DrawVariableWidget(const std::string& mangledName, tpp::VariableBase* variable)
+	// The invisible name is there to get a unique id but not display it using imgui's default positioning. We render the names separately
+	bool DrawVariableWidget(const std::string& invisibleName, tpp::VariableBase* variable)
 	{
 		bool wasModified = false;
 
 		if (variable->type == tpp::VariableType::Float)
 		{
 			tpp::Float* floatVariable = static_cast<tpp::Float*>(variable);
-			wasModified = ImGui::SliderFloat(mangledName.c_str(), &floatVariable->currentValue, floatVariable->metadata.minValue, floatVariable->metadata.maxValue);
+			wasModified = ImGui::SliderFloat(invisibleName.c_str(), &floatVariable->currentValue, floatVariable->metadata.minValue, floatVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::UnsignedInteger)
 		{
 			tpp::UInt* uintVariable = static_cast<tpp::UInt*>(variable);
-			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_U32, &uintVariable->currentValue, &uintVariable->metadata.minValue, &uintVariable->metadata.maxValue);
+			wasModified = ImGui::SliderScalar(invisibleName.c_str(), ImGuiDataType_U32, &uintVariable->currentValue, &uintVariable->metadata.minValue, &uintVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Integer)
 		{
 			tpp::Int* intVariable = static_cast<tpp::Int*>(variable);
-			wasModified = ImGui::SliderScalar(mangledName.c_str(), ImGuiDataType_S32, &intVariable->currentValue, &intVariable->metadata.minValue, &intVariable->metadata.maxValue);
+			wasModified = ImGui::SliderScalar(invisibleName.c_str(), ImGuiDataType_S32, &intVariable->currentValue, &intVariable->metadata.minValue, &intVariable->metadata.maxValue);
 		}
 		else if (variable->type == tpp::VariableType::Bool)
 		{
-			wasModified = ImGui::Checkbox(mangledName.c_str(), &static_cast<tpp::Bool*>(variable)->currentValue);
+			wasModified = ImGui::Checkbox(invisibleName.c_str(), &static_cast<tpp::Bool*>(variable)->currentValue);
 		}
 		else if (variable->type == tpp::VariableType::Color3)
 		{
-			wasModified = ImGui::ColorEdit3(mangledName.c_str(), &static_cast<tpp::Color3*>(variable)->r);
+			wasModified = ImGui::ColorEdit3(invisibleName.c_str(), &static_cast<tpp::Color3*>(variable)->r);
 		}
 		else if (variable->type == tpp::VariableType::Color4)
 		{
-			wasModified = ImGui::ColorEdit4(mangledName.c_str(), &static_cast<tpp::Color4*>(variable)->r);
+			wasModified = ImGui::ColorEdit4(invisibleName.c_str(), &static_cast<tpp::Color4*>(variable)->r);
 		}
 		else if (variable->type == tpp::VariableType::Vector2)
 		{
-			wasModified = ImGui::InputFloat2(mangledName.c_str(), &static_cast<tpp::Vector2*>(variable)->x, "%.3f");
+			wasModified = ImGui::InputFloat2(invisibleName.c_str(), &static_cast<tpp::Vector2*>(variable)->x, "%.3f");
 		}
 		else if (variable->type == tpp::VariableType::Vector3)
 		{
-			wasModified = ImGui::InputFloat3(mangledName.c_str(), &static_cast<tpp::Vector3*>(variable)->x, "%.3f");
+			wasModified = ImGui::InputFloat3(invisibleName.c_str(), &static_cast<tpp::Vector3*>(variable)->x, "%.3f");
 		}
 		else if (variable->type == tpp::VariableType::Vector4)
 		{
-			wasModified = ImGui::InputFloat4(mangledName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
+			wasModified = ImGui::InputFloat4(invisibleName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
 		}
 		else if (variable->type == tpp::VariableType::String)
 		{
-			wasModified = ImGui::InputText(mangledName.c_str(), &static_cast<tpp::String*>(variable)->currentValue);
+			wasModified = ImGui::InputText(invisibleName.c_str(), &static_cast<tpp::String*>(variable)->currentValue);
 		}
 		else if (variable->type == tpp::VariableType::Enum)
 		{
@@ -199,7 +202,7 @@ namespace tpp
 			const auto& entries = enumVariable->metadata.entries;
 
 			ImGuiComboFlags comboFlags = 0;
-			if (ImGui::BeginCombo(mangledName.c_str(), entries[enumVariable->currentValue].name.c_str(), comboFlags))
+			if (ImGui::BeginCombo(invisibleName.c_str(), entries[enumVariable->currentValue].name.c_str(), comboFlags))
 			{
 				for (int n = 0; n < entries.size(); n++)
 				{
@@ -236,10 +239,22 @@ namespace tpp
 		return 0;
 	}
 
+	UIConnectionWindow::UIConnectionWindow(const tpp::ClientVariableManager* variableManager)
+	{
+		m_variablesWindowID = std::string("Variables Window##") + std::string(variableManager->GetDisplayString());
+		m_logWindowID = std::string("Log##") + std::string(variableManager->GetDisplayString());
+
+		m_uiLog = std::make_unique<tpp::UILog>();
+	}
+
 	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::VariableBase*& modifiedVariable)
 	{
 		ImGuiWindowFlags windowFlags = 0;
 		windowFlags |= ImGuiWindowFlags_NoCollapse;
+
+		// We create a dockspace in the connection window to contain two child windows: the variable group + variables and the log
+		// The top window is split into two vertically via an invisible table. The windows need a unique id because we reference
+		// them globally when docking via ImGui::DockBuilderDockWindow
 
 		ImGui::Begin(variableManager->GetDisplayString(), open, windowFlags);
 		{
@@ -262,27 +277,89 @@ namespace tpp
 				}
 			}
 
-			ImGuiTableFlags tableFlags = 0;
-			tableFlags |= ImGuiTableFlags_Resizable;
-			tableFlags |= ImGuiTableFlags_BordersOuter;
-			tableFlags |= ImGuiTableFlags_BordersV;
-			tableFlags |= ImGuiTableFlags_ScrollY;
+			ImVec2 windowSize = ImGui::GetWindowContentRegionMax();
 
-			if (ImGui::BeginTable("##table1", 2, tableFlags))
+			ImGuiID mainDockspaceID = ImGui::GetID(variableManager->GetDisplayString());
+			if (!ImGui::DockBuilderGetNode(mainDockspaceID))
 			{
-				// Set up header rows
-				ImGui::TableSetupColumn("Variable Groups");
-				ImGui::TableHeadersRow();
+				ImGui::DockBuilderRemoveNode(mainDockspaceID); // Clear existing contents
+				ImGui::DockBuilderAddNode(mainDockspaceID, ImGuiDockNodeFlags_PassthruCentralNode | ImGuiDockNodeFlags_NoDockingInCentralNode);
+				ImGui::DockBuilderSetNodeSize(mainDockspaceID, windowSize);
 
-				// Exit header row
+				ImGuiID dockMainID = mainDockspaceID;
+				ImGuiID dockBottom = ImGui::DockBuilderSplitNode(dockMainID, ImGuiDir_Down, 0.2f, nullptr, &dockMainID);
+
+				ImGui::DockBuilderDockWindow(m_variablesWindowID.c_str(), dockMainID);
+				ImGui::DockBuilderDockWindow(m_logWindowID.c_str(), dockBottom);
+
+				ImGuiID ids[] = { dockMainID, dockBottom };
+
+				for (uint32_t i = 0; i < sizeof(ids) / sizeof(ImGuiID); ++i)
+				{
+					ImGuiDockNode* node = ImGui::DockBuilderGetNode(ids[i]);
+					node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+					node->LocalFlags |= ImGuiDockNodeFlags_NoDocking;
+					node->LocalFlags |= ImGuiDockNodeFlags_NoSplit;
+				}
+
+				ImGui::DockBuilderFinish(mainDockspaceID);
+			}
+
+			ImGui::PushStyleColor(ImGuiCol_DockingEmptyBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+			ImGuiDockNodeFlags dockNodeFlags = 0;
+			//dockNodeFlags |= ImGuiDockNodeFlags_NoSplit;
+			//dockNodeFlags |= ImGuiDockNodeFlags_PassthruCentralNode;
+			ImGui::DockSpace(mainDockspaceID, ImVec2(0.0f, 0.0f), dockNodeFlags);
+			ImGui::PopStyleColor(); // ImGuiCol_DockingEmptyBg
+		}
+		ImGui::End();
+
+		// Remove the padding inside the window
+		ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize, 0.0f);
+
+		// Remove padding of the window
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin(m_variablesWindowID.c_str(), nullptr);
+		ImGui::PopStyleVar();
+		{
+			ImGuiTableFlags containerTableFlags = 0;
+			containerTableFlags |= ImGuiTableFlags_Resizable;
+			containerTableFlags |= ImGuiTableFlags_BordersOuter;
+			containerTableFlags |= ImGuiTableFlags_ScrollY;
+
+			ImGuiTableFlags innerTableFlags = 0;
+			innerTableFlags |= ImGuiTableFlags_Resizable; // Make sure we can resize this table
+			innerTableFlags |= ImGuiTableFlags_ScrollY;   // Have a scrollbar
+			innerTableFlags |= ImGuiTableFlags_PadOuterX; // Padding around the titles. Inner padding is implicit
+
+			// Remove the padding between cells for the beginning of the table
+			// This is to render the outer table completely invisible, except for the border
+			ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0.0f, 0.0f));
+			bool beginContainerTable = ImGui::BeginTable("##ContainerTable", 2, containerTableFlags);
+			ImGui::PopStyleVar(); // ImGuiStyleVar_CellPadding
+
+			if (beginContainerTable)
+			{
 				ImGui::TableNextRow();
-
-				// Show variable groups
 				ImGui::TableSetColumnIndex(0);
 
-				variableManager->ForEachVariableGroup
-				(
-					[this](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
+				if (ImGui::BeginTable("##table1", 1, innerTableFlags))
+				{
+					ImGui::TableSetupScrollFreeze(0, 1);
+
+					// Set up header rows
+					ImGui::TableSetupColumn("Variable Groups");
+					ImGui::TableHeadersRow();
+
+					// Exit header row
+					ImGui::TableNextRow();
+
+					// Show variable groups
+					ImGui::TableSetColumnIndex(0);
+
+					variableManager->ForEachVariableGroup
+					(
+						[this](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
 					{
 						ImGuiTreeNodeFlags nodeFlags = 0;
 						nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
@@ -319,33 +396,31 @@ namespace tpp
 							ImGui::TreePop();
 						}
 					}
-				);
+					);
+					ImGui::EndTable();
+				}
 
-				// Show Variables and record which variable was modified through the UI
 				ImGui::TableSetColumnIndex(1);
 
-				if (m_selectedGroup)
+				if (ImGui::BeginTable("##UIVariableWindow", 2, innerTableFlags))
 				{
-					ImGuiTableFlags tableFlags = 0;
-					tableFlags |= ImGuiTableFlags_Resizable;
-					tableFlags |= ImGuiTableFlags_PadOuterX; // Because we've not enabled ImGuiTableFlags_BordersV
-					tableFlags |= ImGuiTableFlags_ScrollY;
+					ImGui::TableSetupScrollFreeze(0, 1);
 
-					if (ImGui::BeginTable("##UIVariableWindow", 2, tableFlags))
+					// Set up header rows
+					ImGui::TableSetupColumn("Name");
+					ImGui::TableSetupColumn("Value");
+					ImGui::TableHeadersRow();
+
+					// Exit header row
+					ImGui::TableNextRow();
+
+					if (m_selectedGroup)
 					{
-						// Set up header rows
-						ImGui::TableSetupColumn("Name");
-						ImGui::TableSetupColumn("Value");
-						ImGui::TableHeadersRow();
-
-						// Exit header row
-						ImGui::TableNextRow();
-
 						variableManager->ForEachVariableInGroup(m_selectedGroup->path, [this, &modifiedVariable](tpp::VariableBase* variable)
 						{
 							ImGui::TableNextRow();
 
-							std::string mangledName = "##" + variable->GetName();
+							std::string invisibleName = "##" + variable->GetName();
 
 							ImGui::TableSetColumnIndex(0);
 							ImGui::Text(variable->GetName().c_str());
@@ -355,7 +430,7 @@ namespace tpp
 
 							ImGui::TableSetColumnIndex(1);
 
-							bool wasModified = DrawVariableWidget(mangledName, variable);
+							bool wasModified = DrawVariableWidget(invisibleName, variable);
 
 							if (wasModified)
 							{
@@ -363,16 +438,26 @@ namespace tpp
 							}
 						});
 
-						ImGui::EndTable();
+						// Copy path into the address bar
+						strcpy(m_currentAddress, m_selectedGroup->path.c_str());
 					}
 
-					// Copy path into the address bar
-					strcpy(m_currentAddress, m_selectedGroup->path.c_str());
+					ImGui::EndTable();
 				}
 
 				ImGui::EndTable();
 			}
 		}
 		ImGui::End();
+
+		ImGui::PopStyleVar();
+
+		bool logOpen = true;
+		m_uiLog->Draw(m_logWindowID.c_str(), &logOpen);
+	}
+
+	void UIConnectionWindow::Log(const char* format...)
+	{
+		m_uiLog->Log(format);
 	}
 }

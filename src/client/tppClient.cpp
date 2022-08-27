@@ -35,9 +35,6 @@ int main(void)
 
 	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-	tpp::UILog uiLog;
-	tpp::UIConnectionWindow uiConnectionWindow;
-
 	tpp::Network::Initialize();
 
 	ClientVariableManagers.push_back(std::unique_ptr<tpp::ClientVariableManager>(new tpp::ClientVariableManager("localhost", 27001)));
@@ -145,12 +142,6 @@ int main(void)
 					++iter;
 				}
 			}
-
-			// Log
-			ImGui::SetNextWindowPos(ImVec2(0, (float)(tpp::UIBackend::GetWindowHeight() - 200)), ImGuiCond_Appearing);
-			ImGui::SetNextWindowSize(ImVec2((float)tpp::UIBackend::GetWindowWidth(), 200), ImGuiCond_Appearing);
-
-			uiLog.Draw("Log", nullptr);
 		}
 
 		ImGui::ShowDemoWindow(nullptr);

@@ -173,7 +173,6 @@ int main(int argc, char **argv)
 					if (variable)
 					{
 						variable->DeserializeValue(reader);
-						variable->PrintDebug();
 					}
 				}
 			}
