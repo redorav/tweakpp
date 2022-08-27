@@ -1,0 +1,25 @@
+# version format
+version: 1.0.{build}
+
+# Do not build feature branch with open Pull Requests
+skip_branch_with_pr: true
+
+environment:
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      vsversion: 2022
+      platform: x64
+      configuration: Debug
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2022
+      vsversion: 2022
+      platform: x64
+      configuration: Release
+
+install:
+  - cmd: if %vsversion%==2022
+         start /B /W premake/win/premake5 --file=tweakpp.lua vs2022
+
+build_script:
+  - cmd: if %vsversion%==2022
+         msbuild "C:\projects\hlslpp\workspace\vs2022\Client\Tweak++ Client.sln" /m /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+         msbuild "C:\projects\hlslpp\workspace\vs2022\Server\Tweak++ Server.sln" /m /logger:"C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
