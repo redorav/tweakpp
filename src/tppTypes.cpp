@@ -265,4 +265,5 @@ namespace tpp
 	void Enum::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Enum::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Enum::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 }
