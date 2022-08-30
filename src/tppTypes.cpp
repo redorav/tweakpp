@@ -24,6 +24,7 @@ namespace tpp
 	void Float::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Float::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Float::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	UInt::UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -43,6 +44,7 @@ namespace tpp
 	void UInt::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void UInt::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool UInt::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Int::Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -62,6 +64,7 @@ namespace tpp
 	void Int::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Int::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Int::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Bool::Bool(const char* path, bool initialValue)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -81,6 +84,7 @@ namespace tpp
 	void Bool::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Bool::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Bool::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Color3::Color3(const char* path, float r, float g, float b)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -100,6 +104,7 @@ namespace tpp
 	void Color3::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Color3::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Color3::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Color4::Color4(const char* path, float r, float g, float b, float a)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -119,6 +124,7 @@ namespace tpp
 	void Color4::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Color4::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Color4::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Vector2::Vector2(const char* path, float x, float y)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -138,6 +144,7 @@ namespace tpp
 	void Vector2::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Vector2::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Vector2::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Vector3::Vector3(const char* path, float x, float y, float z)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -157,6 +164,7 @@ namespace tpp
 	void Vector3::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Vector3::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Vector3::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Vector4::Vector4(const char* path, float x, float y, float z, float w)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -176,6 +184,7 @@ namespace tpp
 	void Vector4::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void Vector4::RevertToDefault() { currentValue = metadata.defaultValue; }
+	bool Vector4::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	Callback::Callback(const char* path, void(*callback)(void))
 		: VariableBase((VariableType)Type, 0)
@@ -198,6 +207,7 @@ namespace tpp
 	}
 
 	void Callback::RevertToDefault() {}
+	bool Callback::HasDefaultValue() { return true; }
 
 	String::String(const char* path, const char* defaultValue)
 		: VariableBase((VariableType)Type, 0)
@@ -223,6 +233,7 @@ namespace tpp
 	void String::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
 
 	void String::RevertToDefault() { currentValue = defaultValue; }
+	bool String::HasDefaultValue() { return currentValue == defaultValue; }
 
 	Enum::Enum(const char* path, int defaultValue, const std::vector<EnumEntry>& entries)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
