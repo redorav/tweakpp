@@ -1,5 +1,7 @@
 #include "tppUIBackend.h"
 
+#include "tppUITextIcons.h"
+
 #include "imgui.h"
 #include "imgui_freetype.h"
 
@@ -144,58 +146,74 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-	static const ImWchar iconsRanges[] = { 0xf000, 0xf3ff, 0 }; // Will not be copied by AddFont* so keep in scope.
-	static const ImWchar asciiRange[] = { 0, 255, 0 };
-
-	ImVector<ImWchar> ranges;
-	ImFontGlyphRangesBuilder builder;
-	builder.AddText("Hello world");                        // Add a string (here "Hello world" contains 7 unique characters)
-	builder.AddChar(0x7262);                               // Add a specific character
-	builder.AddChar('/');                               // Add a specific character
-	builder.AddText(u8"😊\u2697 ➔こんにちは");
-	builder.AddRanges(io.Fonts->GetGlyphRangesJapanese()); // Add one of the default ranges
-	builder.AddRanges(io.Fonts->GetGlyphRangesDefault()); // Add one of the default ranges
-	builder.AddRanges(iconsRanges);
-	builder.AddRanges(asciiRange);
-	builder.BuildRanges(&ranges);
-
-	//ImFont* font = io.Fonts->AddFontDefault();
+	// ImFont* font = io.Fonts->AddFontDefault();
 	// Add character ranges and merge into the previous font
 	// The ranges array is not copied by the AddFont* functions and is used lazily
 	// so ensure it is available at the time of building or calling GetTexDataAsRGBA32().
 
-	float fontSize = 16.0f;
+	float baseFontSize = 16.0f;
 
-	// Add base font
-	{
-		//io.Fonts->AddFontDefault();
-		ImFontConfig defaultFontConfig;
-		defaultFontConfig.SizePixels = fontSize;
-		//defaultFontConfig.PixelSnapH = true;
-		defaultFontConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_LoadColor;
-		//defaultFontConfig.GlyphRanges = fontAwesomeRanges.Data;
-		io.Fonts->AddFontFromFileTTF("segoeui.ttf", 0.0f, &defaultFontConfig, io.Fonts->GetGlyphRangesDefault());
-	}
+	//-----------------
+	// 1. Add base font
+	//-----------------
 
-	// Add FontAwesome's icons
+	ImFontConfig defaultFontConfig;
+	defaultFontConfig.SizePixels = baseFontSize;
+	defaultFontConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_LoadColor;
+	io.Fonts->AddFontFromFileTTF("segoeui.ttf", 0.0f, &defaultFontConfig, io.Fonts->GetGlyphRangesDefault());
+
+	//---------------------------
+	// 2. Add FontAwesome's icons
+	//---------------------------
+
+	ImVector<ImWchar> fontAwesomeRanges;
 	{
-		ImVector<ImWchar> fontAwesomeRanges;
 		//static const ImWchar fontAwesomeIconsRanges[] = { 0xf000, 0xf3ff, 0 };
 		ImFontGlyphRangesBuilder fontAwesomeBuilder;
-		fontAwesomeBuilder.AddText(u8"\uf1c9");
+		fontAwesomeBuilder.AddText(tpp::icons::FileCode);
+		fontAwesomeBuilder.AddText(tpp::icons::MagnifyingGlass);
+		fontAwesomeBuilder.AddText(tpp::icons::ElectricPlug);
+
 		fontAwesomeBuilder.BuildRanges(&fontAwesomeRanges);
-		
+
 		ImFontConfig fontAwesomeConfig;
-		fontAwesomeConfig.SizePixels = fontSize;
-		//fontAwesomeConfig.PixelSnapH = true;
+		fontAwesomeConfig.SizePixels = baseFontSize;
 		fontAwesomeConfig.MergeMode = true;
+		fontAwesomeConfig.GlyphOffset = ImVec2(0.0f, 1.0f);
 		fontAwesomeConfig.GlyphRanges = fontAwesomeRanges.Data;
-		//fontAwesomeConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
-		io.Fonts->AddFontFromFileTTF("Font Awesome 6 Free-Regular-400.otf", fontSize, &fontAwesomeConfig);
-		io.Fonts->Build();
+		io.Fonts->AddFontFromFileTTF("Font Awesome 6 Free-Solid-900.otf", baseFontSize, &fontAwesomeConfig);
 	}
 
+	//---------------------------------------------------
+	// 3. Add Twemoji Font
+	// https://github.com/mozilla/twemoji-colr
+	// Twemoji is open source, whereas Segoe Emoji is not
+	//---------------------------------------------------
+
+	ImVector<ImWchar> twemojiRanges;
+	{
+		ImFontGlyphRangesBuilder twemojiBuilder;
+		twemojiBuilder.AddText(tpp::icons::LargeRedCircle);
+		twemojiBuilder.AddText(tpp::icons::LargeGreenCircle);
+		twemojiBuilder.AddText(tpp::icons::LargeRedSquare);
+		twemojiBuilder.BuildRanges(&twemojiRanges);
+
+		float fontSize = baseFontSize * 0.6f;
+
+		ImFontConfig twemojiConfig = {};
+		twemojiConfig.SizePixels = fontSize;
+		twemojiConfig.MergeMode = true;
+		twemojiConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_LoadColor;
+		twemojiConfig.GlyphRanges = twemojiRanges.Data;
+		twemojiConfig.GlyphOffset = ImVec2(0.0f, -1.0f);
+		//fontAwesomeConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
+		io.Fonts->AddFontFromFileTTF("TwemojiMozilla.ttf", fontSize, &twemojiConfig);
+	}
+
+	io.Fonts->Build();
+
 	// Setup Dear ImGui style
+
 	//ImGui::StyleColorsDark();
 	ImGui::StyleColorsClassic();
 	//ImGui::StyleColorsLight();

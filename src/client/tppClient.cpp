@@ -1,4 +1,17 @@
-﻿#include <stdlib.h>
+﻿#include "tppNetwork.h"
+#include "tppISocket.h"
+
+#include "tppClientVariableManager.h"
+#include "tppUIBackend.h"
+#include "tppUILog.h"
+#include "tppUIConnectionWindow.h"
+#include "tppSerialize.h"
+#include "tppTypes.h"
+#include "tppUITextIcons.h"
+
+#include "imgui.h"
+
+#include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
 #include <vector>
@@ -9,19 +22,9 @@
 #include <memory>
 #include <unordered_map>
 
-#include "tppNetwork.h"
-#include "tppISocket.h"
-
-#include "tppClientVariableManager.h"
-#include "tppUIBackend.h"
-#include "tppUILog.h"
-#include "tppUIConnectionWindow.h"
-#include "tppSerialize.h"
-#include "tppTypes.h"
-
-#include "imgui.h"
-
 std::vector<std::unique_ptr<tpp::ClientVariableManager>> ClientVariableManagers;
+
+std::string scratchMemoryString;
 
 int main(void)
 {
@@ -59,13 +62,32 @@ int main(void)
 			{
 				if (ImGui::BeginMenu("File"))
 				{
-					if (ImGui::MenuItem("New Connection", "Ctrl + N"))
+					scratchMemoryString = tpp::icons::ElectricPlug;
+					scratchMemoryString += " New Connection";
+
+					if (ImGui::MenuItem(scratchMemoryString.c_str(), "Ctrl + N"))
 					{
 						popupOpen = true;
 					}
 
+					if (ImGui::MenuItem("Exit"))
+					{
+
+					}
+
 					ImGui::EndMenu();
 				}
+
+				if (ImGui::BeginMenu("Edit"))
+				{
+					if (ImGui::MenuItem("Options"))
+					{
+
+					}
+
+					ImGui::EndMenu();
+				}
+
 				if (ImGui::BeginMenu("Help"))
 				{
 					if (ImGui::MenuItem("About"))

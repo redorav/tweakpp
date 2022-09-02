@@ -116,7 +116,7 @@ tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_
 	m_displayString += ipAddress;
 	m_displayString += ":";
 	m_displayString += std::to_string(port);
-	m_displayString += "##";
+	m_displayString += "###";
 	m_displayString += std::to_string((uintptr_t)this);
 
 	m_uiConnectionWindow = std::make_unique<tpp::UIConnectionWindow>(this);
@@ -311,7 +311,7 @@ void tpp::ClientVariableManager::UpdateConnection()
 void tpp::ClientVariableManager::DrawConnectionWindow()
 {
 	const tpp::VariableBase* modifiedVariable = nullptr;
-	m_uiConnectionWindow->Draw(this, m_displayString.c_str(), &m_windowOpen, modifiedVariable);
+	m_uiConnectionWindow->Draw(this, &m_windowOpen, modifiedVariable);
 
 	if (modifiedVariable)
 	{
@@ -360,6 +360,11 @@ const tpp::VariableBase* tpp::ClientVariableManager::GetVariable(const std::stri
 const char* tpp::ClientVariableManager::GetDisplayString() const
 {
 	return m_displayString.c_str();
+}
+
+bool tpp::ClientVariableManager::IsConnected() const
+{
+	return m_clientSocket->IsConnected();
 }
 
 void tpp::ClientVariableManager::Clear()

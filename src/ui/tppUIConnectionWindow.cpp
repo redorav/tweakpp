@@ -2,6 +2,7 @@
 
 #include "client/tppClientVariableManager.h"
 #include "ui/tppUILog.h"
+#include "ui/tppUITextIcons.h"
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -14,7 +15,7 @@ namespace tpp
 	void ShowContextMenu(tpp::VariableBase* variable)
 	{
 		ImGuiPopupFlags popupFlags = ImGuiPopupFlags_MouseButtonRight;
-		if (ImGui::BeginPopupContextItem((const char*)variable, popupFlags))
+		if (ImGui::BeginPopupContextItem(variable->GetName().c_str(), popupFlags))
 		{
 			if (ImGui::MenuItem("Revert To Default"))
 			{
@@ -256,20 +257,37 @@ namespace tpp
 		// The top window is split into two vertically via an invisible table. The windows need a unique id because we reference
 		// them globally when docking via ImGui::DockBuilderDockWindow
 
-		ImGui::Begin(variableManager->GetDisplayString(), open, windowFlags);
+		ImGui::Begin(m_currentDisplayString.c_str(), open, windowFlags);
 		{
+			//-----------------------
+			// Render the address bar
+			//-----------------------
+
 			// Address. We can pick up this address and modify it based on the selection, or parse it and navigate through it
 			ImGui::Text("Address:");
 			ImGui::SameLine();
-			ImGuiInputTextFlags addressFlags = 0;
-			addressFlags |= ImGuiInputTextFlags_AutoSelectAll;
+			ImGuiInputTextFlags addressBarFlags = 0;
+			addressBarFlags |= ImGuiInputTextFlags_AutoSelectAll;
 			//addressFlags |= ImGuiInputTextFlags_CharsDecimal;
-			bool modifiedAddress = ImGui::InputText("##Address:", m_currentAddress, 512, addressFlags);
+
+			float windowWidth = ImGui::GetContentRegionAvail().x;
+			float currentCursorPosX = ImGui::GetCursorPosX();
+			ImGui::PushItemWidth(windowWidth);
+			bool modifiedAddress = ImGui::InputText("##Address:", &m_currentAddress, addressBarFlags);
+			ImGui::PopItemWidth();
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(currentCursorPosX + windowWidth - FontSize - 10.0f);
+
+			ImVec4 dimmedColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
+			dimmedColor.w *= 0.2f;
+			ImGui::PushStyleColor(ImGuiCol_Text, dimmedColor);
+			ImGui::Text(tpp::icons::MagnifyingGlass);
+			ImGui::PopStyleColor();
 
 			if (modifiedAddress)
 			{
-				// Navigate to the appropriate place
-				const VariableGroupNode* candidateGroupNode = variableManager->GetVariableGroupNode(std::string(m_currentAddress));
+				// If we modified the address and we found a matching group navigate to the appropriate place
+				const VariableGroupNode* candidateGroupNode = variableManager->GetVariableGroupNode(m_currentAddress);
 
 				if (candidateGroupNode)
 				{
@@ -360,42 +378,43 @@ namespace tpp
 					variableManager->ForEachVariableGroup
 					(
 						[this](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
-					{
-						ImGuiTreeNodeFlags nodeFlags = 0;
-						nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
-						nodeFlags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
-						nodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-
-						if (variableGroupNode.nodes.empty())
 						{
-							nodeFlags |= ImGuiTreeNodeFlags_Leaf;
-						}
+							ImGuiTreeNodeFlags nodeFlags = 0;
+							nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
+							nodeFlags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+							nodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-						if (&variableGroupNode == m_selectedGroup)
+							if (variableGroupNode.nodes.empty())
+							{
+								nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+							}
+
+							if (&variableGroupNode == m_selectedGroup)
+							{
+								nodeFlags |= ImGuiTreeNodeFlags_Selected;
+							}
+
+							m_scratchPatchedNames = tpp::icons::FileCode;
+							m_scratchPatchedNames += " ";
+							m_scratchPatchedNames += nodeName;
+
+							// Take the address of the variable as the unique id so it remains consistent across frames
+							bool nodeOpen = ImGui::TreeNodeEx((void*)&variableGroupNode, nodeFlags, m_scratchPatchedNames.c_str());
+
+							if (ImGui::IsItemClicked())
+							{
+								m_selectedGroup = &variableGroupNode;
+							}
+
+							return nodeOpen;
+						},
+						[](const std::string& nodeName, const VariableGroupNode& variableGroupNode, bool isOpen)
 						{
-							nodeFlags |= ImGuiTreeNodeFlags_Selected;
+							if (isOpen)
+							{
+								ImGui::TreePop();
+							}
 						}
-
-						// TODO Make more efficient than heap copy
-						std::string patchedName = u8"\uf1c9 " + nodeName;
-
-						// Take the address of the variable as the unique id so it remains consistent across frames
-						bool nodeOpen = ImGui::TreeNodeEx((void*)&variableGroupNode, nodeFlags, patchedName.c_str());
-
-						if (ImGui::IsItemClicked())
-						{
-							m_selectedGroup = &variableGroupNode;
-						}
-
-						return nodeOpen;
-					},
-					[](const std::string& nodeName, const VariableGroupNode& variableGroupNode, bool isOpen)
-					{
-						if (isOpen)
-						{
-							ImGui::TreePop();
-						}
-					}
 					);
 					ImGui::EndTable();
 				}
@@ -420,9 +439,15 @@ namespace tpp
 						{
 							ImGui::TableNextRow();
 
-							std::string invisibleName = "##" + variable->GetName();
-
 							ImGui::TableSetColumnIndex(0);
+
+							if (!variable->HasDefaultValue())
+							{
+								ImGui::Text(" "); ImGui::SameLine(); ImGui::Text(tpp::icons::LargeRedSquare); ImGui::SameLine();
+							}
+
+							float fontSize = ImGui::GetFontSize();
+							ImGui::SetCursorPosX(fontSize * 2.0f); // TODO Check different font sizes
 							ImGui::Text(variable->GetName().c_str());
 
 							ShowContextMenu(variable);
@@ -430,7 +455,9 @@ namespace tpp
 
 							ImGui::TableSetColumnIndex(1);
 
-							bool wasModified = DrawVariableWidget(invisibleName, variable);
+							m_scratchPatchedNames = "##";
+							m_scratchPatchedNames += variable->GetName();
+							bool wasModified = DrawVariableWidget(m_scratchPatchedNames, variable);
 
 							if (wasModified)
 							{
@@ -439,7 +466,7 @@ namespace tpp
 						});
 
 						// Copy path into the address bar
-						strcpy(m_currentAddress, m_selectedGroup->path.c_str());
+						m_currentAddress = m_selectedGroup->path.c_str();
 					}
 
 					ImGui::EndTable();

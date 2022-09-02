@@ -100,6 +100,8 @@ namespace tpp
 
 		const char* GetDisplayString() const;
 
+		bool IsConnected() const;
+
 		void Clear();
 
 		bool MarkedAsClosed() const;
