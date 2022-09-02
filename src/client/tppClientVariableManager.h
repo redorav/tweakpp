@@ -142,7 +142,7 @@ namespace tpp
 
 		VariableGroupTree m_variableGroupTree;
 
-		std::unordered_map<std::string, VariableGroup> m_variableGroupHashMap;
+		std::unordered_map<std::string, VariableGroup> m_variableGroupHashmap;
 
 		std::unordered_map<std::string, std::shared_ptr<VariableBase>> m_variableHashMap;
 
@@ -158,9 +158,9 @@ namespace tpp
 	template<typename Fn>
 	void tpp::ClientVariableManager::ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const
 	{
-		auto it = m_variableGroupHashMap.find(groupPath);
+		auto it = m_variableGroupHashmap.find(groupPath);
 
-		if (it != m_variableGroupHashMap.end())
+		if (it != m_variableGroupHashmap.end())
 		{
 			const VariableGroup& variableGroup = it->second;
 

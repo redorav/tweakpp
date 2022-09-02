@@ -328,11 +328,11 @@ void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>
 
 	VariableGroup* variableGroup = nullptr;
 
-	auto variableGroupIterator = m_variableGroupHashMap.find(groupPath);
+	auto variableGroupIterator = m_variableGroupHashmap.find(groupPath);
 
-	if (variableGroupIterator == m_variableGroupHashMap.end())
+	if (variableGroupIterator == m_variableGroupHashmap.end())
 	{
-		variableGroupIterator = m_variableGroupHashMap.insert({ groupPath, VariableGroup() }).first;
+		variableGroupIterator = m_variableGroupHashmap.insert({ groupPath, VariableGroup() }).first;
 	}
 
 	variableGroup = &variableGroupIterator->second;
@@ -371,7 +371,7 @@ void tpp::ClientVariableManager::Clear()
 {
 	m_variableGroupTree.Clear();
 
-	m_variableGroupHashMap.clear();
+	m_variableGroupHashmap.clear();
 
 	m_variableHashMap.clear();
 }
@@ -383,9 +383,9 @@ bool tpp::ClientVariableManager::MarkedAsClosed() const
 
 const tpp::VariableGroup* tpp::ClientVariableManager::GetVariableGroup(const std::string& path) const
 {
-	auto variableGroup = m_variableGroupHashMap.find(path);
+	auto variableGroup = m_variableGroupHashmap.find(path);
 
-	if (variableGroup != m_variableGroupHashMap.end())
+	if (variableGroup != m_variableGroupHashmap.end())
 	{
 		return &variableGroup->second;
 	}
