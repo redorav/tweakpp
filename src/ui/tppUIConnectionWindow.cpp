@@ -242,14 +242,39 @@ namespace tpp
 
 	UIConnectionWindow::UIConnectionWindow(const tpp::ClientVariableManager* variableManager)
 	{
-		m_variablesWindowID = std::string("Variables Window##") + std::string(variableManager->GetDisplayString());
-		m_logWindowID = std::string("Log##") + std::string(variableManager->GetDisplayString());
+		m_variablesWindowID = std::string("Variables Window##") + std::to_string((uintptr_t)this);
+		m_logWindowID = std::string("Log##") + std::to_string((uintptr_t)this);
 
 		m_uiLog = std::make_unique<tpp::UILog>();
+		
+		m_currentDisplayString = tpp::icons::LargeRedCircle;
+		m_currentDisplayString += " ";
+		m_currentDisplayString += variableManager->GetDisplayString();
 	}
 
-	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, const char* title, bool* open, const tpp::VariableBase*& modifiedVariable)
+	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, bool* open, const tpp::VariableBase*& modifiedVariable)
 	{
+		bool isConnected = variableManager->IsConnected();
+
+		if (m_isConnected != isConnected)
+		{
+			if (isConnected)
+			{
+				m_currentDisplayString = tpp::icons::LargeGreenCircle;
+			}
+			else
+			{
+				m_currentDisplayString = tpp::icons::LargeRedCircle;
+			}
+
+			m_currentDisplayString += " ";
+			m_currentDisplayString += variableManager->GetDisplayString();
+
+			m_isConnected = isConnected;
+		}
+
+		const float FontSize = ImGui::GetFontSize();
+
 		ImGuiWindowFlags windowFlags = 0;
 		windowFlags |= ImGuiWindowFlags_NoCollapse;
 
