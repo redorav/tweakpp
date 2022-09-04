@@ -55,7 +55,7 @@ namespace tpp
 
 		void SetPath(const std::string& path)
 		{
-			this->path = path;
+			m_path = path;
 
 			if (path.size() > 0)
 			{
@@ -64,34 +64,34 @@ namespace tpp
 			
 				if (lastSlash != std::string::npos)
 				{
-					groupPath = std::string(path.data(), lastSlash);
-					name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
+					m_groupPath = std::string(path.data(), lastSlash);
+					m_name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
 				}
 			}
 		}
 
 		const std::string& GetPath() const
 		{
-			return path;
+			return m_path;
 		}
 
 		const std::string& GetGroupPath() const
 		{
-			return groupPath;
+			return m_groupPath;
 		}
 		
 		const std::string& GetName() const
 		{
-			return name;
+			return m_name;
 		}
 		
-		std::string path;
+		std::string m_path;
 		
-		std::string groupPath;
+		std::string m_groupPath;
 		
-		tpp::Hash hash;
+		tpp::Hash m_hash;
 		
-		std::string name;
+		std::string m_name;
 
 #else
 
