@@ -190,9 +190,12 @@ namespace tpp
 			uint32_t sizeBytes;
 			Read(sizeBytes);
 
-			v.reserve(sizeBytes);
-			v.assign(reinterpret_cast<const char*>(&m_data[m_currentPosition]), sizeBytes);
-			m_currentPosition += sizeBytes;
+			if (sizeBytes > 0)
+			{
+				v.reserve(sizeBytes);
+				v.assign(reinterpret_cast<const char*>(&m_data[m_currentPosition]), sizeBytes);
+				m_currentPosition += sizeBytes;
+			}
 
 			return *this;
 		}
