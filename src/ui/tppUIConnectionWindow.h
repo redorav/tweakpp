@@ -25,6 +25,8 @@ namespace tpp
 
 	private:
 
+		void ShowContextMenu(tpp::VariableBase* variable);
+
 		void ShowTooltip(tpp::VariableBase* variable);
 
 		// Which item we have captured being hovered
@@ -37,7 +39,7 @@ namespace tpp
 		std::string m_currentAddress;
 
 		// Current selected group in the group tree
-		const tpp::VariableGroupNode* m_selectedGroup = nullptr;
+		const tpp::VariableGroupNode* m_selectedGroupNode = nullptr;
 
 		// Whether a connection has been established
 		bool m_isConnected = false;

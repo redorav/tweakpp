@@ -1,36 +1,49 @@
 #pragma once
 
+#include "tppTypes.h"
+#include "tppSerialize.h"
+#include "tppISocket.h"
+
 #include <string>
 #include <vector>
 #include <unordered_map>
 #include <map>
 #include <memory>
 
-#include "tppTypes.h"
-#include "tppSerialize.h"
-#include "tppISocket.h"
-
 namespace tpp
 {
 	class UIConnectionWindow;
 	class UILog;
 
+	// Contains a list of variables
+	class VariableGroup
+	{
+	public:
+
+		// TODO Rework memory ownership
+
+		std::unordered_map<std::string, std::shared_ptr<VariableBase>> variableHashmap;
+
+		std::vector<tpp::VariableBase*> variables;
+	};
+
 	// Represents a node in the variable group tree, that is itself a group and
 	// can have other groups under it. A group with an empty array of nodes is a leaf
+	// The variable group node is just a way to represent the tree, it doesn't own data
 	class VariableGroupNode
 	{
 	public:
 
 		VariableGroupNode() {}
 
-		VariableGroupNode(const std::string& path) : path(path) {}
+		VariableGroupNode(const std::string& path) : m_path(path) {}
 		
 		VariableGroupNode* AddFindNode(const std::string& path, const std::string& nodeName);
 
 		template<typename FnOpen, typename FnClose>
 		void ForEachNode(const FnOpen& fnOpen, const FnClose& fnClose) const
 		{
-			for (auto& node = nodes.begin(); node != nodes.end(); ++node)
+			for (auto node = nodes.begin(); node != nodes.end(); ++node)
 			{
 				// Evaluate ourselves first
 				bool processChildren = fnOpen(node->first, node->second);
@@ -49,7 +62,10 @@ namespace tpp
 		}
 
 		// Each node contains its full path so through a node we can easily access its variables
-		std::string path;
+		std::string m_path;
+
+		// Pointer to the actual group of variables
+		tpp::VariableGroup* variableGroup = nullptr;
 
 		// Have a map so that it's sorted on insertion, we also want to traverse it sorted
 		// and we want to be able to find things in it as well
@@ -58,7 +74,7 @@ namespace tpp
 
 	struct VariableGroupTree
 	{
-		void AddPath(const std::string& path);
+		void AddPath(const std::string& path, tpp::VariableGroup* variableGroup);
 
 		bool Exists(const std::string& path);
 
@@ -77,14 +93,7 @@ namespace tpp
 		// Check to see if path already exists (when adding a new variable)
 		// This also points to leaf nodes that are guaranteed to exist in 
 		// the variable tree
-		std::unordered_map<std::string, VariableGroupNode*> m_variableGroupNodeHashMap;
-	};
-
-	class VariableGroup
-	{
-	public:
-
-		std::vector<tpp::VariableBase*> variables;
+		std::unordered_map<std::string, VariableGroupNode*> m_variableGroupNodeHashmap;
 	};
 
 	class ClientVariableManager
@@ -107,7 +116,7 @@ namespace tpp
 		bool MarkedAsClosed() const;
 
 		template<typename Fn>
-		void ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const;
+		void ForEachVariableInGroup(tpp::VariableGroup* group, const Fn& fn) const;
 
 		template<typename FnOpen, typename FnClose>
 		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const;
@@ -119,8 +128,6 @@ namespace tpp
 	private:
 
 		void AddVariable(const std::shared_ptr<VariableBase>& variable);
-
-		const VariableBase* GetVariable(const std::string& path) const;
 
 		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
 
@@ -144,8 +151,6 @@ namespace tpp
 
 		std::unordered_map<std::string, VariableGroup> m_variableGroupHashmap;
 
-		std::unordered_map<std::string, std::shared_ptr<VariableBase>> m_variableHashMap;
-
 		// UI Management
 
 		bool m_windowOpen;
@@ -156,15 +161,11 @@ namespace tpp
 	};
 
 	template<typename Fn>
-	void tpp::ClientVariableManager::ForEachVariableInGroup(const std::string& groupPath, const Fn& fn) const
+	void tpp::ClientVariableManager::ForEachVariableInGroup(tpp::VariableGroup* group, const Fn& fn) const
 	{
-		auto it = m_variableGroupHashmap.find(groupPath);
-
-		if (it != m_variableGroupHashmap.end())
+		if (group)
 		{
-			const VariableGroup& variableGroup = it->second;
-
-			for (tpp::VariableBase* variable : variableGroup.variables)
+			for (tpp::VariableBase* variable : group->variables)
 			{
 				fn(variable);
 			}

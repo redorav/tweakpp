@@ -3,6 +3,7 @@
 #include "client/tppClientVariableManager.h"
 #include "ui/tppUILog.h"
 #include "ui/tppUITextIcons.h"
+#include "ui/tppUIWidgets.h"
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -12,7 +13,7 @@
 
 namespace tpp
 {
-	void ShowContextMenu(tpp::VariableBase* variable)
+	void UIConnectionWindow::ShowContextMenu(tpp::VariableBase* variable)
 	{
 		ImGuiPopupFlags popupFlags = ImGuiPopupFlags_MouseButtonRight;
 		if (ImGui::BeginPopupContextItem(variable->GetName().c_str(), popupFlags))
@@ -235,11 +236,6 @@ namespace tpp
 		return wasModified;
 	}
 
-	int MyCallback(ImGuiInputTextCallbackData* data)
-	{
-		return 0;
-	}
-
 	UIConnectionWindow::UIConnectionWindow(const tpp::ClientVariableManager* variableManager)
 	{
 		m_variablesWindowID = std::string("Variables Window##") + std::to_string((uintptr_t)this);
@@ -316,7 +312,7 @@ namespace tpp
 
 				if (candidateGroupNode)
 				{
-					m_selectedGroup = candidateGroupNode;
+					m_selectedGroupNode = candidateGroupNode;
 				}
 			}
 
@@ -400,35 +396,33 @@ namespace tpp
 					// Show variable groups
 					ImGui::TableSetColumnIndex(0);
 
+					ImGuiTreeNodeFlags treeNodeFlagsBase = 0;
+					treeNodeFlagsBase |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
+					treeNodeFlagsBase |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
+					treeNodeFlagsBase |= ImGuiTreeNodeFlags_SpanAvailWidth;
+
 					variableManager->ForEachVariableGroup
 					(
-						[this](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
+						[this, treeNodeFlagsBase](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
 						{
-							ImGuiTreeNodeFlags nodeFlags = 0;
-							nodeFlags |= ImGuiTreeNodeFlags_OpenOnArrow; // We want to be able to select it without opening
-							nodeFlags |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
-							nodeFlags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+							ImGuiTreeNodeFlags treeNodeFlags = treeNodeFlagsBase;
 
 							if (variableGroupNode.nodes.empty())
 							{
-								nodeFlags |= ImGuiTreeNodeFlags_Leaf;
+								treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
 							}
 
-							if (&variableGroupNode == m_selectedGroup)
+							if (&variableGroupNode == m_selectedGroupNode)
 							{
-								nodeFlags |= ImGuiTreeNodeFlags_Selected;
+								treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
 							}
-
-							m_scratchPatchedNames = tpp::icons::FileCode;
-							m_scratchPatchedNames += " ";
-							m_scratchPatchedNames += nodeName;
 
 							// Take the address of the variable as the unique id so it remains consistent across frames
-							bool nodeOpen = ImGui::TreeNodeEx((void*)&variableGroupNode, nodeFlags, m_scratchPatchedNames.c_str());
+							bool nodeOpen = tpp::imgui::TreeNodeEx((void*)&variableGroupNode, tpp::icons::FileCode, treeNodeFlags, nodeName.c_str());
 
 							if (ImGui::IsItemClicked())
 							{
-								m_selectedGroup = &variableGroupNode;
+								m_selectedGroupNode = &variableGroupNode;
 							}
 
 							return nodeOpen;
@@ -458,9 +452,9 @@ namespace tpp
 					// Exit header row
 					ImGui::TableNextRow();
 
-					if (m_selectedGroup)
+					if (m_selectedGroupNode)
 					{
-						variableManager->ForEachVariableInGroup(m_selectedGroup->path, [this, &modifiedVariable](tpp::VariableBase* variable)
+						variableManager->ForEachVariableInGroup(m_selectedGroupNode->variableGroup, [this, &modifiedVariable](tpp::VariableBase* variable)
 						{
 							ImGui::TableNextRow();
 
@@ -491,7 +485,7 @@ namespace tpp
 						});
 
 						// Copy path into the address bar
-						m_currentAddress = m_selectedGroup->path.c_str();
+						m_currentAddress = m_selectedGroupNode->m_path.c_str();
 					}
 
 					ImGui::EndTable();

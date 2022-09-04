@@ -6,6 +6,15 @@
 #include <algorithm>
 #include <chrono>
 
+void tppAssert(bool condition)
+{
+	if (!condition)
+	{
+		int* i = nullptr;
+		*i = 0;
+	}
+}
+
 // TODO Remove ugly const_cast and just make explicit that things can be modified. It does
 // mean that we have to change the code upstream
 void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::BinarySerializationWriter& stream)
@@ -17,7 +26,7 @@ void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::Bi
 	stream << tpp::MessageHeader(0, tpp::MessageType::Update);
 
 	// We don't serialize the path when updating the packet, as we pass in the hash
-	stream << tpp::VariableHeader(variable->type, (uint64_t)variable->hash);
+	stream << tpp::VariableHeader(variable->type, (uint64_t)variable->m_hash);
 
 	variable->SerializeValue(stream);
 
@@ -44,9 +53,15 @@ tpp::VariableGroupNode* tpp::VariableGroupNode::AddFindNode(const std::string& p
 	}
 }
 
-void tpp::VariableGroupTree::AddPath(const std::string& path)
+void tpp::VariableGroupTree::AddPath(const std::string& path, tpp::VariableGroup* variableGroup)
 {
-	if (!Exists(path))
+	auto groupNode = m_variableGroupNodeHashmap.find(path);
+
+	if (groupNode != m_variableGroupNodeHashmap.end())
+	{
+		tppAssert(groupNode->second->variableGroup == variableGroup);
+	}
+	else
 	{
 		VariableGroupNode* currentNode = &m_root;
 
@@ -75,20 +90,22 @@ void tpp::VariableGroupTree::AddPath(const std::string& path)
 			}
 		}
 
-		m_variableGroupNodeHashMap.insert({ path, currentNode });
+		currentNode->variableGroup = variableGroup;
+
+		m_variableGroupNodeHashmap.insert({ path, currentNode });
 	}
 }
 
 bool tpp::VariableGroupTree::Exists(const std::string& path)
 {
-	return m_variableGroupNodeHashMap.find(path) != m_variableGroupNodeHashMap.end();
+	return m_variableGroupNodeHashmap.find(path) != m_variableGroupNodeHashmap.end();
 }
 
 const tpp::VariableGroupNode* tpp::VariableGroupTree::GetVariableGroupNode(const std::string& path) const
 {
-	auto variableGroupNode = m_variableGroupNodeHashMap.find(path);
+	auto variableGroupNode = m_variableGroupNodeHashmap.find(path);
 
-	if (variableGroupNode != m_variableGroupNodeHashMap.end())
+	if (variableGroupNode != m_variableGroupNodeHashmap.end())
 	{
 		return variableGroupNode->second;
 	}
@@ -101,7 +118,7 @@ const tpp::VariableGroupNode* tpp::VariableGroupTree::GetVariableGroupNode(const
 void tpp::VariableGroupTree::Clear()
 {
 	m_root = VariableGroupNode("");
-	m_variableGroupNodeHashMap.clear();
+	m_variableGroupNodeHashmap.clear();
 }
 
 tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_t port)
@@ -163,7 +180,7 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 	{
 		variable->DeserializeMetadata(reader);
 		variable->SetPath(path);
-		variable->hash = variableHeader.hash;
+		variable->m_hash = variableHeader.hash;
 
 		AddVariable(variable);
 	}
@@ -321,11 +338,9 @@ void tpp::ClientVariableManager::DrawConnectionWindow()
 
 void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>& variable)
 {
-	// TODO Make this string_view and function take a string_view
-	const std::string& groupPath = variable->groupPath;
+	const std::string& groupPath = variable->m_groupPath;
 
-	m_variableGroupTree.AddPath(groupPath);
-
+	// Find variable group, or create empty if it doesn't exist
 	VariableGroup* variableGroup = nullptr;
 
 	auto variableGroupIterator = m_variableGroupHashmap.find(groupPath);
@@ -337,24 +352,15 @@ void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>
 
 	variableGroup = &variableGroupIterator->second;
 
-	std::shared_ptr<VariableBase>& insertedVariable = m_variableHashMap.insert({ variable->path, variable }).first->second;
+	// Add new variable to the variable group
+	std::shared_ptr<VariableBase>& insertedVariable = variableGroup->variableHashmap.insert({ variable->m_path, variable }).first->second;
 
 	// Insert a pointer to the variable that we inserted (as a copy of the pointer)
 	variableGroup->variables.push_back(insertedVariable.get());
-}
 
-const tpp::VariableBase* tpp::ClientVariableManager::GetVariable(const std::string& path) const
-{
-	auto variable = m_variableHashMap.find(path);
-
-	if (variable != m_variableHashMap.end())
-	{
-		return variable->second.get();
-	}
-	else
-	{
-		return nullptr;
-	}
+	// Add to the tree
+	// TODO No need to do this if group existed already
+	m_variableGroupTree.AddPath(groupPath, variableGroup);
 }
 
 const char* tpp::ClientVariableManager::GetDisplayString() const
@@ -372,8 +378,6 @@ void tpp::ClientVariableManager::Clear()
 	m_variableGroupTree.Clear();
 
 	m_variableGroupHashmap.clear();
-
-	m_variableHashMap.clear();
 }
 
 bool tpp::ClientVariableManager::MarkedAsClosed() const

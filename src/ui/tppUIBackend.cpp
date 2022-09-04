@@ -166,6 +166,8 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 	// 2. Add FontAwesome's icons
 	//---------------------------
 
+	const char* FontAwesomeFile = "Font Awesome 6 Free-Solid-900.otf";
+
 	ImVector<ImWchar> fontAwesomeRanges;
 	{
 		//static const ImWchar fontAwesomeIconsRanges[] = { 0xf000, 0xf3ff, 0 };
@@ -173,6 +175,10 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 		fontAwesomeBuilder.AddText(tpp::icons::FileCode);
 		fontAwesomeBuilder.AddText(tpp::icons::MagnifyingGlass);
 		fontAwesomeBuilder.AddText(tpp::icons::ElectricPlug);
+		fontAwesomeBuilder.AddText(tpp::icons::RotatedStar);
+		fontAwesomeBuilder.AddText(tpp::icons::NormalStar);
+		fontAwesomeBuilder.AddText(tpp::icons::SettingsCog);
+		fontAwesomeBuilder.AddText(tpp::icons::Info);
 
 		fontAwesomeBuilder.BuildRanges(&fontAwesomeRanges);
 
@@ -181,7 +187,25 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 		fontAwesomeConfig.MergeMode = true;
 		fontAwesomeConfig.GlyphOffset = ImVec2(0.0f, 1.0f);
 		fontAwesomeConfig.GlyphRanges = fontAwesomeRanges.Data;
-		io.Fonts->AddFontFromFileTTF("Font Awesome 6 Free-Solid-900.otf", baseFontSize, &fontAwesomeConfig);
+		io.Fonts->AddFontFromFileTTF(FontAwesomeFile, baseFontSize, &fontAwesomeConfig);
+	}
+
+	ImVector<ImWchar> fontAwesomeSmallRanges;
+	{
+		ImFontGlyphRangesBuilder fontAwesomeBuilder;
+		fontAwesomeBuilder.AddText(tpp::icons::SquareWithMinus);
+		fontAwesomeBuilder.AddText(tpp::icons::SquareWithPlus);
+
+		fontAwesomeBuilder.BuildRanges(&fontAwesomeSmallRanges);
+
+		float fontSize = baseFontSize * 0.8f;
+
+		ImFontConfig fontAwesomeConfig;
+		fontAwesomeConfig.SizePixels = fontSize;
+		fontAwesomeConfig.MergeMode = true;
+		fontAwesomeConfig.GlyphOffset = ImVec2(0.0f, 0.0f);
+		fontAwesomeConfig.GlyphRanges = fontAwesomeSmallRanges.Data;
+		io.Fonts->AddFontFromFileTTF(FontAwesomeFile, fontSize, &fontAwesomeConfig);
 	}
 
 	//---------------------------------------------------
@@ -214,8 +238,8 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 
 	// Setup Dear ImGui style
 
-	//ImGui::StyleColorsDark();
-	ImGui::StyleColorsClassic();
+	ImGui::StyleColorsDark();
+	//ImGui::StyleColorsClassic();
 	//ImGui::StyleColorsLight();
 	ApplyStyles();
 

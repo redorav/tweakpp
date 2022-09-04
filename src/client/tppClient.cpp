@@ -10,6 +10,7 @@
 #include "tppUITextIcons.h"
 
 #include "imgui.h"
+#include "imgui_internal.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,16 +57,11 @@ int main(void)
 
 		// Prepare the UI elements
 		{
-			const tpp::VariableBase* modifiedVariable = nullptr;
-
 			if (ImGui::BeginMainMenuBar())
 			{
 				if (ImGui::BeginMenu("File"))
 				{
-					scratchMemoryString = tpp::icons::ElectricPlug;
-					scratchMemoryString += " New Connection";
-
-					if (ImGui::MenuItem(scratchMemoryString.c_str(), "Ctrl + N"))
+					if (ImGui::MenuItemEx("New Connection", tpp::icons::ElectricPlug, "Ctrl + N"))
 					{
 						popupOpen = true;
 					}
@@ -80,7 +76,7 @@ int main(void)
 
 				if (ImGui::BeginMenu("Edit"))
 				{
-					if (ImGui::MenuItem("Options"))
+					if (ImGui::MenuItemEx("Options...", tpp::icons::SettingsCog, "Ctrl + O"))
 					{
 
 					}
@@ -90,7 +86,7 @@ int main(void)
 
 				if (ImGui::BeginMenu("Help"))
 				{
-					if (ImGui::MenuItem("About"))
+					if (ImGui::MenuItemEx("About", tpp::icons::Info))
 					{
 
 					}
@@ -148,7 +144,7 @@ int main(void)
 
 			ImGuiID mainDockspaceID = ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-			for (auto& iter = ClientVariableManagers.begin(); iter != ClientVariableManagers.end();)
+			for (auto iter = ClientVariableManagers.begin(); iter != ClientVariableManagers.end();)
 			{
 				const auto& clientVariableManager = *iter;
 

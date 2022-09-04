@@ -29,6 +29,24 @@ namespace tpp
 		// Used as icon for the address bar
 		static constexpr const char* MagnifyingGlass = u8"\uF002";
 
+		// For the new connection icon
 		static constexpr const char* ElectricPlug = u8"\uF1E6";
+
+		static constexpr const char* RotatedStar = u8"\uF5BC";
+
+		// For the Favorites variable group
+		static constexpr const char* NormalStar = u8"\u2B50";
+
+		// For the Options menu
+		static constexpr const char* SettingsCog = u8"\u2699";
+
+		// To close a tree node
+		static constexpr const char* SquareWithMinus = u8"\uF146";
+
+		// To open a tree node
+		static constexpr const char* SquareWithPlus = u8"\uF0FE";
+
+		// For the About menu
+		static constexpr const char* Info = u8"\uF05A";
 	}
 }
