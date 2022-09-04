@@ -196,11 +196,11 @@ namespace tpp
 		#endif
 	}
 	
-	void Callback::SerializeMetadata(tpp::BinarySerializationWriter& writer) const {}
-	void Callback::DeserializeMetadata(tpp::BinarySerializationReader& reader) {}
+	void Callback::SerializeMetadata(tpp::BinarySerializationWriter& /*writer*/) const {}
+	void Callback::DeserializeMetadata(tpp::BinarySerializationReader& /*reader*/) {}
 
-	void Callback::SerializeValue(tpp::BinarySerializationWriter& writer) const {}
-	void Callback::DeserializeValue(tpp::BinarySerializationReader& reader)
+	void Callback::SerializeValue(tpp::BinarySerializationWriter& /*writer*/) const {}
+	void Callback::DeserializeValue(tpp::BinarySerializationReader& /*reader*/)
 	{
 		// Deserializing the value means calling the function
 		currentValue();
