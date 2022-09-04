@@ -48,7 +48,7 @@ end
 function AddImguiDependencies()
 
 	-- Disable obsolete stuff so we don't rely on it
-	defines { "IMGUI_DISABLE_OBSOLETE_FUNCTIONS", "IMGUI_ENABLE_FREETYPE" }
+	defines { "IMGUI_DISABLE_OBSOLETE_FUNCTIONS", "IMGUI_ENABLE_FREETYPE", "IMGUI_USE_WCHAR32" }
 
 	files
 	{
@@ -159,10 +159,35 @@ function AddGraphicsApiDependencies()
 
 end
 
+function AddCommonFlags()
+
+	flags
+	{
+		"multiprocessorcompile", -- /MP
+	}
+	
+	cppdialect("c++11")
+	warnings('extra')
+	
+	filter { "configurations:Debug" }
+		defines { "DEBUG" }
+		symbols ("full")
+		inlining("auto")
+		optimize("debug")
+		
+	filter { "configurations:Release" }
+		defines { "NDEBUG" }
+		inlining("auto")
+		optimize("speed")
+
+end
+
 workspace "Tweak++ Client"
 	configurations { "Debug", "Release" }
 	location (Workspace.."/Client")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
+	
+	AddCommonFlags()
 	
 project "Client"
 	kind("consoleapp")
@@ -183,9 +208,10 @@ project "Client"
 	}
 	
 workspace "Tweak++ Server"
-	configurations { "Debug", "Release" }	
+	configurations { "Debug", "Release" }
 	location (Workspace.."/Server")
-	defines { "_CRT_SECURE_NO_WARNINGS" }
+
+	AddCommonFlags()
 	
 project "Server"
 	kind("consoleapp")
