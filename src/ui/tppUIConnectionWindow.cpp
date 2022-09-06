@@ -298,12 +298,7 @@ namespace tpp
 			ImGui::PopItemWidth();
 			ImGui::SameLine();
 			ImGui::SetCursorPosX(currentCursorPosX + windowWidth - FontSize - 10.0f);
-
-			ImVec4 dimmedColor = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-			dimmedColor.w *= 0.2f;
-			ImGui::PushStyleColor(ImGuiCol_Text, dimmedColor);
-			ImGui::Text(tpp::icons::MagnifyingGlass);
-			ImGui::PopStyleColor();
+			ImGui::TextDisabled(tpp::icons::MagnifyingGlass);
 
 			if (modifiedAddress)
 			{
