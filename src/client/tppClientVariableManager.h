@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <unordered_set>
 #include <map>
 #include <memory>
 
@@ -15,16 +16,38 @@ namespace tpp
 	class UIConnectionWindow;
 	class UILog;
 
+	// The variable database contains all the live variables for this session. Adding and removing
+	// variables is done through this class. All variable managers have a database that other systems
+	// reference. Variable groups and favorites should all have weak references to this database, and
+	// can react accordingly.
+	//
+	// When a variable is deleted, the variable group should delete it from its known variables
+	// However, a favorite group should still display it, greyed out until it's deleted from the
+	// favorite group.
+	//
+	// We can make groups have only hashes or paths to the variables, because we don't look them all
+	// up live. Instead we cache the sorted results in a vector, which we display every frame
+	struct VariableDatabase
+	{
+		VariableBase* GetVariable(const std::string& path) const;
+
+		void AddVariable(const std::string& path, const std::shared_ptr<VariableBase>& variable);
+
+		void RemoveVariable(const std::string& path);
+
+	private:
+
+		std::unordered_map<std::string, std::shared_ptr<VariableBase>> m_variableHashmap;
+	};
+
 	// Contains a list of variables
 	class VariableGroup
 	{
 	public:
 
-		// TODO Rework memory ownership
-
-		std::unordered_map<std::string, std::shared_ptr<VariableBase>> variableHashmap;
-
-		std::vector<tpp::VariableBase*> variables;
+		// TODO convert to just hashes. Eventually we want a path database so that favorite
+		// groups can query a path/name without the variable existing in the database
+		std::unordered_set<std::string> variableStrings;
 	};
 
 	// Represents a node in the variable group tree, that is itself a group and
@@ -34,7 +57,7 @@ namespace tpp
 	{
 	public:
 
-		VariableGroupNode() {}
+		VariableGroupNode() = default;
 
 		VariableGroupNode(const std::string& path) : m_path(path) {}
 		
@@ -57,7 +80,7 @@ namespace tpp
 
 				// Call the close function. We need the flag that was returned
 				// by the open to customize behavior in the close
-				fnClose(node->first, node->second, processChildren);
+				fnClose(processChildren);
 			}
 		}
 
@@ -69,6 +92,7 @@ namespace tpp
 
 		// Have a map so that it's sorted on insertion, we also want to traverse it sorted
 		// and we want to be able to find things in it as well
+		// TODO Be able to sort variable groups too in the same way we sort variables
 		std::map<std::string, VariableGroupNode> nodes;
 	};
 
@@ -119,11 +143,18 @@ namespace tpp
 		void ForEachVariableInGroup(tpp::VariableGroup* group, const Fn& fn) const;
 
 		template<typename FnOpen, typename FnClose>
-		void ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const;
+		void ForEachVariableGroupNode(const FnOpen& fnOpen, const FnClose& fnClose) const;
+
+		template<typename FnOpen, typename FnClose>
+		void ForEachFavoriteGroupNode(const FnOpen& fnOpen, const FnClose& fnClose) const;
 
 		const VariableGroup* GetVariableGroup(const std::string& path) const;
 
 		const VariableGroupNode* GetVariableGroupNode(const std::string& path) const;
+
+		// Favorites
+
+		void AddToFavorites(const std::string& path, tpp::VariableBase* variable);
 
 	private:
 
@@ -147,9 +178,15 @@ namespace tpp
 
 		// Variable management
 
+		std::unordered_map<std::string, VariableGroupNode> m_favoriteGroupNodeHashmap;
+
+		std::unordered_map<std::string, VariableGroup> m_favoriteGroupHashmap;
+
 		VariableGroupTree m_variableGroupTree;
 
 		std::unordered_map<std::string, VariableGroup> m_variableGroupHashmap;
+
+		VariableDatabase m_variableDatabase;
 
 		// UI Management
 
@@ -165,16 +202,34 @@ namespace tpp
 	{
 		if (group)
 		{
-			for (tpp::VariableBase* variable : group->variables)
+			for (const std::string& variablePath : group->variableStrings)
 			{
-				fn(variable);
+				tpp::VariableBase* variable = m_variableDatabase.GetVariable(variablePath);
+
+				if (variable)
+				{
+					fn(variable);
+				}
 			}
 		}
 	}
 
 	template<typename FnOpen, typename FnClose>
-	void tpp::ClientVariableManager::ForEachVariableGroup(const FnOpen& fnOpen, const FnClose& fnClose) const
+	void tpp::ClientVariableManager::ForEachVariableGroupNode(const FnOpen& fnOpen, const FnClose& fnClose) const
 	{
 		m_variableGroupTree.ForEachNode(fnOpen, fnClose);
+	}
+
+	template<typename FnOpen, typename FnClose>
+	void tpp::ClientVariableManager::ForEachFavoriteGroupNode(const FnOpen& fnOpen, const FnClose& fnClose) const
+	{
+		for (auto it = m_favoriteGroupNodeHashmap.begin(), end = m_favoriteGroupNodeHashmap.end(); it != end; ++it)
+		{
+			// Evaluate node
+			bool processChildren = fnOpen(it->first, it->second);
+
+			// Call the close function. We need the flag that was returned by the open to customize behavior in the close
+			fnClose(processChildren);
+		}
 	}
 }

@@ -38,6 +38,35 @@ void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::Bi
 	header->size = (decltype(header->size))packetSize;
 }
 
+tpp::VariableBase* tpp::VariableDatabase::GetVariable(const std::string& path) const
+{
+	auto variable = m_variableHashmap.find(path);
+
+	if (variable != m_variableHashmap.end())
+	{
+		return variable->second.get();
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+void tpp::VariableDatabase::AddVariable(const std::string& path, const std::shared_ptr<VariableBase>& variable)
+{
+	auto variableIter = m_variableHashmap.find(path);
+
+	if (variableIter == m_variableHashmap.end())
+	{
+		m_variableHashmap.insert({ path, variable });
+	}
+}
+
+void tpp::VariableDatabase::RemoveVariable(const std::string& path)
+{
+	m_variableHashmap.erase(path);
+}
+
 tpp::VariableGroupNode* tpp::VariableGroupNode::AddFindNode(const std::string& path, const std::string& nodeName)
 {
 	auto it = nodes.find(nodeName);
@@ -137,6 +166,12 @@ tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_
 	m_displayString += std::to_string((uintptr_t)this);
 
 	m_uiConnectionWindow = std::make_unique<tpp::UIConnectionWindow>(this);
+
+	// TODO Turn into a normal variable group, sort by favorite/non-favorite
+	VariableGroup& favoriteGroup = m_favoriteGroupHashmap.insert({ "Favorites", VariableGroup() }).first->second;
+
+	VariableGroupNode& favoriteGroupNode = m_favoriteGroupNodeHashmap.insert({ "Favorites", VariableGroupNode() }).first->second;
+	favoriteGroupNode.variableGroup = &favoriteGroup;
 }
 
 static const int DEFAULT_BUFLEN = 512;
@@ -173,6 +208,7 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 		case tpp::VariableType::String: variable = std::shared_ptr<tpp::VariableBase>(new tpp::String()); break;
 		case tpp::VariableType::Enum: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Enum()); break;
 		case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
+		case tpp::VariableType::Flags8: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags8()); break;
 		default: validVariable = false;
 	}
 
@@ -327,12 +363,17 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 void tpp::ClientVariableManager::DrawConnectionWindow()
 {
-	const tpp::VariableBase* modifiedVariable = nullptr;
-	m_uiConnectionWindow->Draw(this, &m_windowOpen, modifiedVariable);
+	tpp::UIInteractionData interactionData;
+	m_uiConnectionWindow->Draw(this, &m_windowOpen, interactionData);
 
-	if (modifiedVariable)
+	if (interactionData.editedVariable)
 	{
-		SerializeTppVariableUpdatePacket(modifiedVariable, m_writerStream);
+		SerializeTppVariableUpdatePacket(interactionData.editedVariable, m_writerStream);
+	}
+
+	if (interactionData.addedToFavorites)
+	{
+		AddToFavorites("Favorites", interactionData.addedToFavorites);
 	}
 }
 
@@ -342,21 +383,21 @@ void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>
 
 	// Find variable group, or create empty if it doesn't exist
 	VariableGroup* variableGroup = nullptr;
-
-	auto variableGroupIterator = m_variableGroupHashmap.find(groupPath);
-
-	if (variableGroupIterator == m_variableGroupHashmap.end())
 	{
-		variableGroupIterator = m_variableGroupHashmap.insert({ groupPath, VariableGroup() }).first;
+		auto variableGroupIterator = m_variableGroupHashmap.find(groupPath);
+
+		if (variableGroupIterator == m_variableGroupHashmap.end())
+		{
+			variableGroupIterator = m_variableGroupHashmap.insert({ groupPath, VariableGroup() }).first;
+		}
+
+		variableGroup = &variableGroupIterator->second;
 	}
 
-	variableGroup = &variableGroupIterator->second;
-
-	// Add new variable to the variable group
-	std::shared_ptr<VariableBase>& insertedVariable = variableGroup->variableHashmap.insert({ variable->m_path, variable }).first->second;
+	m_variableDatabase.AddVariable(variable->GetPath(), variable);
 
 	// Insert a pointer to the variable that we inserted (as a copy of the pointer)
-	variableGroup->variables.push_back(insertedVariable.get());
+	variableGroup->variableStrings.insert(variable->GetPath());
 
 	// Add to the tree
 	// TODO No need to do this if group existed already
@@ -378,6 +419,8 @@ void tpp::ClientVariableManager::Clear()
 	m_variableGroupTree.Clear();
 
 	m_variableGroupHashmap.clear();
+
+	m_uiConnectionWindow->Clear();
 }
 
 bool tpp::ClientVariableManager::MarkedAsClosed() const
@@ -402,4 +445,14 @@ const tpp::VariableGroup* tpp::ClientVariableManager::GetVariableGroup(const std
 const tpp::VariableGroupNode* tpp::ClientVariableManager::GetVariableGroupNode(const std::string& path) const
 {
 	return m_variableGroupTree.GetVariableGroupNode(path);
+}
+
+void tpp::ClientVariableManager::AddToFavorites(const std::string& path, tpp::VariableBase* variable)
+{
+	auto favoritesGroup = m_favoriteGroupHashmap.find(path);
+
+	if (favoritesGroup != m_favoriteGroupHashmap.end())
+	{
+		favoritesGroup->second.variableStrings.insert(variable->GetPath());
+	}
 }

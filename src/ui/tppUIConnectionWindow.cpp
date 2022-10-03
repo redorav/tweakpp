@@ -10,10 +10,11 @@
 #include "imgui_internal.h"
 
 #include <chrono>
+#include <algorithm>
 
 namespace tpp
 {
-	void UIConnectionWindow::ShowContextMenu(tpp::VariableBase* variable)
+	void UIConnectionWindow::ShowContextMenu(tpp::VariableBase* variable, tpp::UIInteractionData& interactionData)
 	{
 		ImGuiPopupFlags popupFlags = ImGuiPopupFlags_MouseButtonRight;
 		if (ImGui::BeginPopupContextItem(variable->GetName().c_str(), popupFlags))
@@ -21,6 +22,12 @@ namespace tpp
 			if (ImGui::MenuItem("Revert To Default"))
 			{
 				variable->RevertToDefault();
+			}
+
+			if (ImGui::MenuItem("Add to Favorites"))
+			{
+				interactionData.addedToFavorites = variable;
+				m_dirty = true;
 			}
 
 			ImGui::Separator();
@@ -150,6 +157,50 @@ namespace tpp
 		}
 	}
 
+	void UIConnectionWindow::UpdateCachedVariables(const tpp::ClientVariableManager* variableManager)
+	{
+		if (m_dirty)
+		{
+			// Clear regardless of whether the group is null or not. If it is null, we don't show any variables
+			m_currentVariables.clear();
+
+			if (m_selectedGroupNode && m_selectedGroupNode->variableGroup)
+			{
+				m_currentVariables.reserve(m_selectedGroupNode->variableGroup->variableStrings.size());
+
+				variableManager->ForEachVariableInGroup(m_selectedGroupNode->variableGroup, [this](tpp::VariableBase* variable)
+				{
+					m_currentVariables.push_back(variable);
+				});
+
+				struct
+				{
+					bool operator()(tpp::VariableBase* a, tpp::VariableBase* b) const
+					{
+						return a->GetName() > b->GetName();
+					}
+				} SortAscending;
+
+				struct
+				{
+					bool operator()(tpp::VariableBase* a, tpp::VariableBase* b) const
+					{
+						return a->GetName() < b->GetName();
+					}
+				} SortDescending;
+
+				switch (m_sortOrder)
+				{
+					case tpp::SortOrder::Ascending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortAscending); break;
+					case tpp::SortOrder::Descending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortDescending); break;
+					default: break;
+				}
+			}
+
+			m_dirty = false;
+		}
+	}
+
 	// The invisible name is there to get a unique id but not display it using imgui's default positioning. We render the names separately
 	bool DrawVariableWidget(const std::string& invisibleName, tpp::VariableBase* variable)
 	{
@@ -248,8 +299,10 @@ namespace tpp
 		m_currentDisplayString += variableManager->GetDisplayString();
 	}
 
-	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, bool* open, const tpp::VariableBase*& modifiedVariable)
+	void UIConnectionWindow::Draw(const tpp::ClientVariableManager* variableManager, bool* open, UIInteractionData& interactionData)
 	{
+		UpdateCachedVariables(variableManager);
+
 		bool isConnected = variableManager->IsConnected();
 
 		if (m_isConnected != isConnected)
@@ -303,12 +356,9 @@ namespace tpp
 			if (modifiedAddress)
 			{
 				// If we modified the address and we found a matching group navigate to the appropriate place
-				const VariableGroupNode* candidateGroupNode = variableManager->GetVariableGroupNode(m_currentAddress);
-
-				if (candidateGroupNode)
-				{
-					m_selectedGroupNode = candidateGroupNode;
-				}
+				// Otherwise the selected group node will be null and we won't show anything
+				m_selectedGroupNode = variableManager->GetVariableGroupNode(m_currentAddress);
+				m_dirty = true;
 			}
 
 			ImVec2 windowSize = ImGui::GetWindowContentRegionMax();
@@ -362,9 +412,11 @@ namespace tpp
 			containerTableFlags |= ImGuiTableFlags_ScrollY;
 
 			ImGuiTableFlags innerTableFlags = 0;
-			innerTableFlags |= ImGuiTableFlags_Resizable; // Make sure we can resize this table
-			innerTableFlags |= ImGuiTableFlags_ScrollY;   // Have a scrollbar
-			innerTableFlags |= ImGuiTableFlags_PadOuterX; // Padding around the titles. Inner padding is implicit
+			innerTableFlags |= ImGuiTableFlags_Resizable;    // Make sure we can resize this table
+			innerTableFlags |= ImGuiTableFlags_ScrollY;      // Have a scrollbar
+			innerTableFlags |= ImGuiTableFlags_PadOuterX;    // Padding around the titles. Inner padding is implicit
+			innerTableFlags |= ImGuiTableFlags_Sortable;     // Make sure we can get the sort specs
+			innerTableFlags |= ImGuiTableFlags_SortTristate; // Be able to return no sorting
 
 			// Remove the padding between cells for the beginning of the table
 			// This is to render the outer table completely invisible, except for the border
@@ -396,7 +448,42 @@ namespace tpp
 					treeNodeFlagsBase |= ImGuiTreeNodeFlags_OpenOnDoubleClick;
 					treeNodeFlagsBase |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
-					variableManager->ForEachVariableGroup
+					// Favorite groups go first
+					variableManager->ForEachFavoriteGroupNode
+					(
+						[this, treeNodeFlagsBase](const std::string& groupName, const VariableGroupNode& favoriteGroup)
+						{
+							ImGuiTreeNodeFlags treeNodeFlags = treeNodeFlagsBase;
+
+							// Favorite groups don't have subgroups, all variables are displayed inline
+							treeNodeFlags |= ImGuiTreeNodeFlags_Leaf;
+
+							if (m_selectedGroupNode == &favoriteGroup)
+							{
+								treeNodeFlags |= ImGuiTreeNodeFlags_Selected;
+							}
+
+							// Take the address of the variable as the unique id so it remains consistent across frames
+							bool nodeOpen = tpp::imgui::TreeNodeEx((void*)&favoriteGroup, tpp::icons::NormalStar, treeNodeFlags, groupName.c_str());
+
+							if (ImGui::IsItemClicked())
+							{
+								m_selectedGroupNode = &favoriteGroup;
+								m_dirty = true;
+							}
+
+							return nodeOpen;
+						},
+						[](bool isOpen)
+						{
+							if (isOpen)
+							{
+								ImGui::TreePop();
+							}
+						}
+					);
+
+					variableManager->ForEachVariableGroupNode
 					(
 						[this, treeNodeFlagsBase](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
 						{
@@ -418,11 +505,12 @@ namespace tpp
 							if (ImGui::IsItemClicked())
 							{
 								m_selectedGroupNode = &variableGroupNode;
+								m_dirty = true;
 							}
 
 							return nodeOpen;
 						},
-						[](const std::string& nodeName, const VariableGroupNode& variableGroupNode, bool isOpen)
+						[](bool isOpen)
 						{
 							if (isOpen)
 							{
@@ -440,16 +528,38 @@ namespace tpp
 					ImGui::TableSetupScrollFreeze(0, 1);
 
 					// Set up header rows
+					// We can only sort the name column
 					ImGui::TableSetupColumn("Name");
-					ImGui::TableSetupColumn("Value");
+					ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_NoSort);
 					ImGui::TableHeadersRow();
+
+					ImGuiTableSortSpecs* tableSortSpecs = ImGui::TableGetSortSpecs();
+					if (tableSortSpecs && tableSortSpecs->SpecsDirty)
+					{
+						if (tableSortSpecs->Specs)
+						{
+							switch (tableSortSpecs->Specs->SortDirection)
+							{
+								case ImGuiSortDirection_Ascending: m_sortOrder = tpp::SortOrder::Ascending; break;
+								case ImGuiSortDirection_Descending: m_sortOrder = tpp::SortOrder::Descending; break;
+								default: m_sortOrder = tpp::SortOrder::None; break;
+							}
+						}
+						else
+						{
+							m_sortOrder = tpp::SortOrder::None;
+						}
+
+						m_dirty = true;
+						tableSortSpecs->SpecsDirty = false;
+					}
 
 					// Exit header row
 					ImGui::TableNextRow();
 
 					if (m_selectedGroupNode)
 					{
-						variableManager->ForEachVariableInGroup(m_selectedGroupNode->variableGroup, [this, &modifiedVariable](tpp::VariableBase* variable)
+						for(tpp::VariableBase* variable : m_currentVariables)
 						{
 							ImGui::TableNextRow();
 
@@ -464,7 +574,7 @@ namespace tpp
 							ImGui::SetCursorPosX(fontSize * 2.0f); // TODO Check different font sizes
 							ImGui::Text(variable->GetName().c_str());
 
-							ShowContextMenu(variable);
+							ShowContextMenu(variable, interactionData);
 							ShowTooltip(variable);
 
 							ImGui::TableSetColumnIndex(1);
@@ -475,9 +585,9 @@ namespace tpp
 
 							if (wasModified)
 							{
-								modifiedVariable = variable;
+								interactionData.editedVariable = variable;
 							}
-						});
+						}
 
 						// Copy path into the address bar
 						m_currentAddress = m_selectedGroupNode->m_path.c_str();
@@ -500,5 +610,12 @@ namespace tpp
 	void UIConnectionWindow::Log(const char* format...)
 	{
 		m_uiLog->Log(format);
+	}
+
+	void UIConnectionWindow::Clear()
+	{
+		m_selectedGroupNode = nullptr;
+
+		m_wasHovering = nullptr;
 	}
 }

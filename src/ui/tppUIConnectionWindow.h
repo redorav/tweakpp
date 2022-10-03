@@ -13,21 +13,41 @@ namespace tpp
 	class VariableBase;
 	class UILog;
 
+	namespace SortOrder
+	{
+		enum T
+		{
+			None,
+			Ascending,
+			Descending
+		};
+	};
+
+	struct UIInteractionData
+	{
+		tpp::VariableBase* editedVariable = nullptr;
+		tpp::VariableBase* addedToFavorites = nullptr;
+	};
+
 	class UIConnectionWindow
 	{
 	public:
 
 		UIConnectionWindow(const tpp::ClientVariableManager* variableManager);
 
-		void Draw(const tpp::ClientVariableManager* variableManager, bool* open, const tpp::VariableBase*& modifiedVariable);
+		void Draw(const tpp::ClientVariableManager* variableManager, bool* open, UIInteractionData& interactionData);
 
 		void Log(const char* format...);
 
+		void Clear();
+
 	private:
 
-		void ShowContextMenu(tpp::VariableBase* variable);
+		void ShowContextMenu(tpp::VariableBase* variable, tpp::UIInteractionData& interactioinData);
 
 		void ShowTooltip(tpp::VariableBase* variable);
+
+		void UpdateCachedVariables(const tpp::ClientVariableManager* variableManager);
 
 		// Which item we have captured being hovered
 		void* m_wasHovering = nullptr;
@@ -38,7 +58,7 @@ namespace tpp
 		// Current address in the address bar
 		std::string m_currentAddress;
 
-		// Current selected group in the group tree
+		// Current selected group node in the group tree
 		const tpp::VariableGroupNode* m_selectedGroupNode = nullptr;
 
 		// Whether a connection has been established
@@ -53,6 +73,18 @@ namespace tpp
 
 		// Use this string to patch names at runtime without allocating memory
 		std::string m_scratchPatchedNames;
+
+		// Current variable cached structure. This is just a UI concept, the variable manager shouldn't know
+		// about any of this. We must rebuild the cached structure in several scenarios, such as
+		// - Add/remove variable from group
+		// - Change sort order
+		// - Change selected group
+
+		std::vector<tpp::VariableBase*> m_currentVariables;
+
+		SortOrder::T m_sortOrder = SortOrder::None;
+
+		bool m_dirty = true;
 
 		// Connection log
 		std::unique_ptr<tpp::UILog> m_uiLog;
