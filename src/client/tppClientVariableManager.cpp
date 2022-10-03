@@ -208,7 +208,6 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 		case tpp::VariableType::String: variable = std::shared_ptr<tpp::VariableBase>(new tpp::String()); break;
 		case tpp::VariableType::Enum: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Enum()); break;
 		case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
-		case tpp::VariableType::Flags8: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags8()); break;
 		default: validVariable = false;
 	}
 
