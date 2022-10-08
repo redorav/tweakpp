@@ -1,6 +1,8 @@
 ﻿#include "tppNetwork.h"
 #include "tppISocket.h"
 
+#include "platform/tppPlatform.h"
+
 #include "tppClientVariableManager.h"
 #include "tppUIBackend.h"
 #include "tppUILog.h"
@@ -8,27 +10,28 @@
 #include "tppSerialize.h"
 #include "tppTypes.h"
 #include "tppUITextIcons.h"
+#include "tppSaveData.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <time.h>
 #include <vector>
-#include <chrono>
-#include <thread>
-#include <algorithm>
 #include <string>
 #include <memory>
-#include <unordered_map>
 
 std::vector<std::unique_ptr<tpp::ClientVariableManager>> ClientVariableManagers;
 
-std::string scratchMemoryString;
+// We use these to temporarily modify settings. If we then cancel, they are discarded
+tpp::ApplicationSettings TemporarySettings;
 
 int main(void)
 {
+	tpp::Platform::Initialize();
+
+	std::string TweakppDirectory = tpp::Platform::GetUserDirectory() + "Tweak++/";
+
+	tpp::SaveData::LoadSettingsFromFile(tpp::SaveData::GlobalSettings, TweakppDirectory + "Settings.xml"); 
+
 	tpp::UIInitializeParams params;
 	params.windowPositionX = 100;
 	params.windowPositionY = 100;
@@ -37,14 +40,10 @@ int main(void)
 
 	tpp::UIBackend::Initialize(params);
 
-	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
 	tpp::Network::Initialize();
 
 	ClientVariableManagers.push_back(std::unique_ptr<tpp::ClientVariableManager>(new tpp::ClientVariableManager("localhost", 27001)));
 	ClientVariableManagers.push_back(std::unique_ptr<tpp::ClientVariableManager>(new tpp::ClientVariableManager("127.0.0.1", 27002)));
-
-	std::vector<std::vector<char>> messages;
 
 	while (tpp::UIBackend::PrepareNewFrame() != tpp::UIBackendResult::Quit)
 	{
@@ -53,7 +52,8 @@ int main(void)
 			clientVariableManager->UpdateConnection();
 		}
 
-		bool popupOpen = false;
+		bool newConnectionOpen = false;
+		bool optionsMenuOpen = false;
 
 		// Prepare the UI elements
 		{
@@ -63,7 +63,7 @@ int main(void)
 				{
 					if (ImGui::MenuItemEx("New Connection", tpp::icons::ElectricPlug, "Ctrl + N"))
 					{
-						popupOpen = true;
+						newConnectionOpen = true;
 					}
 
 					if (ImGui::MenuItem("Exit"))
@@ -78,7 +78,8 @@ int main(void)
 				{
 					if (ImGui::MenuItemEx("Options...", tpp::icons::SettingsCog, "Ctrl + O"))
 					{
-
+						TemporarySettings = tpp::SaveData::GlobalSettings;
+						optionsMenuOpen = true;
 					}
 
 					ImGui::EndMenu();
@@ -96,7 +97,7 @@ int main(void)
 				ImGui::EndMainMenuBar();
 			}
 
-			if (popupOpen)
+			if (newConnectionOpen)
 			{
 				ImGui::OpenPopup("New Connection");
 			}
@@ -138,7 +139,68 @@ int main(void)
 				}
 				else
 				{
-					popupOpen = false;
+					newConnectionOpen = false;
+				}
+			}
+
+			if (optionsMenuOpen)
+			{
+				ImGui::OpenPopup("Settings");
+			}
+
+			{
+				ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+				ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+				if (ImGui::BeginPopupModal("Settings", NULL, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("General");
+					ImGui::Separator();
+
+					static const char* SortSettings[] =
+					{
+						"None",
+						"Descending",
+						"Ascending"
+					};
+
+					if (ImGui::BeginCombo("Variable Sort Order", SortSettings[TemporarySettings.defaultSortOrder], 0))
+					{
+						for (int n = 0; n < tpp::SortOrder::Count; n++)
+						{
+							bool isSelected = TemporarySettings.defaultSortOrder == n;
+							if (ImGui::Selectable(SortSettings[n], isSelected))
+							{
+								TemporarySettings.defaultSortOrder = (tpp::SortOrder::T)n;
+							}
+
+							if (isSelected)
+							{
+								ImGui::SetItemDefaultFocus();
+							}
+						}
+
+						ImGui::EndCombo();
+					}
+
+					if (ImGui::Button("OK", ImVec2(60, 0)))
+					{
+						tpp::SaveData::GlobalSettings = TemporarySettings;
+
+						tpp::Platform::CreateDirectories(TweakppDirectory); // Create the AppData folder
+						tpp::SaveData::SaveSettingsToFile(tpp::SaveData::GlobalSettings, TweakppDirectory + "Settings.xml");
+
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::SetItemDefaultFocus();
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel", ImVec2(60, 0)))
+					{
+						ImGui::CloseCurrentPopup();
+					}
+
+					ImGui::EndPopup();
 				}
 			}
 

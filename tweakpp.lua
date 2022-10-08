@@ -11,9 +11,11 @@ PlatformLinux64_GCC		= "Linux64 GCC"
 PlatformLinux64_Clang	= "Linux64 Clang"
 
 -- Directories
-SourceDirectory = "src"
-NetworkDirectory = SourceDirectory.."/platform"
-UIDirectory = SourceDirectory.."/ui"
+SourceDirectory = "src/"
+NetworkDirectory = SourceDirectory.."platform/"
+UIDirectory = SourceDirectory.."ui/"
+ClientDirectory = SourceDirectory.."client/"
+ServerDirectory = SourceDirectory.."server/"
 
 function AddWinsockLibrary()
 	links("Ws2_32")
@@ -47,7 +49,7 @@ end
 
 function AddImguiDependencies()
 
-	-- Disable obsolete stuff so we don't rely on it
+	-- Disable obsolete stuff so we don't rely on it by accident
 	defines { "IMGUI_DISABLE_OBSOLETE_FUNCTIONS", "IMGUI_ENABLE_FREETYPE", "IMGUI_USE_WCHAR32" }
 
 	files
@@ -159,6 +161,24 @@ function AddGraphicsApiDependencies()
 
 end
 
+function AddPugiXmlDependencies()
+
+	local pugixml = "external/pugixml/"
+
+	includedirs
+	{
+		pugixml,
+		pugixml.."src"
+	}
+
+	files
+	{
+		pugixml.."src/*.cpp",
+		pugixml.."src/*.hpp"
+	}
+
+end
+
 function AddCommonFlags()
 
 	flags
@@ -192,6 +212,7 @@ workspace "Tweak++ Client"
 project "Client"
 	kind("consoleapp")
 	language("C++")
+	cppdialect("C++17")
 	architecture("x64")
 	AddNetworkDependencies()
 	AddImguiDependencies()
@@ -199,13 +220,28 @@ project "Client"
 	AddUIDependencies()
 	AddXxHashDependencies()
 	AddFreetypeDependencies()
-	includedirs (SourceDirectory)
+	AddPugiXmlDependencies()
+	includedirs
+	{
+		SourceDirectory,
+		ClientDirectory
+	}
+	
 	defines { "TPP_CLIENT" }
 	files
 	{
-		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
-		SourceDirectory.."/client/*.cpp",
+		SourceDirectory.."*.cpp", SourceDirectory.."*.h",
+		SourceDirectory.."platform/*.h",
+		SourceDirectory.."platform/*.cpp",
+		ClientDirectory.."*.cpp", ClientDirectory.."*.h",
 	}
+	
+	filter { "system:windows" }
+		files
+		{
+			SourceDirectory.."platform/windows/*.h",
+			SourceDirectory.."platform/windows/*.cpp"
+		}
 	
 workspace "Tweak++ Server"
 	configurations { "Debug", "Release" }
@@ -222,6 +258,6 @@ project "Server"
 	includedirs (SourceDirectory)
 	files
 	{
-		SourceDirectory.."/*.cpp", SourceDirectory.."/*.h",
-		SourceDirectory.."/server/*.cpp",
+		SourceDirectory.."*.cpp", SourceDirectory.."*.h",
+		ServerDirectory.."*.cpp",
 	}

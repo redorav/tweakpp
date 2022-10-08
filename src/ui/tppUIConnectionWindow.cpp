@@ -1,6 +1,7 @@
 #include "tppUIConnectionWindow.h"
 
 #include "client/tppClientVariableManager.h"
+#include "client/tppSaveData.h"
 #include "ui/tppUILog.h"
 #include "ui/tppUITextIcons.h"
 #include "ui/tppUIWidgets.h"
@@ -191,8 +192,8 @@ namespace tpp
 
 				switch (m_sortOrder)
 				{
-					case tpp::SortOrder::Ascending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortAscending); break;
 					case tpp::SortOrder::Descending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortDescending); break;
+					case tpp::SortOrder::Ascending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortAscending); break;
 					default: break;
 				}
 			}
@@ -252,7 +253,7 @@ namespace tpp
 		else if (variable->type == tpp::VariableType::Enum)
 		{
 			tpp::Enum* enumVariable = static_cast<tpp::Enum*>(variable);
-			const auto& entries = enumVariable->metadata.entries;
+			const std::vector<EnumEntry>& entries = enumVariable->metadata.entries;
 
 			ImGuiComboFlags comboFlags = 0;
 			if (ImGui::BeginCombo(invisibleName.c_str(), entries[enumVariable->currentValue].name.c_str(), comboFlags))
@@ -289,6 +290,21 @@ namespace tpp
 
 	UIConnectionWindow::UIConnectionWindow(const tpp::ClientVariableManager* variableManager)
 	{
+		m_sortOrder = tpp::SaveData::GlobalSettings.defaultSortOrder;
+
+		if (m_sortOrder == tpp::SortOrder::Descending)
+		{
+			m_defaultVariableSortOrder = ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortDescending;
+		}
+		else if (m_sortOrder == tpp::SortOrder::Ascending)
+		{
+			m_defaultVariableSortOrder = ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_PreferSortAscending;
+		}
+		else
+		{
+			m_defaultVariableSortOrder = 0;
+		}
+
 		m_variablesWindowID = std::string("Variables Window##") + std::to_string((uintptr_t)this);
 		m_logWindowID = std::string("Log##") + std::to_string((uintptr_t)this);
 
@@ -529,7 +545,7 @@ namespace tpp
 
 					// Set up header rows
 					// We can only sort the name column
-					ImGui::TableSetupColumn("Name");
+					ImGui::TableSetupColumn("Name", m_defaultVariableSortOrder);
 					ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_NoSort);
 					ImGui::TableHeadersRow();
 
@@ -540,8 +556,8 @@ namespace tpp
 						{
 							switch (tableSortSpecs->Specs->SortDirection)
 							{
-								case ImGuiSortDirection_Ascending: m_sortOrder = tpp::SortOrder::Ascending; break;
 								case ImGuiSortDirection_Descending: m_sortOrder = tpp::SortOrder::Descending; break;
+								case ImGuiSortDirection_Ascending: m_sortOrder = tpp::SortOrder::Ascending; break;
 								default: m_sortOrder = tpp::SortOrder::None; break;
 							}
 						}

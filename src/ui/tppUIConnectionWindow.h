@@ -1,5 +1,6 @@
 #pragma once
 
+#include "tppClientCommon.h"
 #include "tppUILog.h"
 
 #include <cstdint>
@@ -12,16 +13,6 @@ namespace tpp
 	class VariableGroupNode;
 	class VariableBase;
 	class UILog;
-
-	namespace SortOrder
-	{
-		enum T
-		{
-			None,
-			Ascending,
-			Descending
-		};
-	};
 
 	struct UIInteractionData
 	{
@@ -81,6 +72,8 @@ namespace tpp
 		// - Change selected group
 
 		std::vector<tpp::VariableBase*> m_currentVariables;
+
+		ImGuiTableColumnFlags m_defaultVariableSortOrder = 0;
 
 		SortOrder::T m_sortOrder = SortOrder::None;
 
