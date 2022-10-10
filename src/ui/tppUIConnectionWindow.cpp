@@ -499,6 +499,8 @@ namespace tpp
 						}
 					);
 
+					ImGui::Separator();
+
 					variableManager->ForEachVariableGroupNode
 					(
 						[this, treeNodeFlagsBase](const std::string& nodeName, const VariableGroupNode& variableGroupNode)
