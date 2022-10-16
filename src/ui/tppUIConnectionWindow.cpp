@@ -5,6 +5,7 @@
 #include "ui/tppUILog.h"
 #include "ui/tppUITextIcons.h"
 #include "ui/tppUIWidgets.h"
+#include "tppCommon.h"
 
 #include "imgui.h"
 #include "imgui_stdlib.h"
@@ -17,18 +18,34 @@ namespace tpp
 {
 	void UIConnectionWindow::ShowContextMenu(tpp::VariableBase* variable, tpp::UIInteractionData& interactionData)
 	{
-		ImGuiPopupFlags popupFlags = ImGuiPopupFlags_MouseButtonRight;
-		if (ImGui::BeginPopupContextItem(variable->GetName().c_str(), popupFlags))
+		tpp::Assert(variable != nullptr);
+		tpp::Assert(m_selectedGroupNode != nullptr);
+		tpp::Assert(m_selectedGroupNode->variableGroup != nullptr);
+
+		bool isFavoriteGroup = m_selectedGroupNode->variableGroup->GetIsFavorite();
+
+		if (ImGui::BeginPopupContextItem(variable->GetName().c_str(), ImGuiPopupFlags_MouseButtonRight))
 		{
 			if (ImGui::MenuItem("Revert To Default"))
 			{
 				variable->RevertToDefault();
 			}
 
-			if (ImGui::MenuItem("Add to Favorites"))
+			if (isFavoriteGroup)
 			{
-				interactionData.addedToFavorites = variable;
-				m_dirty = true;
+				if (ImGui::MenuItem("Remove from Favorites"))
+				{
+					interactionData.removedFromFavorites = variable;
+					m_dirty = true;
+				}
+			}
+			else
+			{
+				if (ImGui::MenuItem("Add to Favorites"))
+				{
+					interactionData.addedToFavorites = variable;
+					m_dirty = true;
+				}
 			}
 
 			ImGui::Separator();
@@ -38,7 +55,7 @@ namespace tpp
 				ImGui::SetClipboardText(variable->GetName().c_str());
 			}
 
-			if (ImGui::MenuItem("Copy Path"))
+			if (ImGui::MenuItem("Copy Group Path"))
 			{
 				ImGui::SetClipboardText(variable->GetGroupPath().c_str());
 			}
@@ -46,6 +63,27 @@ namespace tpp
 			if (ImGui::MenuItem("Copy Full Path"))
 			{
 				ImGui::SetClipboardText(variable->GetPath().c_str());
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+
+	void UIConnectionWindow::ShowDisabledVariableContextMenu(const std::string& variablePath, tpp::UIInteractionData& interactionData)
+	{
+		if (ImGui::BeginPopupContextItem(variablePath.c_str(), ImGuiPopupFlags_MouseButtonRight))
+		{
+			if (ImGui::MenuItem("Remove from Favorites"))
+			{
+				interactionData.removedFromFavoritePath = variablePath;
+				m_dirty = true;
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Copy Full Path"))
+			{
+				ImGui::SetClipboardText(variablePath.c_str());
 			}
 
 			ImGui::EndPopup();
@@ -162,38 +200,65 @@ namespace tpp
 	{
 		if (m_dirty)
 		{
+			m_selectedGroupNode = m_nextSelectedGroupNode;
+
 			// Clear regardless of whether the group is null or not. If it is null, we don't show any variables
-			m_currentVariables.clear();
+			m_cachedVariables.clear();
 
 			if (m_selectedGroupNode && m_selectedGroupNode->variableGroup)
 			{
-				m_currentVariables.reserve(m_selectedGroupNode->variableGroup->variableStrings.size());
+				size_t variableCount = m_selectedGroupNode->variableGroup->variableStrings.size();
+				m_cachedVariables.reserve(variableCount);
 
-				variableManager->ForEachVariableInGroup(m_selectedGroupNode->variableGroup, [this](tpp::VariableBase* variable)
+				variableManager->ForEachVariableInGroup(m_selectedGroupNode->variableGroup,
+					[this](const std::string& variablePath, tpp::VariableBase* variable)
 				{
-					m_currentVariables.push_back(variable);
+					size_t lastSlashOffset = variablePath.find_last_of("/");
+
+					if (lastSlashOffset == variablePath.npos)
+					{
+						lastSlashOffset = 0;
+					}
+
+					// Include null variables here and deal with them on render. That is so that we can render out their names
+					// when they aren't present but the favorite group has a reference
+					m_cachedVariables.push_back({ variable, variablePath });
 				});
 
 				struct
 				{
-					bool operator()(tpp::VariableBase* a, tpp::VariableBase* b) const
+					bool operator()(CachedVariable& a, CachedVariable& b) const
 					{
-						return a->GetName() > b->GetName();
+						if (a.variable && b.variable)
+						{
+							return a.variable->GetName() > b.variable->GetName();
+						}
+						else
+						{
+							return a.variablePath > b.variablePath;
+						}
 					}
 				} SortAscending;
 
 				struct
 				{
-					bool operator()(tpp::VariableBase* a, tpp::VariableBase* b) const
+					bool operator()(CachedVariable& a, CachedVariable& b) const
 					{
-						return a->GetName() < b->GetName();
+						if (a.variable && b.variable)
+						{
+							return a.variable->GetName() < b.variable->GetName();
+						}
+						else
+						{
+							return a.variablePath < b.variablePath;
+						}
 					}
 				} SortDescending;
 
 				switch (m_sortOrder)
 				{
-					case tpp::SortOrder::Descending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortDescending); break;
-					case tpp::SortOrder::Ascending: std::sort(m_currentVariables.begin(), m_currentVariables.end(), SortAscending); break;
+					case tpp::SortOrder::Descending: std::sort(m_cachedVariables.begin(), m_cachedVariables.end(), SortDescending); break;
+					case tpp::SortOrder::Ascending: std::sort(m_cachedVariables.begin(), m_cachedVariables.end(), SortAscending); break;
 					default: break;
 				}
 			}
@@ -207,82 +272,85 @@ namespace tpp
 	{
 		bool wasModified = false;
 
-		if (variable->type == tpp::VariableType::Float)
+		if (variable)
 		{
-			tpp::Float* floatVariable = static_cast<tpp::Float*>(variable);
-			wasModified = ImGui::SliderFloat(invisibleName.c_str(), &floatVariable->currentValue, floatVariable->metadata.minValue, floatVariable->metadata.maxValue);
-		}
-		else if (variable->type == tpp::VariableType::UnsignedInteger)
-		{
-			tpp::UInt* uintVariable = static_cast<tpp::UInt*>(variable);
-			wasModified = ImGui::SliderScalar(invisibleName.c_str(), ImGuiDataType_U32, &uintVariable->currentValue, &uintVariable->metadata.minValue, &uintVariable->metadata.maxValue);
-		}
-		else if (variable->type == tpp::VariableType::Integer)
-		{
-			tpp::Int* intVariable = static_cast<tpp::Int*>(variable);
-			wasModified = ImGui::SliderScalar(invisibleName.c_str(), ImGuiDataType_S32, &intVariable->currentValue, &intVariable->metadata.minValue, &intVariable->metadata.maxValue);
-		}
-		else if (variable->type == tpp::VariableType::Bool)
-		{
-			wasModified = ImGui::Checkbox(invisibleName.c_str(), &static_cast<tpp::Bool*>(variable)->currentValue);
-		}
-		else if (variable->type == tpp::VariableType::Color3)
-		{
-			wasModified = ImGui::ColorEdit3(invisibleName.c_str(), &static_cast<tpp::Color3*>(variable)->r);
-		}
-		else if (variable->type == tpp::VariableType::Color4)
-		{
-			wasModified = ImGui::ColorEdit4(invisibleName.c_str(), &static_cast<tpp::Color4*>(variable)->r);
-		}
-		else if (variable->type == tpp::VariableType::Vector2)
-		{
-			wasModified = ImGui::InputFloat2(invisibleName.c_str(), &static_cast<tpp::Vector2*>(variable)->x, "%.3f");
-		}
-		else if (variable->type == tpp::VariableType::Vector3)
-		{
-			wasModified = ImGui::InputFloat3(invisibleName.c_str(), &static_cast<tpp::Vector3*>(variable)->x, "%.3f");
-		}
-		else if (variable->type == tpp::VariableType::Vector4)
-		{
-			wasModified = ImGui::InputFloat4(invisibleName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
-		}
-		else if (variable->type == tpp::VariableType::String)
-		{
-			wasModified = ImGui::InputText(invisibleName.c_str(), &static_cast<tpp::String*>(variable)->currentValue);
-		}
-		else if (variable->type == tpp::VariableType::Enum)
-		{
-			tpp::Enum* enumVariable = static_cast<tpp::Enum*>(variable);
-			const std::vector<EnumEntry>& entries = enumVariable->metadata.entries;
-
-			ImGuiComboFlags comboFlags = 0;
-			if (ImGui::BeginCombo(invisibleName.c_str(), entries[enumVariable->currentValue].name.c_str(), comboFlags))
+			if (variable->type == tpp::VariableType::Float)
 			{
-				for (int n = 0; n < entries.size(); n++)
-				{
-					bool isSelected = enumVariable->currentValue == n;
-					if (ImGui::Selectable(entries[n].name.c_str(), isSelected))
-					{
-						wasModified = !isSelected;
-						enumVariable->currentValue = n;
-					}
-					
-					if (isSelected)
-					{
-						ImGui::SetItemDefaultFocus();
-					}
-				}
-				ImGui::EndCombo();
+				tpp::Float* floatVariable = static_cast<tpp::Float*>(variable);
+				wasModified = ImGui::SliderFloat(invisibleName.c_str(), &floatVariable->currentValue, floatVariable->metadata.minValue, floatVariable->metadata.maxValue);
 			}
-		}
-		else if (variable->type == tpp::VariableType::Callback)
-		{
-			// Use the original name here as we want to display it on top of the button
-			wasModified = ImGui::Button(variable->GetName().c_str());
-		}
-		else
-		{
-			printf("Variable type not implemented\n");
+			else if (variable->type == tpp::VariableType::UnsignedInteger)
+			{
+				tpp::UInt* uintVariable = static_cast<tpp::UInt*>(variable);
+				wasModified = ImGui::SliderScalar(invisibleName.c_str(), ImGuiDataType_U32, &uintVariable->currentValue, &uintVariable->metadata.minValue, &uintVariable->metadata.maxValue);
+			}
+			else if (variable->type == tpp::VariableType::Integer)
+			{
+				tpp::Int* intVariable = static_cast<tpp::Int*>(variable);
+				wasModified = ImGui::SliderScalar(invisibleName.c_str(), ImGuiDataType_S32, &intVariable->currentValue, &intVariable->metadata.minValue, &intVariable->metadata.maxValue);
+			}
+			else if (variable->type == tpp::VariableType::Bool)
+			{
+				wasModified = ImGui::Checkbox(invisibleName.c_str(), &static_cast<tpp::Bool*>(variable)->currentValue);
+			}
+			else if (variable->type == tpp::VariableType::Color3)
+			{
+				wasModified = ImGui::ColorEdit3(invisibleName.c_str(), &static_cast<tpp::Color3*>(variable)->r);
+			}
+			else if (variable->type == tpp::VariableType::Color4)
+			{
+				wasModified = ImGui::ColorEdit4(invisibleName.c_str(), &static_cast<tpp::Color4*>(variable)->r);
+			}
+			else if (variable->type == tpp::VariableType::Vector2)
+			{
+				wasModified = ImGui::InputFloat2(invisibleName.c_str(), &static_cast<tpp::Vector2*>(variable)->x, "%.3f");
+			}
+			else if (variable->type == tpp::VariableType::Vector3)
+			{
+				wasModified = ImGui::InputFloat3(invisibleName.c_str(), &static_cast<tpp::Vector3*>(variable)->x, "%.3f");
+			}
+			else if (variable->type == tpp::VariableType::Vector4)
+			{
+				wasModified = ImGui::InputFloat4(invisibleName.c_str(), &static_cast<tpp::Vector4*>(variable)->x, "%.3f");
+			}
+			else if (variable->type == tpp::VariableType::String)
+			{
+				wasModified = ImGui::InputText(invisibleName.c_str(), &static_cast<tpp::String*>(variable)->currentValue);
+			}
+			else if (variable->type == tpp::VariableType::Enum)
+			{
+				tpp::Enum* enumVariable = static_cast<tpp::Enum*>(variable);
+				const std::vector<EnumEntry>& entries = enumVariable->metadata.entries;
+
+				ImGuiComboFlags comboFlags = 0;
+				if (ImGui::BeginCombo(invisibleName.c_str(), entries[enumVariable->currentValue].name.c_str(), comboFlags))
+				{
+					for (int n = 0; n < entries.size(); n++)
+					{
+						bool isSelected = enumVariable->currentValue == n;
+						if (ImGui::Selectable(entries[n].name.c_str(), isSelected))
+						{
+							wasModified = !isSelected;
+							enumVariable->currentValue = n;
+						}
+
+						if (isSelected)
+						{
+							ImGui::SetItemDefaultFocus();
+						}
+					}
+					ImGui::EndCombo();
+				}
+			}
+			else if (variable->type == tpp::VariableType::Callback)
+			{
+				// Use the original name here as we want to display it on top of the button
+				wasModified = ImGui::Button(variable->GetName().c_str());
+			}
+			else
+			{
+				printf("Variable type not implemented\n");
+			}
 		}
 
 		return wasModified;
@@ -373,7 +441,7 @@ namespace tpp
 			{
 				// If we modified the address and we found a matching group navigate to the appropriate place
 				// Otherwise the selected group node will be null and we won't show anything
-				m_selectedGroupNode = variableManager->GetVariableGroupNode(m_currentAddress);
+				m_nextSelectedGroupNode = variableManager->GetVariableGroupNode(m_currentAddress);
 				m_dirty = true;
 			}
 
@@ -484,7 +552,7 @@ namespace tpp
 
 							if (ImGui::IsItemClicked())
 							{
-								m_selectedGroupNode = &favoriteGroup;
+								m_nextSelectedGroupNode = &favoriteGroup;
 								m_dirty = true;
 							}
 
@@ -522,7 +590,7 @@ namespace tpp
 
 							if (ImGui::IsItemClicked())
 							{
-								m_selectedGroupNode = &variableGroupNode;
+								m_nextSelectedGroupNode = &variableGroupNode;
 								m_dirty = true;
 							}
 
@@ -577,33 +645,42 @@ namespace tpp
 
 					if (m_selectedGroupNode)
 					{
-						for(tpp::VariableBase* variable : m_currentVariables)
+						for(CachedVariable& cachedVariable : m_cachedVariables)
 						{
 							ImGui::TableNextRow();
 
 							ImGui::TableSetColumnIndex(0);
 
-							if (!variable->HasDefaultValue())
+							float fontSize = ImGui::GetFontSize();
+
+							if (cachedVariable.variable && !cachedVariable.variable->HasDefaultValue())
 							{
 								ImGui::Text(" "); ImGui::SameLine(); ImGui::Text(tpp::icons::LargeRedSquare); ImGui::SameLine();
 							}
 
-							float fontSize = ImGui::GetFontSize();
 							ImGui::SetCursorPosX(fontSize * 2.0f); // TODO Check different font sizes
-							ImGui::Text(variable->GetName().c_str());
 
-							ShowContextMenu(variable, interactionData);
-							ShowTooltip(variable);
-
-							ImGui::TableSetColumnIndex(1);
-
-							m_scratchPatchedNames = "##";
-							m_scratchPatchedNames += variable->GetName();
-							bool wasModified = DrawVariableWidget(m_scratchPatchedNames, variable);
-
-							if (wasModified)
+							if (cachedVariable.variable)
 							{
-								interactionData.editedVariable = variable;
+								ImGui::Text(cachedVariable.variable->GetName().c_str());
+								ShowContextMenu(cachedVariable.variable, interactionData);
+								ShowTooltip(cachedVariable.variable);
+
+								ImGui::TableSetColumnIndex(1);
+
+								m_scratchPatchedNames = "##";
+								m_scratchPatchedNames += cachedVariable.variable->GetName();
+								bool wasModified = DrawVariableWidget(m_scratchPatchedNames, cachedVariable.variable);
+
+								if (wasModified)
+								{
+									interactionData.editedVariable = cachedVariable.variable;
+								}
+							}
+							else
+							{
+								ImGui::TextDisabled(cachedVariable.variablePath.c_str());
+								ShowDisabledVariableContextMenu(cachedVariable.variablePath, interactionData);
 							}
 						}
 
@@ -633,6 +710,8 @@ namespace tpp
 	void UIConnectionWindow::Clear()
 	{
 		m_selectedGroupNode = nullptr;
+
+		m_nextSelectedGroupNode = nullptr;
 
 		m_wasHovering = nullptr;
 	}

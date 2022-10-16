@@ -7,7 +7,6 @@ namespace tpp
 	class Platform
 	{
 	public:
-
 		static void Initialize();
 
 		static const std::string& GetUserDirectory();
@@ -21,6 +20,8 @@ namespace tpp
 		static const void CreateDirectories(const std::string& path);
 
 	private:
+
+		static void InitializePlatform();
 
 		static std::string UserDirectory;
 

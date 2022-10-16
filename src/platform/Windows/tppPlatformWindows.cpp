@@ -30,7 +30,7 @@ namespace tpp
 		}
 	}
 
-	void Platform::Initialize()
+	void Platform::InitializePlatform()
 	{
 		const uint32_t MaxPathSize = MAX_PATH + 1;
 

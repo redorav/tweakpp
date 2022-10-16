@@ -4,6 +4,12 @@
 
 namespace tpp
 {
+
+	void Platform::Initialize()
+	{
+		InitializePlatform();
+	}
+
 	const std::string& Platform::GetUserDirectory()
 	{
 		return UserDirectory;

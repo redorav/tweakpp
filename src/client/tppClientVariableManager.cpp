@@ -1,22 +1,14 @@
 #include "tppClientVariableManager.h"
 
+#include "platform/tppPlatform.h"
+#include "tppSaveData.h"
 #include "tppISocket.h"
 #include "tppUIConnectionWindow.h"
+#include "tppCommon.h"
 
 #include <algorithm>
 #include <chrono>
 
-void tppAssert(bool condition)
-{
-	if (!condition)
-	{
-		int* i = nullptr;
-		*i = 0;
-	}
-}
-
-// TODO Remove ugly const_cast and just make explicit that things can be modified. It does
-// mean that we have to change the code upstream
 void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::BinarySerializationWriter& stream)
 {
 	size_t startSize = stream.Size();
@@ -54,17 +46,108 @@ tpp::VariableBase* tpp::VariableDatabase::GetVariable(const std::string& path) c
 
 void tpp::VariableDatabase::AddVariable(const std::string& path, const std::shared_ptr<VariableBase>& variable)
 {
+	// Try to find the variable group this variable lives in. If we cannot find it, create it
+	// Find variable group, or create empty if it doesn't exist
+
+	const std::string& groupPath = variable->GetGroupPath();
+
+	VariableGroup* variableGroup = nullptr;
+	{
+		auto variableGroupIterator = m_variableGroupHashmap.find(groupPath);
+
+		if (variableGroupIterator == m_variableGroupHashmap.end())
+		{
+			variableGroupIterator = m_variableGroupHashmap.insert({ groupPath, std::shared_ptr<VariableGroup>(new VariableGroup(variable->GetGroupPath(), false)) }).first;
+		}
+
+		variableGroup = variableGroupIterator->second.get();
+	}
+
 	auto variableIter = m_variableHashmap.find(path);
 
 	if (variableIter == m_variableHashmap.end())
 	{
 		m_variableHashmap.insert({ path, variable });
 	}
+
+	// Insert a pointer to the variable that we inserted (as a copy of the pointer)
+	variableGroup->variableStrings.insert(variable->GetPath());
 }
 
 void tpp::VariableDatabase::RemoveVariable(const std::string& path)
 {
 	m_variableHashmap.erase(path);
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::GetVariableGroup(const std::string& path) const
+{
+	auto variableGroup = m_variableGroupHashmap.find(path);
+
+	if (variableGroup != m_variableGroupHashmap.end())
+	{
+		return variableGroup->second.get();
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::AddFavoriteGroup(const std::string& favoriteGroupName)
+{
+	VariableGroup* favoriteGroup = nullptr;
+	{
+		auto variableGroupIterator = m_favoriteGroupHashmap.find(favoriteGroupName);
+
+		if (variableGroupIterator == m_favoriteGroupHashmap.end())
+		{
+			variableGroupIterator = m_favoriteGroupHashmap.insert({ favoriteGroupName, std::shared_ptr<VariableGroup>(new VariableGroup(favoriteGroupName, true)) }).first;
+		}
+
+		favoriteGroup = variableGroupIterator->second.get();
+	}
+
+	return favoriteGroup;
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::AddToFavorites(const std::string& favoriteGroupName, const VariableBase* variable)
+{
+	VariableGroup* favoriteGroup = AddFavoriteGroup(favoriteGroupName);
+	favoriteGroup->variableStrings.insert(variable->GetPath());
+	return favoriteGroup;
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::GetFavoriteGroup(const std::string& favoriteGroupName) const
+{
+	auto variableGroupIterator = m_favoriteGroupHashmap.find(favoriteGroupName);
+
+	if (variableGroupIterator != m_favoriteGroupHashmap.end())
+	{
+		return variableGroupIterator->second.get();
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::RemoveFromFavorites(const std::string& favoriteGroupName, const VariableBase* variable)
+{
+	return RemoveFromFavorites(favoriteGroupName, variable->GetPath());
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::RemoveFromFavorites(const std::string& favoriteGroupName, const std::string& variablePath)
+{
+	VariableGroup* favoriteGroup = GetFavoriteGroup(favoriteGroupName);
+	favoriteGroup->variableStrings.erase(variablePath);
+	return favoriteGroup;
+}
+
+void tpp::VariableDatabase::Clear()
+{
+	m_variableHashmap.clear();
+	m_variableGroupHashmap.clear();
+	m_favoriteGroupHashmap.clear();
 }
 
 tpp::VariableGroupNode* tpp::VariableGroupNode::AddFindNode(const std::string& path, const std::string& nodeName)
@@ -88,7 +171,7 @@ void tpp::VariableGroupTree::AddPath(const std::string& path, tpp::VariableGroup
 
 	if (groupNode != m_variableGroupNodeHashmap.end())
 	{
-		tppAssert(groupNode->second->variableGroup == variableGroup);
+		tpp::Assert(groupNode->second->variableGroup == variableGroup);
 	}
 	else
 	{
@@ -166,12 +249,6 @@ tpp::ClientVariableManager::ClientVariableManager(const char* ipAddress, uint32_
 	m_displayString += std::to_string((uintptr_t)this);
 
 	m_uiConnectionWindow = std::make_unique<tpp::UIConnectionWindow>(this);
-
-	// TODO Turn into a normal variable group, sort by favorite/non-favorite
-	VariableGroup& favoriteGroup = m_favoriteGroupHashmap.insert({ "Favorites", VariableGroup() }).first->second;
-
-	VariableGroupNode& favoriteGroupNode = m_favoriteGroupNodeHashmap.insert({ "Favorites", VariableGroupNode() }).first->second;
-	favoriteGroupNode.variableGroup = &favoriteGroup;
 }
 
 static const int DEFAULT_BUFLEN = 512;
@@ -352,7 +429,7 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 			if (connectReturn == SocketReturn::Ok)
 			{
-				m_uiConnectionWindow->Log("Connected to server %s:%i\n", m_networkAddress.address, m_networkAddress.port);
+				EstablishedConnection();
 			}
 
 			m_lastAttemptedConnection = currentTime;
@@ -372,35 +449,66 @@ void tpp::ClientVariableManager::DrawConnectionWindow()
 
 	if (interactionData.addedToFavorites)
 	{
-		AddToFavorites("Favorites", interactionData.addedToFavorites);
+		tpp::VariableGroup* favoriteGroup = AddToFavorites("Favorites", interactionData.addedToFavorites);
+
+		if (favoriteGroup)
+		{
+			tpp::SaveData::SaveFavoritesToFile(favoriteGroup, tpp::Platform::GetUserDirectory() + "Tweak++/Favorites.xml");
+		}
 	}
+
+	if (interactionData.removedFromFavorites)
+	{
+		tpp::VariableGroup* favoriteGroup = RemoveFromFavorites("Favorites", interactionData.removedFromFavorites);
+
+		if (favoriteGroup)
+		{
+			tpp::SaveData::SaveFavoritesToFile(favoriteGroup, tpp::Platform::GetUserDirectory() + "Tweak++/Favorites.xml");
+		}
+	}
+
+	if (!interactionData.removedFromFavoritePath.empty())
+	{
+		tpp::VariableGroup* favoriteGroup = RemoveFromFavorites("Favorites", interactionData.removedFromFavoritePath);
+
+		if (favoriteGroup)
+		{
+			tpp::SaveData::SaveFavoritesToFile(favoriteGroup, tpp::Platform::GetUserDirectory() + "Tweak++/Favorites.xml");
+		}
+	}
+}
+
+void tpp::ClientVariableManager::EstablishedConnection()
+{
+	m_uiConnectionWindow->Log("Connected to server %s:%i\n", m_networkAddress.address, m_networkAddress.port);
+
+	// TODO
+	// 1. Iterate through the favorites folder
+	// 2. For every file, create a favorite group
+	// 3. Add all variables to it, even if they don't exist in the database yet
+	// 4. They can be viewed once a connection is established, even if those variables don't exist
+
+	tpp::VariableGroup* favoriteGroup = m_variableDatabase.AddFavoriteGroup("Favorites");
+	if (m_favoriteGroupNodeHashmap.find("Favorites") == m_favoriteGroupNodeHashmap.end())
+	{
+		VariableGroupNode& favoriteGroupNode = m_favoriteGroupNodeHashmap.insert({ "Favorites", VariableGroupNode() }).first->second;
+		favoriteGroupNode.variableGroup = favoriteGroup;
+	}
+
+	// Load saved favorites once we've established the connection
+	tpp::SaveData::LoadFavoritesFromFile(favoriteGroup, tpp::Platform::GetUserDirectory() + "Tweak++/Favorites.xml");
 }
 
 void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>& variable)
 {
-	const std::string& groupPath = variable->m_groupPath;
-
-	// Find variable group, or create empty if it doesn't exist
-	VariableGroup* variableGroup = nullptr;
-	{
-		auto variableGroupIterator = m_variableGroupHashmap.find(groupPath);
-
-		if (variableGroupIterator == m_variableGroupHashmap.end())
-		{
-			variableGroupIterator = m_variableGroupHashmap.insert({ groupPath, VariableGroup() }).first;
-		}
-
-		variableGroup = &variableGroupIterator->second;
-	}
-
 	m_variableDatabase.AddVariable(variable->GetPath(), variable);
 
-	// Insert a pointer to the variable that we inserted (as a copy of the pointer)
-	variableGroup->variableStrings.insert(variable->GetPath());
+	// TODO Make sure this variable is returned from AddVariable
+	VariableGroup* variableGroup = m_variableDatabase.GetVariableGroup(variable->GetGroupPath());
 
 	// Add to the tree
 	// TODO No need to do this if group existed already
-	m_variableGroupTree.AddPath(groupPath, variableGroup);
+	m_variableGroupTree.AddPath(variable->GetGroupPath(), variableGroup);
 }
 
 const char* tpp::ClientVariableManager::GetDisplayString() const
@@ -417,7 +525,9 @@ void tpp::ClientVariableManager::Clear()
 {
 	m_variableGroupTree.Clear();
 
-	m_variableGroupHashmap.clear();
+	m_variableDatabase.Clear();
+
+	m_favoriteGroupNodeHashmap.clear(); // TODO Remove
 
 	m_uiConnectionWindow->Clear();
 }
@@ -427,18 +537,9 @@ bool tpp::ClientVariableManager::MarkedAsClosed() const
 	return !m_windowOpen;
 }
 
-const tpp::VariableGroup* tpp::ClientVariableManager::GetVariableGroup(const std::string& path) const
+tpp::VariableGroup* tpp::ClientVariableManager::GetVariableGroup(const std::string& path) const
 {
-	auto variableGroup = m_variableGroupHashmap.find(path);
-
-	if (variableGroup != m_variableGroupHashmap.end())
-	{
-		return &variableGroup->second;
-	}
-	else
-	{
-		return nullptr;
-	}
+	return m_variableDatabase.GetVariableGroup(path);
 }
 
 const tpp::VariableGroupNode* tpp::ClientVariableManager::GetVariableGroupNode(const std::string& path) const
@@ -446,12 +547,27 @@ const tpp::VariableGroupNode* tpp::ClientVariableManager::GetVariableGroupNode(c
 	return m_variableGroupTree.GetVariableGroupNode(path);
 }
 
-void tpp::ClientVariableManager::AddToFavorites(const std::string& path, tpp::VariableBase* variable)
+tpp::VariableGroup* tpp::ClientVariableManager::AddToFavorites(const std::string& favoriteGroupName, tpp::VariableBase* variable)
 {
-	auto favoritesGroup = m_favoriteGroupHashmap.find(path);
+	tpp::VariableGroup* favoriteGroup = m_variableDatabase.AddToFavorites(favoriteGroupName, variable);
 
-	if (favoritesGroup != m_favoriteGroupHashmap.end())
+	// TODO Remove this after refactoring the way we select groups in the UI tree. We cannot have these two representations
+	// We are spilling UI concepts into the logical structure of the data
+	if (m_favoriteGroupNodeHashmap.find(favoriteGroupName) == m_favoriteGroupNodeHashmap.end())
 	{
-		favoritesGroup->second.variableStrings.insert(variable->GetPath());
+		VariableGroupNode& favoriteGroupNode = m_favoriteGroupNodeHashmap.insert({ favoriteGroupName, VariableGroupNode() }).first->second;
+		favoriteGroupNode.variableGroup = favoriteGroup;
 	}
+
+	return favoriteGroup;
+}
+
+tpp::VariableGroup* tpp::ClientVariableManager::RemoveFromFavorites(const std::string& favoriteGroupName, tpp::VariableBase* variable)
+{
+	return m_variableDatabase.RemoveFromFavorites(favoriteGroupName, variable);
+}
+
+tpp::VariableGroup* tpp::ClientVariableManager::RemoveFromFavorites(const std::string& favoriteGroupName, const std::string& variablePath)
+{
+	return m_variableDatabase.RemoveFromFavorites(favoriteGroupName, variablePath);
 }

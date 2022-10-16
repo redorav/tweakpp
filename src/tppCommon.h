@@ -19,4 +19,13 @@ namespace tpp
 
 	template< bool B, class T, class F >
 	using conditional_t = typename conditional<B, T, F>::type;
+
+	inline void Assert(bool condition)
+	{
+		if (!condition)
+		{
+			int* i = nullptr;
+			*i = 0;
+		}
+	}
 };

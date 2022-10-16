@@ -16,6 +16,28 @@ namespace tpp
 	class UIConnectionWindow;
 	class UILog;
 
+	// Contains a list of variables
+	class VariableGroup
+	{
+	public:
+
+		VariableGroup(const std::string& path, bool isFavorite) : m_path(path), m_isFavorite(isFavorite) {}
+
+		bool GetIsFavorite() const { return m_isFavorite; }
+
+		// Whether this is a favorite group. We have different behaviors for favorite groups
+		// such as variables can be removed from them and variables that don't exist can be
+		// greyed out
+		bool m_isFavorite = false;
+
+		// Path of the group (or name in the case of a favorite group)
+		std::string m_path;
+
+		// TODO convert to just hashes. Eventually we want a path database so that favorite
+		// groups can query a path/name without the variable existing in the database
+		std::unordered_set<std::string> variableStrings;
+	};
+
 	// The variable database contains all the live variables for this session. Adding and removing
 	// variables is done through this class. All variable managers have a database that other systems
 	// reference. Variable groups and favorites should all have weak references to this database, and
@@ -29,25 +51,45 @@ namespace tpp
 	// up live. Instead we cache the sorted results in a vector, which we display every frame
 	struct VariableDatabase
 	{
-		VariableBase* GetVariable(const std::string& path) const;
+		//----------
+		// Variables
+		//----------
 
 		void AddVariable(const std::string& path, const std::shared_ptr<VariableBase>& variable);
 
+		VariableBase* GetVariable(const std::string& path) const;
+
 		void RemoveVariable(const std::string& path);
+
+		//----------------
+		// Variable Groups
+		//----------------
+
+		VariableGroup* GetVariableGroup(const std::string& path) const;
+
+		//----------------
+		// Favorite Groups
+		//----------------
+
+		VariableGroup* AddFavoriteGroup(const std::string& favoriteGroupName);
+
+		VariableGroup* AddToFavorites(const std::string& favoriteGroupName, const VariableBase* variable);
+
+		VariableGroup* GetFavoriteGroup(const std::string& favoriteGroupName) const;
+
+		VariableGroup* RemoveFromFavorites(const std::string& favoriteGroupName, const VariableBase* variable);
+
+		VariableGroup* RemoveFromFavorites(const std::string& favoriteGroupName, const std::string& variablePath);
+
+		void Clear();
 
 	private:
 
 		std::unordered_map<std::string, std::shared_ptr<VariableBase>> m_variableHashmap;
-	};
 
-	// Contains a list of variables
-	class VariableGroup
-	{
-	public:
-
-		// TODO convert to just hashes. Eventually we want a path database so that favorite
-		// groups can query a path/name without the variable existing in the database
-		std::unordered_set<std::string> variableStrings;
+		std::unordered_map<std::string, std::shared_ptr<VariableGroup>> m_variableGroupHashmap;
+		
+		std::unordered_map<std::string, std::shared_ptr<VariableGroup>> m_favoriteGroupHashmap;
 	};
 
 	// Represents a node in the variable group tree, that is itself a group and
@@ -131,6 +173,9 @@ namespace tpp
 
 		void DrawConnectionWindow();
 
+		// Called once when connection is established
+		void EstablishedConnection();
+
 		const char* GetDisplayString() const;
 
 		bool IsConnected() const;
@@ -148,13 +193,17 @@ namespace tpp
 		template<typename FnOpen, typename FnClose>
 		void ForEachFavoriteGroupNode(const FnOpen& fnOpen, const FnClose& fnClose) const;
 
-		const VariableGroup* GetVariableGroup(const std::string& path) const;
+		VariableGroup* GetVariableGroup(const std::string& path) const;
 
 		const VariableGroupNode* GetVariableGroupNode(const std::string& path) const;
 
 		// Favorites
 
-		void AddToFavorites(const std::string& path, tpp::VariableBase* variable);
+		tpp::VariableGroup* AddToFavorites(const std::string& favoriteGroupName, tpp::VariableBase* variable);
+
+		tpp::VariableGroup* RemoveFromFavorites(const std::string& favoriteGroupName, tpp::VariableBase* variable);
+
+		tpp::VariableGroup* RemoveFromFavorites(const std::string& favoriteGroupName, const std::string& variablePath);
 
 	private:
 
@@ -162,7 +211,9 @@ namespace tpp
 
 		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
 
-		// Connection management
+		//----------------------
+		// Connection Management
+		//----------------------
 
 		std::vector<char> m_receivedData;
 
@@ -176,24 +227,30 @@ namespace tpp
 
 		uint64_t m_lastAttemptedConnection = 0;
 
-		// Variable management
+		//--------------------
+		// Variable Management
+		//--------------------
 
 		std::unordered_map<std::string, VariableGroupNode> m_favoriteGroupNodeHashmap;
 
-		std::unordered_map<std::string, VariableGroup> m_favoriteGroupHashmap;
-
+		// Contains the variable groups as a tree. Can be traversed hierarchically
+		// to display as a tree in the UI
 		VariableGroupTree m_variableGroupTree;
 
-		std::unordered_map<std::string, VariableGroup> m_variableGroupHashmap;
-
+		// Contains information for all variables
 		VariableDatabase m_variableDatabase;
 
+		//--------------
 		// UI Management
+		//--------------
 
-		bool m_windowOpen;
-
+		// String displayed for this variable manager
 		std::string m_displayString;
 
+		// Whether we've closed the window through the UI
+		bool m_windowOpen;
+
+		// UI View of the variables
 		std::unique_ptr<tpp::UIConnectionWindow> m_uiConnectionWindow;
 	};
 
@@ -205,11 +262,7 @@ namespace tpp
 			for (const std::string& variablePath : group->variableStrings)
 			{
 				tpp::VariableBase* variable = m_variableDatabase.GetVariable(variablePath);
-
-				if (variable)
-				{
-					fn(variable);
-				}
+				fn(variablePath, variable);
 			}
 		}
 	}

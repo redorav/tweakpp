@@ -28,9 +28,9 @@ int main(void)
 {
 	tpp::Platform::Initialize();
 
-	std::string TweakppDirectory = tpp::Platform::GetUserDirectory() + "Tweak++/";
+	tpp::SaveData::Initialize();
 
-	tpp::SaveData::LoadSettingsFromFile(tpp::SaveData::GlobalSettings, TweakppDirectory + "Settings.xml"); 
+	tpp::SaveData::LoadSettingsFromFile(tpp::SaveData::GlobalSettings, tpp::SaveData::GetTweakppDirectory() + "Settings.xml");
 
 	tpp::UIInitializeParams params;
 	params.windowPositionX = 100;
@@ -187,8 +187,8 @@ int main(void)
 					{
 						tpp::SaveData::GlobalSettings = TemporarySettings;
 
-						tpp::Platform::CreateDirectories(TweakppDirectory); // Create the AppData folder
-						tpp::SaveData::SaveSettingsToFile(tpp::SaveData::GlobalSettings, TweakppDirectory + "Settings.xml");
+						tpp::Platform::CreateDirectories(tpp::SaveData::TweakppDirectory); // Create the AppData folder
+						tpp::SaveData::SaveSettingsToFile(tpp::SaveData::GlobalSettings, tpp::SaveData::GetSettingsPath());
 
 						ImGui::CloseCurrentPopup();
 					}
