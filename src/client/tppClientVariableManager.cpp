@@ -387,7 +387,7 @@ void tpp::ClientVariableManager::UpdateConnection()
 
 					// Insert into the current packet, but don't process it yet as it's incomplete
 					m_currentPacketData.clear();
-					m_currentPacketData.insert(m_currentPacketData.end(), headerPosition, m_receivedData.end());
+					m_currentPacketData.insert(m_currentPacketData.end(), m_receivedData.begin() + offset, m_receivedData.end());
 					break;
 				}
 			}
