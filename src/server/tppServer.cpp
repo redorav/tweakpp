@@ -50,7 +50,7 @@ namespace SSRModes
 	};
 };
 
-std::vector<tpp::Uint32Entry> RenderingModeEntries =
+std::vector<tpp::EnumEntry> RenderingModeEntries =
 {
 	{ SSRModes::Reference,  "Reference" },
 	{ SSRModes::Preblur,    "Preblur" },
