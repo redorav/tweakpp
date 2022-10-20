@@ -7,7 +7,23 @@
 
 namespace tpp
 {
-	void ConvertWcharToUTF8AndNormalize(const wchar_t* wideString, std::string& utf8String)
+	// Replace backslashes with forward slashes
+	void ReplaceBackslashes(std::string& utf8String)
+	{
+		std::replace(utf8String.begin(), utf8String.end(), '\\', '/');
+	}
+
+	void NormalizePath(std::string& utf8String)
+	{
+		ReplaceBackslashes(utf8String);
+
+		if (utf8String[utf8String.length() - 1] != '/')
+		{
+			utf8String += '/';
+		}
+	}
+
+	int ConvertWcharToUTF8(const wchar_t* wideString, std::string& utf8String)
 	{
 		// Get string length
 		int stringLength = WideCharToMultiByte(CP_UTF8, 0, wideString, -1, NULL, 0, NULL, NULL);
@@ -19,14 +35,19 @@ namespace tpp
 
 			// Copy contents
 			WideCharToMultiByte(CP_UTF8, 0, wideString, -1, (char*)utf8String.data(), stringLength, NULL, NULL);
+		}
 
-			// Replace backslashes with forward slashes
-			std::replace(utf8String.begin(), utf8String.end(), '\\', '/');
+		return stringLength;
+	}
 
-			if (utf8String[utf8String.length() - 1] != '/')
-			{
-				utf8String += '/';
-			}
+	void ConvertWcharToUTF8AndNormalize(const wchar_t* wideString, std::string& utf8String)
+	{
+		// Get string length
+		int stringLength = ConvertWcharToUTF8(wideString, utf8String);
+
+		if (stringLength > 0)
+		{
+			NormalizePath(utf8String);
 		}
 	}
 
@@ -67,6 +88,25 @@ namespace tpp
 		if (hResult == S_OK)
 		{
 			ConvertWcharToUTF8AndNormalize(appDataPath, UserDirectory);
+		}
+
+		// Get executable path
+		{
+			int wargc;
+			wchar_t** wargv = CommandLineToArgvW(GetCommandLineW(), &wargc);
+
+			ConvertWcharToUTF8(wargv[0], ExecutableDirectory);
+
+			ReplaceBackslashes(ExecutableDirectory);
+
+			size_t lastSlash = ExecutableDirectory.find_last_of("/");
+
+			if (lastSlash != ExecutableDirectory.npos)
+			{
+				ExecutableDirectory = ExecutableDirectory.substr(0, lastSlash + 1);
+			}
+
+			LocalFree(wargv);
 		}
 	}
 };

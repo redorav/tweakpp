@@ -24,7 +24,7 @@ std::vector<std::unique_ptr<tpp::ClientVariableManager>> ClientVariableManagers;
 // We use these to temporarily modify settings. If we then cancel, they are discarded
 tpp::ApplicationSettings TemporarySettings;
 
-int main(void)
+int main(int /*argc*/, char** /*argv*/)
 {
 	tpp::Platform::Initialize();
 

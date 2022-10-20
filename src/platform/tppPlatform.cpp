@@ -25,6 +25,11 @@ namespace tpp
 		return CurrentWorkingDirectory;
 	}
 
+	const std::string& Platform::GetExecutableDirectory()
+	{
+		return ExecutableDirectory;
+	}
+
 	const void Platform::CreateDirectory(const std::string& path)
 	{
 		std::filesystem::create_directory(path);
@@ -40,4 +45,6 @@ namespace tpp
 	std::string Platform::TempDirectory;
 
 	std::string Platform::CurrentWorkingDirectory;
+
+	std::string Platform::ExecutableDirectory;
 };
