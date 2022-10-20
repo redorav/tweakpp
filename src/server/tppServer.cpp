@@ -1,120 +1,25 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <vector>
-#include <string>
+#include "tppServer.h"
 
 #include "tppNetwork.h"
 #include "tppISocket.h"
-#include "tppTypes.h"
 #include "tppSerialize.h"
-#include "server/tppServerVariableManager.h"
+#include "tppTypes.h"
 
-//---------
-// EXAMPLES
-//---------
+#include "tppServerVariableManager.h"
 
-// SSR
-tpp::Float SSRNumberOfRays("Rendering/Post Effects/SSR/Number of Rays", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::UInt SSRThicknessMultiplier("Rendering/Post Effects/SSR/Thickness Multiplier", 1, 1, 8, 1);
-tpp::Int SSRThicknessBias("Rendering/Post Effects/SSR/Thickness Bias", -1, -10, 10, 2);
-tpp::Bool SSREnabled("Rendering/Post Effects/SSR/Enabled", false);
-tpp::Vector2 SSRDirection2("Rendering/Post Effects/SSR/Direction 2", 1.0f, 0.7f);
-tpp::Vector3 SSRDirection3("Rendering/Post Effects/SSR/Direction 3", 0.4f, 0.2f, 0.3f);
-tpp::Vector4 SSRDirection4("Rendering/Post Effects/SSR/Direction 4", 0.34f, 0.5f, 0.6f, 0.1f);
-tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
-tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 0.7f, 0.4f, 0.2f, 0.2f);
+tpp::ISocket* tpp::Server::GlobalServerSocket = nullptr;
 
-tpp::Float SSRNumberOfRays1("Rendering/Post Effects/SSR/Number of Rays1", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays2("Rendering/Post Effects/SSR/Number of Rays2", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays3("Rendering/Post Effects/SSR/Number of Rays3", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays4("Rendering/Post Effects/SSR/Number of Rays4", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays5("Rendering/Post Effects/SSR/Number of Rays5", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays6("Rendering/Post Effects/SSR/Number of Rays6", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays7("Rendering/Post Effects/SSR/Number of Rays7", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays8("Rendering/Post Effects/SSR/Number of Rays8", 8.0f, 1.0f, 64.0f, 1.0f);
-tpp::Float SSRNumberOfRays9("Rendering/Post Effects/SSR/Number of Rays9", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::ISocket* tpp::Server::GlobalClientSocket = nullptr;
 
-void RecompileShadersCallback()
-{
-	printf("I recompiled shaders\n");
-}
+bool tpp::Server::SentVariableTable = false;
 
-namespace SSRModes
-{
-	enum T
-	{
-		Reference,
-		Preblur,
-		Postblur,
-		Stochastic
-	};
-};
+tpp::NetworkAddress tpp::Server::GlobalNetworkAddress;
 
-std::vector<tpp::EnumEntry> RenderingModeEntries =
-{
-	{ SSRModes::Reference,  "Reference" },
-	{ SSRModes::Preblur,    "Preblur" },
-	{ SSRModes::Postblur,   "Postblur" },
-	{ SSRModes::Stochastic, "Stochastic" }
-};
+char tpp::Server::ReceiveBuffer[tpp::Server::BufferLength];
 
-tpp::Enum SSRRenderingMode("Rendering/Post Effects/SSR/Rendering Mode", SSRModes::Preblur, RenderingModeEntries);
+static tpp::BinarySerializationWriter VariableDescriptionTable(tpp::Server::BufferLength);
 
-namespace SSRRenderFlags
-{
-	enum T
-	{
-		DoIntersection   = 1,
-		FireflyReduction = 2,
-		UseLastFrame     = 3,
-		UseFullresDepth  = 4
-	};
-};
-
-std::vector<std::string> FlagOptionEntries =
-{
-	{ "Do Intersection" },
-	{ "Firefly Reduction" },
-	{ "Use Last Frame" },
-	{ "Use Fullres Depth" },
-};
-
-tpp::Flags8 SSRFlagOptions8("Rendering/Post Effects/SSR/Rendering Flag Options 8", 0b0101, FlagOptionEntries);
-
-tpp::Flags16 SSRFlagOptions16("Rendering/Post Effects/SSR/Rendering Flag Options 16", 0b0101, FlagOptionEntries);
-
-tpp::Flags32 SSRFlagOptions32("Rendering/Post Effects/SSR/Rendering Flag Options 32", 0b0101, FlagOptionEntries);
-
-tpp::Flags64 SSRFlagOptions64("Rendering/Post Effects/SSR/Rendering Flag Options 64", 0b0101, FlagOptionEntries);
-
-tpp::String SSRCompilationFilter("Rendering/Post Effects/SSR/Compilation Filter", "");
-
-tpp::Callback RecompileShaders("Rendering/Post Effects/SSR/Recompile Shaders", RecompileShadersCallback);
-
-// Depth of Field
-tpp::Float DepthOfFieldAperture("Rendering/Post Effects/Depth of Field/Aperture", 2.0f, 0.001f, 8.0f, 1.0f);
-tpp::Float DepthOfFieldBokehSize("Rendering/Post Effects/Depth of Field/Bokeh Size", 2.5f, 1.0f, 32.0f, 1.0f);
-
-// TAA
-tpp::Float TAAJitterX("Rendering/Post Effects/TAA/TAA Jitter X", 0.5f, 0.0f, 128.0f, 1.0f);
-tpp::Float TAAJitterY("Rendering/Post Effects/TAA/TAA Jitter Y", 0.5f, 0.0f, 128.0f, 1.0f);
-
-tpp::Float PerformanceGraphScaleX("Rendering/Performance/Graph Scale X", 1.5f, 0.1f, 4.0f, 1.0f);
-tpp::Float PerformanceGraphScaleY("Rendering/Performance/Graph Scale Y", 1.5f, 0.1f, 4.0f, 1.0f);
-
-tpp::Float CoreGraphScaleX("Core/Performance/Graph Scale X", 1.3f, 0.1f, 4.0f, 1.0f);
-tpp::Float CoreGraphScaleY("Core/Performance/Graph Scale Y", 1.3f, 0.1f, 4.0f, 1.0f);
-
-tpp::Float AnimationTimeScale("Animation/Time Scale", 1.0f, 0.0f, 2.0f, 1.0f);
-tpp::Float AnimationThreshold("Animation/Threshold", 1.0f, 1.0f, 3.0f, 1.0f);
-
-tpp::Float PhysicsTargetFPS("Physics/Target FPS", 60.0f, 1.0f, 120.0f, 1.0f);
-tpp::Float PhysicsFPSLimit("Physics/Performance/FPS Limit", 120.0f, 0.0f, 120.0f, 1.0f);
-
-tpp::Float DebugDisplayDeferredNormals("Rendering/Debug Display/Deferred/Normals", 0.77f, 0.0f, 1.0f, 1.0f);
-tpp::Float DebugDisplayForwardAlbedo("Rendering/Debug Display/Forward/Albedo", 1.0f, 0.0f, 1.0f, 1.0f);
-
-void SerializeVariableDescription(const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& writer)
+static void SerializeVariableDescription(const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& writer)
 {
 	size_t startSize = writer.Size();
 
@@ -135,7 +40,7 @@ void SerializeVariableDescription(const tpp::VariableBase* variable, const std::
 	header->size = (decltype(header->size))packetSize;
 }
 
-void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDescriptionTable)
+static void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDescriptionTable)
 {
 	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash)
 	{
@@ -143,114 +48,96 @@ void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDes
 	});
 }
 
-int main(int argc, char **argv)
+void tpp::Server::Initialize(const tpp::NetworkAddress& networkAddress)
 {
-	int port = 27001;
-
-	if (argc > 1)
-	{
-		port = atoi(argv[1]);
-	}
-
-	static const int DEFAULT_BUFLEN = 512;
-
-	char receiveBuffer[DEFAULT_BUFLEN] = {};
-	int receiveBufferLength = DEFAULT_BUFLEN;
-
 	tpp::Network::Initialize();
 
-	tpp::NetworkAddress address("127.0.0.1", port);
-	tpp::ISocket* serverSocket = tpp::Network::CreateSocket();
-	serverSocket->Create();
-	serverSocket->SetBlocking(false);
-	serverSocket->Listen(address.port);
+	GlobalServerSocket = tpp::Network::CreateSocket();
+	GlobalServerSocket->Create();
+	GlobalServerSocket->SetBlocking(false);
+	GlobalServerSocket->Listen(networkAddress.port);
 
-	tpp::ISocket* clientSocket = tpp::Network::CreateSocket();
-	clientSocket->Create();
-	clientSocket->SetBlocking(false);
+	GlobalClientSocket = tpp::Network::CreateSocket();
+	GlobalClientSocket->Create();
+	GlobalClientSocket->SetBlocking(false);
 
-	bool shutdown = false;
+	GlobalNetworkAddress = networkAddress;
+}
 
-	bool sentVariableTable = false;
-
-	tpp::BinarySerializationWriter variableDescriptionTable(DEFAULT_BUFLEN);
-
-	while (!shutdown)
+void tpp::Server::Update()
+{
+	if (GlobalClientSocket->IsConnected())
 	{
-		if (clientSocket->IsConnected())
+		if (!SentVariableTable)
 		{
-			if (!sentVariableTable)
+			VariableDescriptionTable.Clear();
+			PrepareVariableDescriptionTable(VariableDescriptionTable);
+			GlobalClientSocket->Send(VariableDescriptionTable.Data(), VariableDescriptionTable.Size());
+			SentVariableTable = true;
+		}
+
+		tpp::SocketReturn::T receiveResult = GlobalClientSocket->Receive(ReceiveBuffer, BufferLength);
+
+		// If we have received valid data
+		if (receiveResult > 0)
+		{
+			// Copy all the data into the serialization stream
+			// TODO Use the original buffer instead
+			tpp::BinarySerializationReader reader(ReceiveBuffer, receiveResult);
+
+			while (reader.HasData())
 			{
-				variableDescriptionTable.Clear();
-				PrepareVariableDescriptionTable(variableDescriptionTable);
-				clientSocket->Send(variableDescriptionTable.Data(), variableDescriptionTable.Size());
-				sentVariableTable = true;
-			}
+				tpp::MessageHeader messageHeader;
+				reader << messageHeader;
 
-			tpp::SocketReturn::T receiveResult = clientSocket->Receive(receiveBuffer, receiveBufferLength);
+				tpp::VariableHeader variableHeader;
+				reader << variableHeader;
 
-			// If we have received valid data
-			if (receiveResult > 0)
-			{
-				// Copy all the data into the serialization stream
-				// TODO Use the original buffer instead
-				tpp::BinarySerializationReader reader(receiveBuffer, receiveResult);
+				tpp::VariableBase* variable = tpp::GetServerVariableManager()->Find(variableHeader.hash);
 
-				while (reader.HasData())
+				if (variable)
 				{
-					tpp::MessageHeader messageHeader;
-					reader << messageHeader;
-
-					tpp::VariableHeader variableHeader;
-					reader << variableHeader;
-
-					tpp::VariableBase* variable = tpp::GetServerVariableManager()->Find(variableHeader.hash);
-
-					if (variable)
-					{
-						variable->DeserializeValue(reader);
-					}
+					variable->DeserializeValue(reader);
 				}
 			}
-			else if (receiveResult == tpp::SocketReturn::Ok || receiveResult == tpp::SocketReturn::WouldBlock)
-			{
-				// Ignore
-			}
-			else if (receiveResult == tpp::SocketReturn::ConnectionClosed)
-			{
-				// Close the socket. This means we've closed the server
-				clientSocket->Close();
-				printf("Connection closed\n");
-
-				// Reopen and leave in a good state
-				clientSocket->Create();
-				clientSocket->SetBlocking(false);
-			}
-			else if (receiveResult < 0)
-			{
-				//wchar_t errorString[256] = {};
-				//int size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), 0, (LPWSTR)&errorString, sizeof(errorString), NULL);
-				//
-				//printf("recv failed with error: %S\n", errorString);
-			}
 		}
-		else
+		else if (receiveResult == tpp::SocketReturn::Ok || receiveResult == tpp::SocketReturn::WouldBlock)
 		{
-			// TODO Try to connect every heartbeat to avoid spamming
+			// Ignore
+		}
+		else if (receiveResult == tpp::SocketReturn::ConnectionClosed)
+		{
+			// Close the socket. This means we've closed the server
+			GlobalClientSocket->Close();
+			printf("Connection closed\n");
 
-			tpp::SocketReturn::T acceptReturn = serverSocket->Accept(address, clientSocket);
-
-			if (acceptReturn != tpp::SocketReturn::Ok)
-			{
-				serverSocket->Close();
-				sentVariableTable = false;
-			}
+			// Reopen and leave in a good state
+			GlobalClientSocket->Create();
+			GlobalClientSocket->SetBlocking(false);
+		}
+		else if (receiveResult < 0)
+		{
+			//wchar_t errorString[256] = {};
+			//int size = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, WSAGetLastError(), 0, (LPWSTR)&errorString, sizeof(errorString), NULL);
+			//
+			//printf("recv failed with error: %S\n", errorString);
 		}
 	}
+	else
+	{
+		// TODO Try to connect every heartbeat to avoid spamming
 
+		tpp::SocketReturn::T acceptReturn = GlobalServerSocket->Accept(GlobalNetworkAddress, GlobalClientSocket);
+
+		if (acceptReturn != tpp::SocketReturn::Ok)
+		{
+			GlobalServerSocket->Close();
+			SentVariableTable = false;
+		}
+	}
+}
+
+void tpp::Server::Shutdown()
+{
 	tpp::Network::Shutdown();
-
-	printf("Client closed successfully\n");
-
-	return 0;
 }

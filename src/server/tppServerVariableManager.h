@@ -6,14 +6,14 @@
 
 #endif
 
-#include "tppTypes.h"
-
 #include "tppHash.h"
 
 #include <unordered_map>
 
 namespace tpp
 {
+	class VariableBase;
+
 	struct VariableDescription
 	{
 		VariableDescription(tpp::VariableBase* variable, const std::string& path)

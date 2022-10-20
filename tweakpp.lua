@@ -16,6 +16,7 @@ NetworkDirectory = SourceDirectory.."platform/"
 UIDirectory = SourceDirectory.."ui/"
 ClientDirectory = SourceDirectory.."client/"
 ServerDirectory = SourceDirectory.."server/"
+ServerExampleDirectory = SourceDirectory.."example/"
 
 function AddWinsockLibrary()
 	links("Ws2_32")
@@ -259,5 +260,6 @@ project "Server"
 	files
 	{
 		SourceDirectory.."*.cpp", SourceDirectory.."*.h",
-		ServerDirectory.."*.cpp",
+		ServerDirectory.."*.cpp", ServerDirectory.."*.h",
+		ServerExampleDirectory.."*.cpp",
 	}

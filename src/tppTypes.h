@@ -606,19 +606,7 @@ namespace tpp
 		Flags() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 
-		Flags(const char* path, UnderlyingT defaultValue, const std::vector<std::string>& entries)
-			: VariableBase((VariableType)Type, sizeof(currentValue))
-			, currentValue(defaultValue)
-		{
-			metadata.defaultValue = defaultValue;
-			metadata.entries = entries;
-
-#if !defined(TPP_CLIENT)
-			tpp::Assert(entries.size() <= 8 * sizeof(UnderlyingType));
-			memory = &currentValue;
-			GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
-#endif
-		}
+		Flags(const char* path, UnderlyingT defaultValue, const std::vector<std::string>& entries);
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -640,33 +628,6 @@ namespace tpp
 			std::vector<std::string> entries;
 		} metadata;
 	};
-
-	template<typename UnderlyingT, VariableType VariableT>
-	void Flags<UnderlyingT, VariableT>::SerializeMetadata(tpp::BinarySerializationWriter& writer) const
-	{
-		writer << metadata.defaultValue;
-		writer << metadata.entries;
-	}
-
-	template<typename UnderlyingT, VariableType VariableT>
-	void Flags<UnderlyingT, VariableT>::DeserializeMetadata(tpp::BinarySerializationReader& reader)
-	{
-		reader << metadata.defaultValue;
-		reader << metadata.entries;
-		currentValue = metadata.defaultValue;
-	}
-
-	template<typename UnderlyingT, VariableType VariableT>
-	void Flags<UnderlyingT, VariableT>::SerializeValue(tpp::BinarySerializationWriter& writer) const { writer << currentValue; }
-
-	template<typename UnderlyingT, VariableType VariableT>
-	void Flags<UnderlyingT, VariableT>::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
-
-	template<typename UnderlyingT, VariableType VariableT>
-	void Flags<UnderlyingT, VariableT>::RevertToDefault() { currentValue = metadata.defaultValue; }
-
-	template<typename UnderlyingT, VariableType VariableT>
-	bool Flags<UnderlyingT, VariableT>::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
 	typedef Flags<uint8_t, VariableType::Flags8> Flags8;
 	typedef Flags<uint16_t, VariableType::Flags16> Flags16;
