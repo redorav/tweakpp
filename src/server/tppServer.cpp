@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <vector>
 #include <string>
-#include <algorithm>
 
 #include "tppNetwork.h"
 #include "tppISocket.h"
@@ -25,6 +24,16 @@ tpp::Vector4 SSRDirection4("Rendering/Post Effects/SSR/Direction 4", 0.34f, 0.5f
 tpp::Color3 SSRClearColor("Rendering/Post Effects/SSR/Clear Color", 1.0f, 0.5f, 0.3f);
 tpp::Color4 SSRRayColor("Rendering/Post Effects/SSR/Ray Color", 0.7f, 0.4f, 0.2f, 0.2f);
 
+tpp::Float SSRNumberOfRays1("Rendering/Post Effects/SSR/Number of Rays1", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays2("Rendering/Post Effects/SSR/Number of Rays2", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays3("Rendering/Post Effects/SSR/Number of Rays3", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays4("Rendering/Post Effects/SSR/Number of Rays4", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays5("Rendering/Post Effects/SSR/Number of Rays5", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays6("Rendering/Post Effects/SSR/Number of Rays6", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays7("Rendering/Post Effects/SSR/Number of Rays7", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays8("Rendering/Post Effects/SSR/Number of Rays8", 8.0f, 1.0f, 64.0f, 1.0f);
+tpp::Float SSRNumberOfRays9("Rendering/Post Effects/SSR/Number of Rays9", 8.0f, 1.0f, 64.0f, 1.0f);
+
 void RecompileShadersCallback()
 {
 	printf("I recompiled shaders\n");
@@ -41,7 +50,7 @@ namespace SSRModes
 	};
 };
 
-std::vector<tpp::EnumEntry> Entries =
+std::vector<tpp::Uint32Entry> RenderingModeEntries =
 {
 	{ SSRModes::Reference,  "Reference" },
 	{ SSRModes::Preblur,    "Preblur" },
@@ -49,7 +58,34 @@ std::vector<tpp::EnumEntry> Entries =
 	{ SSRModes::Stochastic, "Stochastic" }
 };
 
-tpp::Enum SSRRenderingMode("Rendering/Post Effects/SSR/Rendering Mode", SSRModes::Preblur, Entries);
+tpp::Enum SSRRenderingMode("Rendering/Post Effects/SSR/Rendering Mode", SSRModes::Preblur, RenderingModeEntries);
+
+namespace SSRRenderFlags
+{
+	enum T
+	{
+		DoIntersection   = 1,
+		FireflyReduction = 2,
+		UseLastFrame     = 3,
+		UseFullresDepth  = 4
+	};
+};
+
+std::vector<std::string> FlagOptionEntries =
+{
+	{ "Do Intersection" },
+	{ "Firefly Reduction" },
+	{ "Use Last Frame" },
+	{ "Use Fullres Depth" },
+};
+
+tpp::Flags8 SSRFlagOptions8("Rendering/Post Effects/SSR/Rendering Flag Options 8", 0b0101, FlagOptionEntries);
+
+tpp::Flags16 SSRFlagOptions16("Rendering/Post Effects/SSR/Rendering Flag Options 16", 0b0101, FlagOptionEntries);
+
+tpp::Flags32 SSRFlagOptions32("Rendering/Post Effects/SSR/Rendering Flag Options 32", 0b0101, FlagOptionEntries);
+
+tpp::Flags64 SSRFlagOptions64("Rendering/Post Effects/SSR/Rendering Flag Options 64", 0b0101, FlagOptionEntries);
 
 tpp::String SSRCompilationFilter("Rendering/Post Effects/SSR/Compilation Filter", "");
 

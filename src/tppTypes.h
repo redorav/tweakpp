@@ -3,11 +3,12 @@
 #include "tppCommon.h"
 
 #if defined(TPP_CLIENT)
-#include <string>
 #include "tppHash.h"
 #endif
 
 #include "tppSerialize.h"
+
+#include <string>
 
 namespace tpp
 {
@@ -25,13 +26,17 @@ namespace tpp
 		String = 9,
 		Enum = 10,
 		Callback = 11,
+		Flags8 = 12,
+		Flags16 = 13,
+		Flags32 = 14,
+		Flags64 = 15,
 		Invalid = 0xff
 	};
 
 	template<typename T, int N>
-	struct vector
+	struct array
 	{
-		bool operator == (const vector<T, N>& other)
+		bool operator == (const array<T, N>& other)
 		{
 			for (int i = 0; i < N; ++i)
 			{
@@ -292,7 +297,7 @@ namespace tpp
 		union
 		{
 			struct { float r, g, b; };
-			vector<float, 3> currentValue;
+			array<float, 3> currentValue;
 		};
 
 		struct Color3Metadata
@@ -305,7 +310,7 @@ namespace tpp
 			union
 			{
 				struct { float r, g, b; };
-				vector<float, 3> defaultValue;
+				array<float, 3> defaultValue;
 			};
 		} metadata;
 
@@ -334,7 +339,7 @@ namespace tpp
 		union
 		{
 			struct { float r, g, b, a; };
-			vector<float, 4> currentValue;
+			array<float, 4> currentValue;
 		};
 
 		struct Color4Metadata
@@ -347,7 +352,7 @@ namespace tpp
 			union
 			{
 				struct { float r, g, b, a; };
-				vector<float, 4> defaultValue;
+				array<float, 4> defaultValue;
 			};
 		} metadata;
 
@@ -376,7 +381,7 @@ namespace tpp
 		union
 		{
 			struct { float x, y; };
-			vector<float, 2> currentValue;
+			array<float, 2> currentValue;
 		};
 
 		struct Vector2Metadata
@@ -389,7 +394,7 @@ namespace tpp
 			union
 			{
 				struct { float x, y; };
-				vector<float, 2> defaultValue;
+				array<float, 2> defaultValue;
 			};
 		} metadata;
 
@@ -418,7 +423,7 @@ namespace tpp
 		union
 		{
 			struct { float x, y, z; };
-			vector<float, 3> currentValue;
+			array<float, 3> currentValue;
 		};
 
 		struct Vector3Metadata
@@ -430,7 +435,7 @@ namespace tpp
 			union
 			{
 				struct { float x, y, z; };
-				vector<float, 3> defaultValue;
+				array<float, 3> defaultValue;
 			};
 		} metadata;
 
@@ -459,7 +464,7 @@ namespace tpp
 		union
 		{
 			struct { float x, y, z, w; };
-			vector<float, 4> currentValue;
+			array<float, 4> currentValue;
 		};
 
 		struct Vector4Metadata
@@ -472,7 +477,7 @@ namespace tpp
 			union
 			{
 				struct { float x, y, z, w; };
-				vector<float, 4> defaultValue;
+				array<float, 4> defaultValue;
 			};
 		} metadata;
 
@@ -532,14 +537,26 @@ namespace tpp
 		std::string currentValue;
 	};
 
-	struct EnumEntry
+	template<typename T>
+	struct ValueNameEntry
 	{
-		int value;
+		T value;
 		std::string name;
 	};
 
-	template<SerializationStreamType::T StreamTypeT>
-	inline BinarySerializer<StreamTypeT>& operator << (BinarySerializer<StreamTypeT>& stream, tpp::conditional_t<StreamTypeT == SerializationStreamType::Read, tpp::EnumEntry, const tpp::EnumEntry>& value)
+	typedef ValueNameEntry<uint32_t> EnumEntry;
+
+	// Add serialization/deserialization functions to the ValueNameEntry structs, which we'll use for enumeration, flags, etc
+	template<typename UnderlyingT>
+	inline BinarySerializationReader& operator << (BinarySerializationReader& stream, tpp::ValueNameEntry<UnderlyingT>& value)
+	{
+		stream << value.value;
+		stream << value.name;
+		return stream;
+	}
+
+	template<typename UnderlyingT>
+	inline BinarySerializationWriter& operator << (BinarySerializationWriter& stream, const tpp::ValueNameEntry<UnderlyingT>& value)
 	{
 		stream << value.value;
 		stream << value.name;
@@ -576,4 +593,83 @@ namespace tpp
 			std::vector<EnumEntry> entries;
 		} metadata;
 	};
+
+	template<typename UnderlyingT, VariableType VariableT>
+	class Flags final : public VariableBase
+	{
+	public:
+
+		typedef ValueNameEntry<UnderlyingT> EntryType;
+		typedef UnderlyingT UnderlyingType;
+
+#if defined(TPP_CLIENT)
+		Flags() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
+#endif
+
+		Flags(const char* path, UnderlyingT defaultValue, const std::vector<std::string>& entries)
+			: VariableBase((VariableType)Type, sizeof(currentValue))
+			, currentValue(defaultValue)
+		{
+			metadata.defaultValue = defaultValue;
+			metadata.entries = entries;
+
+#if !defined(TPP_CLIENT)
+			tpp::Assert(entries.size() <= 8 * sizeof(UnderlyingType));
+			memory = &currentValue;
+			GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+#endif
+		}
+
+		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
+		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
+		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
+		virtual void DeserializeValue(tpp::BinarySerializationReader& reader) override;
+		virtual void RevertToDefault() override;
+		virtual bool HasDefaultValue() override;
+
+		enum : uint32_t
+		{
+			Type = VariableT
+		};
+
+		UnderlyingT currentValue = (UnderlyingT)0;
+
+		struct FlagsMetadata
+		{
+			UnderlyingT defaultValue = 0;
+			std::vector<std::string> entries;
+		} metadata;
+	};
+
+	template<typename UnderlyingT, VariableType VariableT>
+	void Flags<UnderlyingT, VariableT>::SerializeMetadata(tpp::BinarySerializationWriter& writer) const
+	{
+		writer << metadata.defaultValue;
+		writer << metadata.entries;
+	}
+
+	template<typename UnderlyingT, VariableType VariableT>
+	void Flags<UnderlyingT, VariableT>::DeserializeMetadata(tpp::BinarySerializationReader& reader)
+	{
+		reader << metadata.defaultValue;
+		reader << metadata.entries;
+		currentValue = metadata.defaultValue;
+	}
+
+	template<typename UnderlyingT, VariableType VariableT>
+	void Flags<UnderlyingT, VariableT>::SerializeValue(tpp::BinarySerializationWriter& writer) const { writer << currentValue; }
+
+	template<typename UnderlyingT, VariableType VariableT>
+	void Flags<UnderlyingT, VariableT>::DeserializeValue(tpp::BinarySerializationReader& reader) { reader << currentValue; }
+
+	template<typename UnderlyingT, VariableType VariableT>
+	void Flags<UnderlyingT, VariableT>::RevertToDefault() { currentValue = metadata.defaultValue; }
+
+	template<typename UnderlyingT, VariableType VariableT>
+	bool Flags<UnderlyingT, VariableT>::HasDefaultValue() { return currentValue == metadata.defaultValue; }
+
+	typedef Flags<uint8_t, VariableType::Flags8> Flags8;
+	typedef Flags<uint16_t, VariableType::Flags16> Flags16;
+	typedef Flags<uint32_t, VariableType::Flags32> Flags32;
+	typedef Flags<uint64_t, VariableType::Flags64> Flags64;
 }

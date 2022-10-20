@@ -179,7 +179,7 @@ namespace tpp
 				else if (variable->type == tpp::VariableType::Enum)
 				{
 					tpp::Enum* enumVariable = static_cast<tpp::Enum*>(variable);
-					const EnumEntry& defaultEnumEntry = enumVariable->metadata.entries[enumVariable->metadata.defaultValue];
+					const tpp::EnumEntry& defaultEnumEntry = enumVariable->metadata.entries[enumVariable->metadata.defaultValue];
 					ImGui::Text("Default: %s", defaultEnumEntry.name.c_str());
 				}
 
@@ -267,6 +267,38 @@ namespace tpp
 		}
 	}
 
+	template<typename FlagsT>
+	bool RenderFlagsWidget(FlagsT* variable)
+	{
+		ImGui::PushID(variable);
+
+		const std::vector<std::string>& entries = variable->metadata.entries;
+		FlagsT::UnderlyingType currentValue = variable->currentValue;
+
+		ImGui::Separator();
+
+		FlagsT::UnderlyingType newValue = 0;
+
+		for (int n = 0; n < entries.size(); n++)
+		{
+			bool boolValue = ((currentValue >> n) & 1) != 0;
+			if (ImGui::Checkbox(entries[n].c_str(), &boolValue))
+			{}
+
+			newValue |= boolValue << n;
+		}
+
+		bool wasModified = currentValue != newValue;
+
+		variable->currentValue = newValue;
+
+		ImGui::Separator();
+
+		ImGui::PopID();
+
+		return wasModified;
+	}
+
 	// The invisible name is there to get a unique id but not display it using imgui's default positioning. We render the names separately
 	bool DrawVariableWidget(const std::string& invisibleName, tpp::VariableBase* variable)
 	{
@@ -346,6 +378,22 @@ namespace tpp
 			{
 				// Use the original name here as we want to display it on top of the button
 				wasModified = ImGui::Button(variable->GetName().c_str());
+			}
+			else if (variable->type == tpp::VariableType::Flags8)
+			{
+				wasModified = RenderFlagsWidget(static_cast<tpp::Flags8*>(variable));
+			}
+			else if (variable->type == tpp::VariableType::Flags16)
+			{
+				wasModified = RenderFlagsWidget(static_cast<tpp::Flags16*>(variable));
+			}
+			else if (variable->type == tpp::VariableType::Flags32)
+			{
+				wasModified = RenderFlagsWidget(static_cast<tpp::Flags32*>(variable));
+			}
+			else if (variable->type == tpp::VariableType::Flags64)
+			{
+				wasModified = RenderFlagsWidget(static_cast<tpp::Flags64*>(variable));
 			}
 			else
 			{
