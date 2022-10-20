@@ -39,7 +39,18 @@ void tpp::UILog::Draw(const char* title, bool* p_open)
 	}
 
 	ImGui::SameLine();
-	bool copy = ImGui::Button("Copy");
+
+	if (ImGui::Button("Copy"))
+	{
+		std::string fullString;
+
+		for (size_t i = 0; i < m_logBuffer.size(); ++i)
+		{
+			fullString += m_logBuffer[i];
+		}
+
+		ImGui::SetClipboardText(fullString.c_str());
+	}
 
 	ImGui::SameLine();
 	ImGui::Checkbox("Auto-scroll", &m_autoScroll);
