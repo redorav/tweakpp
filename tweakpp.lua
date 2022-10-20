@@ -203,6 +203,10 @@ function AddCommonFlags()
 
 end
 
+function CopyFileCommand(filePath, destinationPath)
+	return '{copyfile} "'..filePath..'" "'..destinationPath..'"'
+end
+
 workspace "Tweak++ Client"
 	configurations { "Debug", "Release" }
 	location (Workspace.."/Client")
@@ -222,6 +226,16 @@ project "Client"
 	AddXxHashDependencies()
 	AddFreetypeDependencies()
 	AddPugiXmlDependencies()
+	
+	print(path.getabsolute('fonts/TwemojiMozilla.ttf'))
+	
+	postbuildcommands
+	{
+		CopyFileCommand(path.getabsolute('fonts/TwemojiMozilla.ttf'), '%{cfg.buildtarget.directory}'),
+		CopyFileCommand(path.getabsolute('fonts/Font Awesome 6 Free-Solid-900.otf'), '%{cfg.buildtarget.directory}'),
+		CopyFileCommand(path.getabsolute('fonts/segoeui.ttf'), '%{cfg.buildtarget.directory}'),
+	}
+	
 	includedirs
 	{
 		SourceDirectory,
@@ -229,6 +243,7 @@ project "Client"
 	}
 	
 	defines { "TPP_CLIENT" }
+	
 	files
 	{
 		SourceDirectory.."*.cpp", SourceDirectory.."*.h",
