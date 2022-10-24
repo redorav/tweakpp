@@ -18,6 +18,11 @@ ClientDirectory = SourceDirectory.."client/"
 ServerDirectory = SourceDirectory.."server/"
 ServerExampleDirectory = SourceDirectory.."example/"
 
+Font2HeaderProject = 'Font2Header'
+GeneratedDirectory = '{%{wks.location}/generated/'
+GeneratedFontHeader = GeneratedDirectory.."tppFontHeader.h"
+GeneratedFontCpp = GeneratedDirectory.."tppFontHeader.cpp"
+
 function AddWinsockLibrary()
 	links("Ws2_32")
 end
@@ -207,18 +212,24 @@ function CopyFileCommand(filePath, destinationPath)
 	return '{copyfile} "'..filePath..'" "'..destinationPath..'"'
 end
 
-workspace "Tweak++ Client"
+workspace("Tweak++ Client")
+
 	configurations { "Debug", "Release" }
 	location (Workspace.."/Client")
 	defines { "_CRT_SECURE_NO_WARNINGS" }
+	defines { "TPP_CLIENT" }
 	
 	AddCommonFlags()
 	
-project "Client"
+project("Client")
+
 	kind("consoleapp")
 	language("C++")
 	cppdialect("C++17")
 	architecture("x64")
+	
+	dependson { "Font2Header" }
+
 	AddNetworkDependencies()
 	AddImguiDependencies()
 	AddGraphicsApiDependencies()
@@ -227,22 +238,12 @@ project "Client"
 	AddFreetypeDependencies()
 	AddPugiXmlDependencies()
 	
-	print(path.getabsolute('fonts/TwemojiMozilla.ttf'))
-	
-	postbuildcommands
-	{
-		CopyFileCommand(path.getabsolute('fonts/TwemojiMozilla.ttf'), '%{cfg.buildtarget.directory}'),
-		CopyFileCommand(path.getabsolute('fonts/Font Awesome 6 Free-Solid-900.otf'), '%{cfg.buildtarget.directory}'),
-		CopyFileCommand(path.getabsolute('fonts/segoeui.ttf'), '%{cfg.buildtarget.directory}'),
-	}
-	
 	includedirs
 	{
 		SourceDirectory,
-		ClientDirectory
+		ClientDirectory,
+		GeneratedDirectory
 	}
-	
-	defines { "TPP_CLIENT" }
 	
 	files
 	{
@@ -250,6 +251,8 @@ project "Client"
 		SourceDirectory.."platform/*.h",
 		SourceDirectory.."platform/*.cpp",
 		ClientDirectory.."*.cpp", ClientDirectory.."*.h",
+		GeneratedFontHeader,
+		GeneratedFontCpp
 	}
 	
 	filter { "system:windows" }
@@ -258,14 +261,42 @@ project "Client"
 			SourceDirectory.."platform/windows/*.h",
 			SourceDirectory.."platform/windows/*.cpp"
 		}
+		
+project(Font2HeaderProject)
 	
-workspace "Tweak++ Server"
+	kind("consoleapp")
+	language("C++")
+	cppdialect("C++17")
+	architecture("x64")
+	
+	optimize('speed')
+	symbols('on')
+	inlining('auto')
+	flags { 'linktimeoptimization' }
+	runtime('release')
+
+	files
+	{
+		SourceDirectory.."font2header/*.cpp", SourceDirectory.."font2header/*.h",
+	}
+	
+	local commandLine = '%{cfg.buildtarget.directory}/'..Font2HeaderProject..' '..path.getabsolute('fonts')..' '..'%{wks.location}/generated/'
+	
+	postbuildcommands
+	{
+		'{echo} '..commandLine,
+		commandLine
+	}
+	
+workspace("Tweak++ Server")
+
 	configurations { "Debug", "Release" }
 	location (Workspace.."/Server")
 
 	AddCommonFlags()
 	
-project "Server"
+project("Server")
+
 	kind("consoleapp")
 	language("C++")
 	architecture("x64")

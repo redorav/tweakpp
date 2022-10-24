@@ -2,6 +2,7 @@
 
 #include "tppUITextIcons.h"
 #include "platform/tppPlatform.h"
+#include "tppFontHeader.h"
 
 #include "imgui.h"
 #include "imgui_freetype.h"
@@ -167,7 +168,10 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 	ImFontConfig defaultFontConfig;
 	defaultFontConfig.SizePixels = baseFontSize;
 	defaultFontConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_LoadColor;
-	io.Fonts->AddFontFromFileTTF(SegoeUIFile.c_str(), 0.0f, &defaultFontConfig, io.Fonts->GetGlyphRangesDefault());
+
+	//io.Fonts->AddFontFromFileTTF(SegoeUIFile.c_str(), 0.0f, &defaultFontConfig, io.Fonts->GetGlyphRangesDefault());
+	defaultFontConfig.FontDataOwnedByAtlas = false;
+	io.Fonts->AddFontFromMemoryTTF((void*)Segoeui, SegoeuiSizeBytes, 0.0f, &defaultFontConfig, io.Fonts->GetGlyphRangesDefault());
 
 	//---------------------------
 	// 2. Add FontAwesome's icons
@@ -192,7 +196,10 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 		fontAwesomeConfig.MergeMode = true;
 		fontAwesomeConfig.GlyphOffset = ImVec2(0.0f, 1.0f);
 		fontAwesomeConfig.GlyphRanges = fontAwesomeRanges.Data;
-		io.Fonts->AddFontFromFileTTF(FontAwesomeFile.c_str(), baseFontSize, &fontAwesomeConfig);
+		
+		//io.Fonts->AddFontFromFileTTF(FontAwesomeFile.c_str(), baseFontSize, &fontAwesomeConfig);
+		fontAwesomeConfig.FontDataOwnedByAtlas = false;
+		io.Fonts->AddFontFromMemoryTTF((void*)Font_Awesome_6_Free_Solid_900, Font_Awesome_6_Free_Solid_900SizeBytes, baseFontSize, &fontAwesomeConfig);
 	}
 
 	ImVector<ImWchar> fontAwesomeSmallRanges;
@@ -210,7 +217,10 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 		fontAwesomeConfig.MergeMode = true;
 		fontAwesomeConfig.GlyphOffset = ImVec2(0.0f, 0.0f);
 		fontAwesomeConfig.GlyphRanges = fontAwesomeSmallRanges.Data;
-		io.Fonts->AddFontFromFileTTF(FontAwesomeFile.c_str(), fontSize, &fontAwesomeConfig);
+		
+		//io.Fonts->AddFontFromFileTTF(FontAwesomeFile.c_str(), fontSize, &fontAwesomeConfig);
+		fontAwesomeConfig.FontDataOwnedByAtlas = false;
+		io.Fonts->AddFontFromMemoryTTF((void*)Font_Awesome_6_Free_Solid_900, Font_Awesome_6_Free_Solid_900SizeBytes, fontSize, &fontAwesomeConfig);
 	}
 
 	//---------------------------------------------------
@@ -236,7 +246,10 @@ bool tpp::UIBackend::Initialize(const UIInitializeParams& params)
 		twemojiConfig.GlyphRanges = twemojiRanges.Data;
 		twemojiConfig.GlyphOffset = ImVec2(0.0f, -1.0f);
 		//fontAwesomeConfig.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
-		io.Fonts->AddFontFromFileTTF(TwemojiFile.c_str(), fontSize, &twemojiConfig);
+
+		//io.Fonts->AddFontFromFileTTF(TwemojiFile.c_str(), fontSize, &twemojiConfig);
+		twemojiConfig.FontDataOwnedByAtlas = false;
+		io.Fonts->AddFontFromMemoryTTF((void*)TwemojiMozilla, TwemojiMozillaSizeBytes, fontSize, &twemojiConfig);
 	}
 
 	io.Fonts->Build();
