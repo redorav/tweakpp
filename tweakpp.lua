@@ -200,11 +200,14 @@ function AddCommonFlags()
 		symbols ("full")
 		inlining("auto")
 		optimize("debug")
+		runtime('release')
 		
 	filter { "configurations:Release" }
 		defines { "NDEBUG" }
 		inlining("auto")
 		optimize("speed")
+		flags { 'linktimeoptimization' }
+		runtime('release')
 
 end
 
