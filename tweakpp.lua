@@ -287,7 +287,7 @@ project(Font2HeaderProject)
 	
 	postbuildcommands
 	{
-		'{echo} '..commandLine,
+		--'{echo} '..commandLine,
 		commandLine
 	}
 	
