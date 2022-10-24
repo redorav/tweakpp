@@ -3,29 +3,34 @@
 #include <algorithm>
 #include <filesystem>
 
-void SaveStringToPath(const char* path, const std::string& data)
+void SaveStringToPath(const std::filesystem::path& path, const std::string& data)
 {
-	FILE* file = fopen(path, "wb");
+	std::filesystem::path parentPath = path.parent_path();
+
+	// Ensure all parent directories are created before we try to open a new file
+	std::filesystem::create_directories(parentPath);
+
+	FILE* file = fopen(path.string().c_str(), "wb");
 	if (file)
 	{
 		fwrite(data.c_str(), 1, data.length(), file);
-	}
 
-	fclose(file);
+		fclose(file);
+	}
 }
 
 int main(int argc, char** argv)
 {
 	if (argc > 2)
 	{
-		const std::string fontDirectory = argv[1];
-		const std::string destinationDirectory = argv[2];
+		const std::filesystem::path fontDirectory = argv[1];
+		const std::filesystem::path destinationDirectory = argv[2];
 
 		const std::string HeaderFilename = "tppFontHeader.h";
 		const std::string CppFilename = "tppFontHeader.cpp";
 
-		const std::string HeaderPath = destinationDirectory + "/" + HeaderFilename;
-		const std::string CppPath = destinationDirectory + "/" + CppFilename;
+		const std::filesystem::path HeaderPath = destinationDirectory / HeaderFilename;
+		const std::filesystem::path CppPath = destinationDirectory / CppFilename;
 
 		std::string headerData;
 		headerData += "#pragma once\n\n#include <cstdint>\n\nnamespace tpp\n{\n";
@@ -33,7 +38,7 @@ int main(int argc, char** argv)
 		std::string cppData;
 		cppData += "#include \"" + HeaderFilename + "\"\n\nnamespace tpp\n{\n";
 
-		std::filesystem::directory_iterator iter(fontDirectory.c_str());
+		std::filesystem::directory_iterator iter(fontDirectory);
 		for (const std::filesystem::directory_entry& directoryEntry : iter)
 		{
 			if (!directoryEntry.is_directory())
@@ -92,7 +97,7 @@ int main(int argc, char** argv)
 		headerData += "};";
 		cppData += "};";
 
-		SaveStringToPath(HeaderPath.c_str(), headerData);
-		SaveStringToPath(CppPath.c_str(), cppData);
+		SaveStringToPath(HeaderPath, headerData);
+		SaveStringToPath(CppPath, cppData);
 	}
 }
