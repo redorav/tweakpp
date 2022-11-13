@@ -13,8 +13,9 @@ namespace tpp
 
 	enum class MessageType : uint8_t
 	{
-		Declaration = 0, // Client tells server a variable of a certain type and parameters exists
-		Update      = 1, // Server tells client to update a variable's value
+		Declaration = 0, // Server tells client a variable of a certain type and parameters exists
+		Deletion    = 1, // Server tells client a variable has been deleted
+		Update      = 2, // Client tells server to update a variable's value or server tells client to update a value
 		None        = 255,
 	};
 
