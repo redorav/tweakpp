@@ -11,15 +11,13 @@ tpp::ISocket* tpp::Server::GlobalServerSocket = nullptr;
 
 tpp::ISocket* tpp::Server::GlobalClientSocket = nullptr;
 
-bool tpp::Server::SentVariableTable = false;
+bool tpp::Server::SentFullVariableTable = false;
 
 tpp::NetworkAddress tpp::Server::GlobalNetworkAddress;
 
 char tpp::Server::ReceiveBuffer[tpp::Server::BufferLength];
 
-static tpp::BinarySerializationWriter VariableDescriptionTable(tpp::Server::BufferLength);
-
-static void SerializeVariableDescription(const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash, tpp::BinarySerializationWriter& writer)
+static void SerializeVariableDescription(const tpp::VariableBase* variable, const std::string& path, const tpp::VariableId& variableId, tpp::BinarySerializationWriter& writer)
 {
 	size_t startSize = writer.Size();
 
@@ -30,7 +28,8 @@ static void SerializeVariableDescription(const tpp::VariableBase* variable, cons
 	// Serialize the path of the variable so the server can display it
 	writer << path;
 
-	writer << tpp::VariableHeader(variable->type, hash);
+	writer << tpp::VariableHeader(variable->type, variableId);
+
 	variable->SerializeMetadata(writer);
 
 	size_t totalSize = writer.Size() - startSize;
@@ -40,12 +39,43 @@ static void SerializeVariableDescription(const tpp::VariableBase* variable, cons
 	header->size = (decltype(header->size))packetSize;
 }
 
-static void PrepareVariableDescriptionTable(tpp::BinarySerializationWriter& variableDescriptionTable)
+static void SerializeVariableDeletion(const tpp::VariableId& variableId, tpp::BinarySerializationWriter& writer)
 {
-	tpp::GetServerVariableManager()->ForEachVariable([&variableDescriptionTable](const tpp::VariableBase* variable, const std::string& path, const tpp::Hash& hash)
+	size_t startSize = writer.Size();
+
+	// We don't know what the size is going to be yet so we put 0. The final step will patch the header with the
+	// size that we know once the whole message has been constructed
+	writer << tpp::MessageHeader(0, tpp::MessageType::Deletion);
+
+	writer << variableId;
+
+	size_t totalSize = writer.Size() - startSize;
+	size_t packetSize = totalSize - sizeof(tpp::MessageHeader);
+
+	tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(writer.Back() - totalSize + 1);
+	header->size = (decltype(header->size))packetSize;
+}
+
+static void SerializePendingVariableOperations(tpp::BinarySerializationWriter& variableDescriptionTable)
+{
+	tpp::GetServerVariableManager()->ForEachPendingOperation([&variableDescriptionTable](const tpp::Operation& operation)
 	{
-		SerializeVariableDescription(variable, path, hash, variableDescriptionTable);
+		if (operation.messageType == tpp::MessageType::Declaration)
+		{
+			const tpp::VariableDescription* variableDescription = tpp::GetServerVariableManager()->Find(operation.id);
+			SerializeVariableDescription(variableDescription->variable, variableDescription->path, operation.id, variableDescriptionTable);
+		}
+		else if (operation.messageType == tpp::MessageType::Deletion)
+		{
+			SerializeVariableDeletion(operation.id, variableDescriptionTable);
+		}
+		else if (operation.messageType == tpp::MessageType::Update)
+		{
+
+		}
 	});
+
+	tpp::GetServerVariableManager()->ClearPendingOperations();
 }
 
 void tpp::Server::Initialize(const tpp::NetworkAddress& networkAddress)
@@ -68,12 +98,18 @@ void tpp::Server::Update()
 {
 	if (GlobalClientSocket->IsConnected())
 	{
-		if (!SentVariableTable)
+		if (!SentFullVariableTable)
 		{
-			VariableDescriptionTable.Clear();
-			PrepareVariableDescriptionTable(VariableDescriptionTable);
+			tpp::GetServerVariableManager()->ResetVariableDescriptions();
+			SentFullVariableTable = true;
+		}
+
+		// Send the full variable table as this is the first connection
+		if (tpp::GetServerVariableManager()->HasPendingOperations())
+		{
+			tpp::BinarySerializationWriter VariableDescriptionTable(2048);
+			SerializePendingVariableOperations(VariableDescriptionTable);
 			GlobalClientSocket->Send(VariableDescriptionTable.Data(), VariableDescriptionTable.Size());
-			SentVariableTable = true;
 		}
 
 		tpp::SocketReturn::T receiveResult = GlobalClientSocket->Receive(ReceiveBuffer, BufferLength);
@@ -93,11 +129,16 @@ void tpp::Server::Update()
 				tpp::VariableHeader variableHeader;
 				reader << variableHeader;
 
-				tpp::VariableBase* variable = tpp::GetServerVariableManager()->Find(variableHeader.hash);
+				const tpp::VariableDescription* variableDescription = tpp::GetServerVariableManager()->Find(variableHeader.id);
 
-				if (variable)
+				if (variableDescription)
 				{
-					variable->DeserializeValue(reader);
+					tpp::VariableBase* variable = variableDescription->variable;
+
+					if (variable)
+					{
+						variable->DeserializeValue(reader);
+					}
 				}
 			}
 		}
@@ -132,7 +173,7 @@ void tpp::Server::Update()
 		if (acceptReturn != tpp::SocketReturn::Ok)
 		{
 			GlobalServerSocket->Close();
-			SentVariableTable = false;
+			SentFullVariableTable = false;
 		}
 	}
 }

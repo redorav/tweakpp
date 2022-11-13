@@ -18,7 +18,7 @@ void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::Bi
 	stream << tpp::MessageHeader(0, tpp::MessageType::Update);
 
 	// We don't serialize the path when updating the packet, as we pass in the hash
-	stream << tpp::VariableHeader(variable->type, (uint64_t)variable->m_hash);
+	stream << tpp::VariableHeader(variable->type, (uint64_t)variable->GetId());
 
 	variable->SerializeValue(stream);
 
@@ -30,13 +30,13 @@ void SerializeTppVariableUpdatePacket(const tpp::VariableBase* variable, tpp::Bi
 	header->size = (decltype(header->size))packetSize;
 }
 
-tpp::VariableBase* tpp::VariableDatabase::GetVariable(const std::string& path) const
+tpp::VariableBase* tpp::VariableDatabase::FindVariable(const tpp::VariableId& id) const
 {
-	auto variable = m_variableHashmap.find(path);
+	auto variableIter = m_variableFromId.find(id);
 
-	if (variable != m_variableHashmap.end())
+	if (variableIter != m_variableFromId.end())
 	{
-		return variable->second.get();
+		return variableIter->second.get();
 	}
 	else
 	{
@@ -44,7 +44,28 @@ tpp::VariableBase* tpp::VariableDatabase::GetVariable(const std::string& path) c
 	}
 }
 
-void tpp::VariableDatabase::AddVariable(const std::string& path, const std::shared_ptr<VariableBase>& variable)
+tpp::VariableBase* tpp::VariableDatabase::FindVariable(const std::string& path) const
+{
+	auto variableIdIter = m_pathToId.find(path);
+
+	if (variableIdIter != m_pathToId.end())
+	{
+		VariableId variableId = variableIdIter->second;
+
+		auto variableIter = m_variableFromId.find(variableId);
+
+		tpp::Assert(variableIter != m_variableFromId.end());
+
+		// This should be guaranteed by construction
+		return variableIter->second.get();
+	}
+	else
+	{
+		return nullptr;
+	}
+}
+
+void tpp::VariableDatabase::AddVariable(const std::shared_ptr<VariableBase>& variable)
 {
 	// Try to find the variable group this variable lives in. If we cannot find it, create it
 	// Find variable group, or create empty if it doesn't exist
@@ -63,25 +84,54 @@ void tpp::VariableDatabase::AddVariable(const std::string& path, const std::shar
 		variableGroup = variableGroupIterator->second.get();
 	}
 
-	auto variableIter = m_variableHashmap.find(path);
+	const std::string& path = variable->GetPath();
 
-	if (variableIter == m_variableHashmap.end())
+	auto variableIdIter = m_variableFromId.find(variable->GetId());
+	if (variableIdIter == m_variableFromId.end())
 	{
-		m_variableHashmap.insert({ path, variable });
+		m_variableFromId.insert({ variable->GetId(), variable });
+	}
+
+	auto pathToIdIter = m_pathToId.find(path);
+	if (pathToIdIter == m_pathToId.end())
+	{
+		m_pathToId.insert({ path, variable->GetId() });
 	}
 
 	// Insert a pointer to the variable that we inserted (as a copy of the pointer)
 	variableGroup->variableStrings.insert(variable->GetPath());
 }
 
-void tpp::VariableDatabase::RemoveVariable(const std::string& path)
+void tpp::VariableDatabase::RemoveVariable(const tpp::VariableId& id)
 {
-	m_variableHashmap.erase(path);
+	auto variableIter = m_variableFromId.find(id);
+
+	if (variableIter != m_variableFromId.end())
+	{
+		const std::string& path = variableIter->second->GetPath();
+		m_pathToId.erase(variableIter->second->GetPath());
+		m_variableFromId.erase(id);
+	}
 }
 
-tpp::VariableGroup* tpp::VariableDatabase::GetVariableGroup(const std::string& path) const
+void tpp::VariableDatabase::RemoveVariable(const std::string& path)
 {
-	auto variableGroup = m_variableGroupHashmap.find(path);
+	auto variableIdIter = m_pathToId.find(path);
+
+	if (variableIdIter != m_pathToId.end())
+	{
+		m_variableFromId.erase(variableIdIter->second);
+	}
+}
+
+size_t tpp::VariableDatabase::GetVariableCount() const
+{
+	return m_variableFromId.size();
+}
+
+tpp::VariableGroup* tpp::VariableDatabase::GetVariableGroup(const std::string& groupPath) const
+{
+	auto variableGroup = m_variableGroupHashmap.find(groupPath);
 
 	if (variableGroup != m_variableGroupHashmap.end())
 	{
@@ -145,7 +195,8 @@ tpp::VariableGroup* tpp::VariableDatabase::RemoveFromFavorites(const std::string
 
 void tpp::VariableDatabase::Clear()
 {
-	m_variableHashmap.clear();
+	m_variableFromId.clear();
+	m_pathToId.clear();
 	m_variableGroupHashmap.clear();
 	m_favoriteGroupHashmap.clear();
 }
@@ -261,48 +312,58 @@ void tpp::ClientVariableManager::ProcessDeclarationPacket(const std::vector<char
 	tpp::MessageHeader messageHeader;
 	reader << messageHeader;
 
-	std::string path;
-	reader << path;
-
-	tpp::VariableHeader variableHeader;
-	reader << variableHeader;
-
-	bool validVariable = true;
-
-	std::shared_ptr<tpp::VariableBase> variable;
-
-	switch (variableHeader.type)
+	if (messageHeader.type == MessageType::Declaration)
 	{
-		case tpp::VariableType::Float: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Float()); break;
-		case tpp::VariableType::UnsignedInteger: variable = std::shared_ptr<tpp::VariableBase>(new tpp::UInt()); break;
-		case tpp::VariableType::Integer: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Int()); break;
-		case tpp::VariableType::Bool: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Bool()); break;
-		case tpp::VariableType::Color3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Color3()); break;
-		case tpp::VariableType::Color4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Color4()); break;
-		case tpp::VariableType::Vector2: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector2()); break;
-		case tpp::VariableType::Vector3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector3()); break;
-		case tpp::VariableType::Vector4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector4()); break;
-		case tpp::VariableType::String: variable = std::shared_ptr<tpp::VariableBase>(new tpp::String()); break;
-		case tpp::VariableType::Enum: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Enum()); break;
-		case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
-		case tpp::VariableType::Flags8: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags8()); break;
-		case tpp::VariableType::Flags16: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags16()); break;
-		case tpp::VariableType::Flags32: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags32()); break;
-		case tpp::VariableType::Flags64: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags64()); break;
-		default: validVariable = false;
+		std::string path;
+		reader << path;
+
+		tpp::VariableHeader variableHeader;
+		reader << variableHeader;
+
+		bool validVariable = true;
+
+		std::shared_ptr<tpp::VariableBase> variable;
+
+		switch (variableHeader.type)
+		{
+			case tpp::VariableType::Float: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Float()); break;
+			case tpp::VariableType::UnsignedInteger: variable = std::shared_ptr<tpp::VariableBase>(new tpp::UInt()); break;
+			case tpp::VariableType::Integer: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Int()); break;
+			case tpp::VariableType::Bool: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Bool()); break;
+			case tpp::VariableType::Color3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Color3()); break;
+			case tpp::VariableType::Color4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Color4()); break;
+			case tpp::VariableType::Vector2: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector2()); break;
+			case tpp::VariableType::Vector3: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector3()); break;
+			case tpp::VariableType::Vector4: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Vector4()); break;
+			case tpp::VariableType::String: variable = std::shared_ptr<tpp::VariableBase>(new tpp::String()); break;
+			case tpp::VariableType::Enum: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Enum()); break;
+			case tpp::VariableType::Callback: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Callback()); break;
+			case tpp::VariableType::Flags8: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags8()); break;
+			case tpp::VariableType::Flags16: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags16()); break;
+			case tpp::VariableType::Flags32: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags32()); break;
+			case tpp::VariableType::Flags64: variable = std::shared_ptr<tpp::VariableBase>(new tpp::Flags64()); break;
+			default: validVariable = false;
+		}
+
+		if (validVariable)
+		{
+			variable->DeserializeMetadata(reader);
+			variable->SetPath(path);
+			variable->SetId(tpp::VariableId(variableHeader.id));
+
+			AddVariable(variable);
+		}
+		else
+		{
+			m_uiConnectionWindow->Log("Unrecognized variable found while processing packet\n");
+		}
 	}
-
-	if (validVariable)
+	else if (messageHeader.type == MessageType::Deletion)
 	{
-		variable->DeserializeMetadata(reader);
-		variable->SetPath(path);
-		variable->m_hash = variableHeader.hash;
+		tpp::VariableId id;
+		reader << id;
 
-		AddVariable(variable);
-	}
-	else
-	{
-		m_uiConnectionWindow->Log("Unrecognized variable found while processing packet\n");
+		RemoveVariable(id);
 	}
 }
 
@@ -355,8 +416,6 @@ void tpp::ClientVariableManager::UpdateConnection()
 					if (remainingDataInBuffer >= sizeof(tpp::MessageHeader))
 					{
 						tpp::MessageHeader* header = reinterpret_cast<tpp::MessageHeader*>(&*headerPosition);
-						tpp::MessageType messageType = header->type;
-						tpp::Version version = header->version;
 						uint32_t packetSize = header->size;
 
 						if (remainingDataInBuffer >= sizeof(tpp::MessageHeader) + packetSize)
@@ -505,7 +564,7 @@ void tpp::ClientVariableManager::EstablishedConnection()
 
 void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>& variable)
 {
-	m_variableDatabase.AddVariable(variable->GetPath(), variable);
+	m_variableDatabase.AddVariable(variable);
 
 	// TODO Make sure this variable is returned from AddVariable
 	VariableGroup* variableGroup = m_variableDatabase.GetVariableGroup(variable->GetGroupPath());
@@ -513,6 +572,11 @@ void tpp::ClientVariableManager::AddVariable(const std::shared_ptr<VariableBase>
 	// Add to the tree
 	// TODO No need to do this if group existed already
 	m_variableGroupTree.AddPath(variable->GetGroupPath(), variableGroup);
+}
+
+void tpp::ClientVariableManager::RemoveVariable(const tpp::VariableId& id)
+{
+	m_variableDatabase.RemoveVariable(id);
 }
 
 const char* tpp::ClientVariableManager::GetDisplayString() const
@@ -539,6 +603,11 @@ void tpp::ClientVariableManager::Clear()
 bool tpp::ClientVariableManager::MarkedAsClosed() const
 {
 	return !m_windowOpen;
+}
+
+size_t tpp::ClientVariableManager::GetVariableCount() const
+{
+	return m_variableDatabase.GetVariableCount();
 }
 
 tpp::VariableGroup* tpp::ClientVariableManager::GetVariableGroup(const std::string& path) const

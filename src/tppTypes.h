@@ -3,7 +3,7 @@
 #include "tppCommon.h"
 
 #if defined(TPP_CLIENT)
-#include "tppHash.h"
+#include "tppHashIdTypes.h"
 #endif
 
 #include "tppSerialize.h"
@@ -66,13 +66,18 @@ namespace tpp
 			{
 				size_t lastSlash = path.find_last_of("/");
 				size_t afterLastSlash = lastSlash + 1;
-			
+
 				if (lastSlash != std::string::npos)
 				{
 					m_groupPath = std::string(path.data(), lastSlash);
 					m_name = std::string(path.data() + afterLastSlash, path.size() - afterLastSlash);
 				}
 			}
+		}
+
+		void SetId(const tpp::VariableId& id)
+		{
+			m_id = id;
 		}
 
 		const std::string& GetPath() const
@@ -84,18 +89,26 @@ namespace tpp
 		{
 			return m_groupPath;
 		}
-		
+
 		const std::string& GetName() const
 		{
 			return m_name;
 		}
-		
+
+		const tpp::VariableId& GetId() const
+		{
+			return m_id;
+		}
+
+	private:
+
 		std::string m_path;
-		
+
 		std::string m_groupPath;
-		
-		tpp::Hash m_hash;
-		
+
+		// Unique identifier sent to us by server (variable pointer)
+		tpp::VariableId m_id;
+
 		std::string m_name;
 
 #else
@@ -104,7 +117,11 @@ namespace tpp
 
 #endif
 
+	public:
+
 		VariableBase(tpp::VariableType type, uint32_t size) : type(type), size(size) {}
+
+		virtual ~VariableBase();
 
 		uint32_t size = 0;
 
@@ -126,6 +143,8 @@ namespace tpp
 		Float() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Float(const char* path, float initialValue, float minValue, float maxValue, float step);
+
+		virtual ~Float() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -171,6 +190,8 @@ namespace tpp
 #endif
 		UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step);
 
+		virtual ~UInt() {}
+
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
@@ -214,6 +235,8 @@ namespace tpp
 #endif
 		Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step);
 
+		virtual ~Int() {}
+
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
@@ -243,8 +266,6 @@ namespace tpp
 		};
 	};
 
-	
-
 	class Bool final : public VariableBase
 	{
 	public:
@@ -253,6 +274,8 @@ namespace tpp
 		Bool() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Bool(const char* path, bool initialValue);
+
+		virtual ~Bool() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -286,6 +309,8 @@ namespace tpp
 		Color3() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Color3(const char* path, float r, float g, float b);
+
+		virtual ~Color3() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -329,6 +354,8 @@ namespace tpp
 #endif
 		Color4(const char* path, float r, float g, float b, float a);
 
+		virtual ~Color4() {}
+
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
@@ -370,6 +397,8 @@ namespace tpp
 		Vector2() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Vector2(const char* path, float x, float y);
+
+		virtual ~Vector2() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -413,6 +442,8 @@ namespace tpp
 #endif
 		Vector3(const char* path, float x, float y, float z);
 
+		virtual ~Vector3() {}
+
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
@@ -453,6 +484,8 @@ namespace tpp
 		Vector4() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
 #endif
 		Vector4(const char* path, float x, float y, float z, float w);
+
+		virtual ~Vector4() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -496,6 +529,8 @@ namespace tpp
 #endif
 		Callback(const char* path, void(*callback)(void));
 
+		virtual ~Callback() {}
+
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
@@ -519,6 +554,8 @@ namespace tpp
 		String() : VariableBase((VariableType)Type, 0) {}
 #endif
 		String(const char* path, const char* defaultValue);
+
+		virtual ~String() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
@@ -573,6 +610,8 @@ namespace tpp
 
 		Enum(const char* path, int defaultValue, const std::vector<EnumEntry>& entries);
 
+		virtual ~Enum() {}
+
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;
 		virtual void SerializeValue(tpp::BinarySerializationWriter& writer) const override;
@@ -607,6 +646,8 @@ namespace tpp
 #endif
 
 		Flags(const char* path, UnderlyingT defaultValue, const std::vector<std::string>& entries);
+
+		virtual ~Flags() {}
 
 		virtual void SerializeMetadata(tpp::BinarySerializationWriter& writer) const override;
 		virtual void DeserializeMetadata(tpp::BinarySerializationReader& reader) override;

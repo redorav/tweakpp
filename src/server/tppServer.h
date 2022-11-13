@@ -28,6 +28,6 @@ namespace tpp
 		static char ReceiveBuffer[BufferLength];
 
 		// TODO Remove once we have a more dynamic system
-		static bool SentVariableTable;
+		static bool SentFullVariableTable;
 	};
 };

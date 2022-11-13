@@ -101,6 +101,8 @@ namespace tpp
 
 		bool m_dirty = true;
 
+		size_t m_variableCount = 0;
+
 		// Connection log
 		std::unique_ptr<tpp::UILog> m_uiLog;
 	};

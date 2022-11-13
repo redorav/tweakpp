@@ -49,12 +49,12 @@ namespace tpp
 	{
 		VariableHeader() {}
 
-		VariableHeader(tpp::VariableType type, uint64_t hash) : type(type), hash(hash) {}
+		VariableHeader(tpp::VariableType type, uint64_t id) : type(type), id(id) {}
 
-		VariableHeader(uint32_t type, uint64_t hash) : VariableHeader(static_cast<tpp::VariableType>(type), hash) {}
+		VariableHeader(uint32_t type, uint64_t id) : VariableHeader(static_cast<tpp::VariableType>(type), id) {}
 
-		// Unique identifier. Typically formed from the path
-		uint64_t hash; // 8 bytes
+		// Unique identifier. Server hands it down to client
+		uint64_t id; // 8 bytes
 
 		// Type of variable
 		VariableType type; // 1 byte

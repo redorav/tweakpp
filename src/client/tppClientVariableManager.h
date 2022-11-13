@@ -33,7 +33,7 @@ namespace tpp
 		// Path of the group (or name in the case of a favorite group)
 		std::string m_path;
 
-		// TODO convert to just hashes. Eventually we want a path database so that favorite
+		// TODO convert to just string hashes. Eventually we want a path database so that favorite
 		// groups can query a path/name without the variable existing in the database
 		std::unordered_set<std::string> variableStrings;
 	};
@@ -55,11 +55,17 @@ namespace tpp
 		// Variables
 		//----------
 
-		void AddVariable(const std::string& path, const std::shared_ptr<VariableBase>& variable);
+		void AddVariable(const std::shared_ptr<VariableBase>& variable);
 
-		VariableBase* GetVariable(const std::string& path) const;
+		VariableBase* FindVariable(const tpp::VariableId& id) const;
+
+		VariableBase* FindVariable(const std::string& path) const;
+
+		void RemoveVariable(const tpp::VariableId& id);
 
 		void RemoveVariable(const std::string& path);
+
+		size_t GetVariableCount() const;
 
 		//----------------
 		// Variable Groups
@@ -85,10 +91,16 @@ namespace tpp
 
 	private:
 
-		std::unordered_map<std::string, std::shared_ptr<VariableBase>> m_variableHashmap;
+		// Find variables by their id
+		std::unordered_map<uint64_t, std::shared_ptr<VariableBase>> m_variableFromId;
 
+		// Find variable id through the path
+		std::unordered_map<std::string, VariableId> m_pathToId;
+
+		// Find variable group via its group path
 		std::unordered_map<std::string, std::shared_ptr<VariableGroup>> m_variableGroupHashmap;
-		
+
+		// Find favorite group via its favorite name
 		std::unordered_map<std::string, std::shared_ptr<VariableGroup>> m_favoriteGroupHashmap;
 	};
 
@@ -171,6 +183,7 @@ namespace tpp
 		// Receives incoming data, parses and makes sense of incoming variable definitions
 		void UpdateConnection();
 
+		// Draw the connection window associated with this connection
 		void DrawConnectionWindow();
 
 		// Called once when connection is established
@@ -183,6 +196,8 @@ namespace tpp
 		void Clear();
 
 		bool MarkedAsClosed() const;
+
+		size_t GetVariableCount() const;
 
 		template<typename Fn>
 		void ForEachVariableInGroup(tpp::VariableGroup* group, const Fn& fn) const;
@@ -208,6 +223,8 @@ namespace tpp
 	private:
 
 		void AddVariable(const std::shared_ptr<VariableBase>& variable);
+
+		void RemoveVariable(const tpp::VariableId& id);
 
 		void ProcessDeclarationPacket(const std::vector<char>& currentPacketData);
 
@@ -261,7 +278,7 @@ namespace tpp
 		{
 			for (const std::string& variablePath : group->variableStrings)
 			{
-				tpp::VariableBase* variable = m_variableDatabase.GetVariable(variablePath);
+				tpp::VariableBase* variable = m_variableDatabase.FindVariable(variablePath);
 				fn(variablePath, variable);
 			}
 		}

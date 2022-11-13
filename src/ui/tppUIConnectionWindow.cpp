@@ -198,6 +198,15 @@ namespace tpp
 
 	void UIConnectionWindow::UpdateCachedVariables(const tpp::ClientVariableManager* variableManager)
 	{
+		// Check whether we've added or removed a variable, and react accordingly
+		// This is especially important in the case where we remove a variable, as
+		// the data becomes stale and the cached variable points to deleted memory
+		{
+			size_t currentVariableCount = variableManager->GetVariableCount();
+			m_dirty |= m_variableCount != currentVariableCount;
+			m_variableCount = currentVariableCount;
+		}
+
 		if (m_dirty)
 		{
 			m_selectedGroupNode = m_nextSelectedGroupNode;
@@ -727,8 +736,11 @@ namespace tpp
 							}
 							else
 							{
-								ImGui::TextDisabled(cachedVariable.variablePath.c_str());
-								ShowDisabledVariableContextMenu(cachedVariable.variablePath, interactionData);
+								if (m_selectedGroupNode && m_selectedGroupNode->variableGroup && m_selectedGroupNode->variableGroup->m_isFavorite)
+								{
+									ImGui::TextDisabled(cachedVariable.variablePath.c_str());
+									ShowDisabledVariableContextMenu(cachedVariable.variablePath, interactionData);
+								}
 							}
 						}
 

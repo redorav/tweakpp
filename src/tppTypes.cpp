@@ -6,6 +6,14 @@
 
 namespace tpp
 {
+	VariableBase::~VariableBase()
+	{
+		#if !defined(TPP_CLIENT)
+		const tpp::VariableDescription* variableDescription = GetServerVariableManager()->Find(tpp::VariableId((uint64_t)this));
+		GetServerVariableManager()->Unregister(*variableDescription);
+		#endif
+	}
+
 	Float::Float(const char* path, float initialValue, float minValue, float maxValue, float step)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
@@ -13,7 +21,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -33,7 +41,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -53,7 +61,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -73,7 +81,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -93,7 +101,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -113,7 +121,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -133,7 +141,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -153,7 +161,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -173,7 +181,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -192,7 +200,7 @@ namespace tpp
 	{
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 	
@@ -214,7 +222,7 @@ namespace tpp
 		, currentValue(defaultValue)
 	{
 		#if !defined(TPP_CLIENT)
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -244,7 +252,7 @@ namespace tpp
 
 		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 		#endif
 	}
 
@@ -278,7 +286,7 @@ namespace tpp
 #if !defined(TPP_CLIENT)
 		tpp::Assert(entries.size() <= 8 * sizeof(UnderlyingType));
 		memory = &currentValue;
-		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path)));
+		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
 #endif
 	}
 

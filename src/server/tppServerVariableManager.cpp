@@ -1,6 +1,7 @@
 #include "tppServerVariableManager.h"
 
-#include "tppHash.h"
+#include "tppHashIdTypes.h"
+#include "tppNetwork.h"
 
 #include <memory>
 
@@ -10,22 +11,53 @@ namespace tpp
 
 	void ServerVariableManager::Register(const tpp::VariableDescription& variableDescription)
 	{
-		tpp::Hash hash(variableDescription.path.data(), variableDescription.path.size());
+		// Add variable description to the main table
+		m_variableHashmap.insert({ variableDescription.hash, variableDescription });
 
-		m_variableHashmap.insert({ hash, variableDescription });
+		// Add variable declaration operation
+		m_pendingOperations.push_back({ variableDescription.hash, variableDescription.path, tpp::MessageType::Declaration });
 	}
 
-	tpp::VariableBase* ServerVariableManager::Find(const tpp::Hash& hash) const
+	void ServerVariableManager::Unregister(const tpp::VariableDescription& variableDescription)
 	{
-		auto dataIterator = m_variableHashmap.find(hash);
+		// Add the deletion operation first
+		m_pendingOperations.push_back({ variableDescription.hash, variableDescription.path, tpp::MessageType::Deletion });
+
+		// Then delete the data
+		m_variableHashmap.erase(variableDescription.hash);
+	}
+
+	const tpp::VariableDescription* ServerVariableManager::Find(const tpp::VariableId& id) const
+	{
+		auto dataIterator = m_variableHashmap.find(id);
 
 		if (dataIterator != m_variableHashmap.end())
 		{
-			return dataIterator->second.variable;
+			return &dataIterator->second;
 		}
 		else
 		{
 			return nullptr;
+		}
+	}
+
+	bool ServerVariableManager::HasPendingOperations() const
+	{
+		return !m_pendingOperations.empty();
+	}
+
+	void ServerVariableManager::ClearPendingOperations()
+	{
+		m_pendingOperations.clear();
+	}
+
+	void ServerVariableManager::ResetVariableDescriptions()
+	{
+		ClearPendingOperations();
+
+		for (const auto& it : m_variableHashmap)
+		{
+			m_pendingOperations.push_back({ it.first, it.second.path, tpp::MessageType::Declaration});
 		}
 	}
 
