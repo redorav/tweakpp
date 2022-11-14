@@ -143,6 +143,11 @@ tpp::VariableGroup* tpp::VariableDatabase::GetVariableGroup(const std::string& g
 	}
 }
 
+size_t tpp::VariableDatabase::GetVariableGroupCount() const
+{
+	return m_variableGroupHashmap.size();
+}
+
 tpp::VariableGroup* tpp::VariableDatabase::AddFavoriteGroup(const std::string& favoriteGroupName)
 {
 	VariableGroup* favoriteGroup = nullptr;
@@ -184,6 +189,11 @@ tpp::VariableGroup* tpp::VariableDatabase::GetFavoriteGroup(const std::string& f
 tpp::VariableGroup* tpp::VariableDatabase::RemoveFromFavorites(const std::string& favoriteGroupName, const VariableBase* variable)
 {
 	return RemoveFromFavorites(favoriteGroupName, variable->GetPath());
+}
+
+size_t tpp::VariableDatabase::GetFavoriteGroupCount() const
+{
+	return m_favoriteGroupHashmap.size();
 }
 
 tpp::VariableGroup* tpp::VariableDatabase::RemoveFromFavorites(const std::string& favoriteGroupName, const std::string& variablePath)
@@ -608,6 +618,16 @@ bool tpp::ClientVariableManager::MarkedAsClosed() const
 size_t tpp::ClientVariableManager::GetVariableCount() const
 {
 	return m_variableDatabase.GetVariableCount();
+}
+
+size_t tpp::ClientVariableManager::GetVariableGroupCount() const
+{
+	return m_variableDatabase.GetVariableGroupCount();
+}
+
+size_t tpp::ClientVariableManager::GetFavoriteGroupCount() const
+{
+	return m_variableDatabase.GetFavoriteGroupCount();
 }
 
 tpp::VariableGroup* tpp::ClientVariableManager::GetVariableGroup(const std::string& path) const

@@ -73,6 +73,8 @@ namespace tpp
 
 		VariableGroup* GetVariableGroup(const std::string& path) const;
 
+		size_t GetVariableGroupCount() const;
+
 		//----------------
 		// Favorite Groups
 		//----------------
@@ -86,6 +88,8 @@ namespace tpp
 		VariableGroup* RemoveFromFavorites(const std::string& favoriteGroupName, const VariableBase* variable);
 
 		VariableGroup* RemoveFromFavorites(const std::string& favoriteGroupName, const std::string& variablePath);
+
+		size_t GetFavoriteGroupCount() const;
 
 		void Clear();
 
@@ -198,6 +202,10 @@ namespace tpp
 		bool MarkedAsClosed() const;
 
 		size_t GetVariableCount() const;
+
+		size_t GetVariableGroupCount() const;
+
+		size_t GetFavoriteGroupCount() const;
 
 		template<typename Fn>
 		void ForEachVariableInGroup(tpp::VariableGroup* group, const Fn& fn) const;

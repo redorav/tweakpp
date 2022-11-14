@@ -182,6 +182,26 @@ namespace tpp
 					const tpp::EnumEntry& defaultEnumEntry = enumVariable->metadata.entries[enumVariable->metadata.defaultValue];
 					ImGui::Text("Default: %s", defaultEnumEntry.name.c_str());
 				}
+				else if (variable->type == tpp::VariableType::Flags8)
+				{
+					tpp::Flags8* flags8Variable = static_cast<tpp::Flags8*>(variable);
+					ImGui::Text("Default: %i (0x%02x)", flags8Variable->metadata.defaultValue, flags8Variable->metadata.defaultValue);
+				}
+				else if (variable->type == tpp::VariableType::Flags16)
+				{
+					tpp::Flags16* flags16Variable = static_cast<tpp::Flags16*>(variable);
+					ImGui::Text("Default: %i (0x%04x)", flags16Variable->metadata.defaultValue, flags16Variable->metadata.defaultValue);
+				}
+				else if (variable->type == tpp::VariableType::Flags32)
+				{
+					tpp::Flags32* flags32Variable = static_cast<tpp::Flags32*>(variable);
+					ImGui::Text("Default: %i (0x%08x)", flags32Variable->metadata.defaultValue, flags32Variable->metadata.defaultValue);
+				}
+				else if (variable->type == tpp::VariableType::Flags64)
+				{
+					tpp::Flags64* flags64Variable = static_cast<tpp::Flags64*>(variable);
+					ImGui::Text("Default: %i (0x%016x)", flags64Variable->metadata.defaultValue, flags64Variable->metadata.defaultValue);
+				}
 
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
@@ -285,6 +305,15 @@ namespace tpp
 		FlagsT::UnderlyingType currentValue = variable->currentValue;
 
 		ImGui::Separator();
+
+		switch ((VariableType)FlagsT::Type)
+		{
+			case VariableType::Flags8:  ImGui::Text("0x%02x", currentValue); break;
+			case VariableType::Flags16: ImGui::Text("0x%04x", currentValue); break;
+			case VariableType::Flags32: ImGui::Text("0x%08x", currentValue); break;
+			case VariableType::Flags64: ImGui::Text("0x%016x", currentValue); break;
+			default: break;
+		}
 
 		FlagsT::UnderlyingType newValue = 0;
 
@@ -590,8 +619,10 @@ namespace tpp
 					treeNodeFlagsBase |= ImGuiTreeNodeFlags_SpanAvailWidth;
 
 					// Favorite groups go first
-					variableManager->ForEachFavoriteGroupNode
-					(
+					if (variableManager->GetFavoriteGroupCount() > 0)
+					{
+						variableManager->ForEachFavoriteGroupNode
+						(
 						[this, treeNodeFlagsBase](const std::string& groupName, const VariableGroupNode& favoriteGroup)
 						{
 							ImGuiTreeNodeFlags treeNodeFlags = treeNodeFlagsBase;
@@ -622,9 +653,10 @@ namespace tpp
 								ImGui::TreePop();
 							}
 						}
-					);
+						);
 
-					ImGui::Separator();
+						ImGui::Separator();
+					}
 
 					variableManager->ForEachVariableGroupNode
 					(
@@ -661,6 +693,7 @@ namespace tpp
 							}
 						}
 					);
+
 					ImGui::EndTable();
 				}
 
