@@ -14,16 +14,16 @@ namespace tpp
 		#endif
 	}
 
+#if !defined(TPP_CLIENT)
 	Float::Float(const char* path, float initialValue, float minValue, float maxValue, float step)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Float::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Float::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -34,16 +34,16 @@ namespace tpp
 	void Float::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Float::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	UInt::UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void UInt::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void UInt::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -54,16 +54,16 @@ namespace tpp
 	void UInt::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool UInt::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Int::Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue, minValue, maxValue, step)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Int::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Int::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -74,16 +74,16 @@ namespace tpp
 	void Int::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Int::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Bool::Bool(const char* path, bool initialValue)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(initialValue)
 		, metadata(initialValue)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Bool::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Bool::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -94,16 +94,16 @@ namespace tpp
 	void Bool::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Bool::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Color3::Color3(const char* path, float r, float g, float b)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, r(r), g(g), b(b)
 		, metadata(r, g, b)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Color3::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Color3::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -114,16 +114,16 @@ namespace tpp
 	void Color3::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Color3::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Color4::Color4(const char* path, float r, float g, float b, float a)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, r(r), g(g), b(b), a(a)
 		, metadata(r, g, b, a)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Color4::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Color4::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -134,16 +134,16 @@ namespace tpp
 	void Color4::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Color4::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Vector2::Vector2(const char* path, float x, float y)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, x(x), y(y)
 		, metadata(x, y)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Vector2::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Vector2::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -154,16 +154,16 @@ namespace tpp
 	void Vector2::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Vector2::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Vector3::Vector3(const char* path, float x, float y, float z)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, x(x), y(y), z(z)
 		, metadata(x, y, z)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Vector3::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Vector3::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -174,16 +174,16 @@ namespace tpp
 	void Vector3::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Vector3::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Vector4::Vector4(const char* path, float x, float y, float z, float w)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, x(x), y(y), z(z), w(w)
 		, metadata(x, y, z, w)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Vector4::SerializeMetadata(tpp::BinarySerializationWriter& writer) const { writer << metadata; }
 	void Vector4::DeserializeMetadata(tpp::BinarySerializationReader& reader) { reader << metadata; currentValue = metadata.defaultValue; }
@@ -194,15 +194,15 @@ namespace tpp
 	void Vector4::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Vector4::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Callback::Callback(const char* path, void(*callback)(void))
 		: VariableBase((VariableType)Type, 0)
 		, currentValue(callback)
 	{
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 	
 	void Callback::SerializeMetadata(tpp::BinarySerializationWriter& /*writer*/) const {}
 	void Callback::DeserializeMetadata(tpp::BinarySerializationReader& /*reader*/) {}
@@ -217,14 +217,14 @@ namespace tpp
 	void Callback::RevertToDefault() {}
 	bool Callback::HasDefaultValue() { return true; }
 
+#if !defined(TPP_CLIENT)
 	String::String(const char* path, const char* defaultValue)
 		: VariableBase((VariableType)Type, 0)
 		, currentValue(defaultValue)
 	{
-		#if !defined(TPP_CLIENT)
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void String::SerializeMetadata(tpp::BinarySerializationWriter& writer) const
 	{
@@ -243,6 +243,7 @@ namespace tpp
 	void String::RevertToDefault() { currentValue = defaultValue; }
 	bool String::HasDefaultValue() { return currentValue == defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	Enum::Enum(const char* path, int defaultValue, const std::vector<EnumEntry>& entries)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
 		, currentValue(defaultValue)
@@ -250,11 +251,10 @@ namespace tpp
 		metadata.defaultValue = defaultValue;
 		metadata.entries = entries;
 
-		#if !defined(TPP_CLIENT)
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-		#endif
 	}
+#endif
 
 	void Enum::SerializeMetadata(tpp::BinarySerializationWriter& writer) const
 	{
@@ -275,6 +275,7 @@ namespace tpp
 	void Enum::RevertToDefault() { currentValue = metadata.defaultValue; }
 	bool Enum::HasDefaultValue() { return currentValue == metadata.defaultValue; }
 
+#if !defined(TPP_CLIENT)
 	template<typename UnderlyingT, VariableType VariableT>
 	Flags<UnderlyingT, VariableT>::Flags(const char* path, UnderlyingT defaultValue, const std::vector<std::string>& entries)
 		: VariableBase((VariableType)Type, sizeof(currentValue))
@@ -283,12 +284,11 @@ namespace tpp
 		metadata.defaultValue = defaultValue;
 		metadata.entries = entries;
 
-#if !defined(TPP_CLIENT)
 		tpp::Assert(entries.size() <= 8 * sizeof(UnderlyingType));
 		memory = &currentValue;
 		GetServerVariableManager()->Register(tpp::VariableDescription(this, std::string(path), tpp::Hash((uint64_t)this)));
-#endif
 	}
+#endif
 
 	template<typename UnderlyingT, VariableType VariableT>
 	void Flags<UnderlyingT, VariableT>::SerializeMetadata(tpp::BinarySerializationWriter& writer) const

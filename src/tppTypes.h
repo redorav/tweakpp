@@ -141,8 +141,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Float() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Float(const char* path, float initialValue, float minValue, float maxValue, float step);
+#endif
 
 		virtual ~Float() {}
 
@@ -187,8 +188,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		UInt() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		UInt(const char* path, uint32_t initialValue, uint32_t minValue, uint32_t maxValue, uint32_t step);
+#endif
 
 		virtual ~UInt() {}
 
@@ -232,8 +234,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Int() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Int(const char* path, int32_t initialValue, int32_t minValue, int32_t maxValue, int32_t step);
+#endif
 
 		virtual ~Int() {}
 
@@ -272,8 +275,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Bool() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Bool(const char* path, bool initialValue);
+#endif
 
 		virtual ~Bool() {}
 
@@ -307,8 +311,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Color3() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Color3(const char* path, float r, float g, float b);
+#endif
 
 		virtual ~Color3() {}
 
@@ -351,8 +356,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Color4() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Color4(const char* path, float r, float g, float b, float a);
+#endif
 
 		virtual ~Color4() {}
 
@@ -395,8 +401,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Vector2() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Vector2(const char* path, float x, float y);
+#endif
 
 		virtual ~Vector2() {}
 
@@ -439,8 +446,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Vector3() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Vector3(const char* path, float x, float y, float z);
+#endif
 
 		virtual ~Vector3() {}
 
@@ -482,8 +490,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Vector4() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
+#else
 		Vector4(const char* path, float x, float y, float z, float w);
+#endif
 
 		virtual ~Vector4() {}
 
@@ -526,8 +535,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Callback() : VariableBase((VariableType)Type, 0) {}
-#endif
+#else
 		Callback(const char* path, void(*callback)(void));
+#endif
 
 		virtual ~Callback() {}
 
@@ -552,8 +562,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		String() : VariableBase((VariableType)Type, 0) {}
-#endif
+#else
 		String(const char* path, const char* defaultValue);
+#endif
 
 		virtual ~String() {}
 
@@ -606,9 +617,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Enum() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
-
+#else
 		Enum(const char* path, int defaultValue, const std::vector<EnumEntry>& entries);
+#endif
 
 		virtual ~Enum() {}
 
@@ -643,9 +654,9 @@ namespace tpp
 
 #if defined(TPP_CLIENT)
 		Flags() : VariableBase((VariableType)Type, sizeof(currentValue)) {}
-#endif
-
+#else
 		Flags(const char* path, UnderlyingT defaultValue, const std::vector<std::string>& entries);
+#endif
 
 		virtual ~Flags() {}
 
